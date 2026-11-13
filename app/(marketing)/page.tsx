@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FaqList, FAQ_ITEMS } from "@/components/marketing/faq-list";
+import { SoftwareJsonLd } from "@/components/seo/json-ld";
 
 const steps = [
   {
@@ -98,6 +99,7 @@ function DashboardPreview() {
 export default function HomePage() {
   return (
     <>
+      <SoftwareJsonLd />
       {/* HERO */}
       <section className="relative overflow-hidden">
         <div className="bg-grid absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]" />

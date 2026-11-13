@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 export const metadata: Metadata = {
   title: "Tarifs",
   description: "Artisan Relance est gratuit pendant la phase de lancement.",
+  alternates: { canonical: "/tarifs" },
 };
 
 const plans = [

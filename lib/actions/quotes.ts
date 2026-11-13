@@ -51,7 +51,11 @@ export async function createQuote(_: ActionState, formData: FormData): Promise<A
 
   // Les relances J+4 / J+10 sont programmées par le déclencheur SQL
   const { error } = await supabase.from("quotes").insert({ ...parsed.data, user_id: user.id });
-  if (error) return { error: "Impossible d'enregistrer le devis." };
+  if (error) {
+    // Limite anti-abus définie côté base (trigger enforce_quote_quota)
+    if (error.message?.includes("Limite")) return { error: error.message };
+    return { error: "Impossible d'enregistrer le devis." };
+  }
 
   revalidateApp();
   return { ok: true, message: "Devis ajouté. Les relances sont programmées." };

@@ -37,6 +37,10 @@ export async function sendQuoteReminder(params: {
       html,
       text,
       tags: [{ name: "type", value: params.type }],
+      // Lien de désinscription standard (améliore la délivrabilité Gmail / Yahoo)
+      headers: {
+        "List-Unsubscribe": `<mailto:${params.data.replyTo}?subject=STOP>`,
+      },
     },
     { idempotencyKey: `scheduled-email-${params.id}` },
   );

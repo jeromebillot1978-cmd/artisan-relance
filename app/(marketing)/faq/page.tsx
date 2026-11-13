@@ -2,15 +2,18 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { FaqList } from "@/components/marketing/faq-list";
+import { FaqJsonLd } from "@/components/seo/json-ld";
 
 export const metadata: Metadata = {
   title: "FAQ",
   description: "Toutes les réponses sur Artisan Relance : relances, e-mails, données, tarifs.",
+  alternates: { canonical: "/faq" },
 };
 
 export default function FaqPage() {
   return (
     <section className="container max-w-3xl py-16 md:py-24">
+      <FaqJsonLd />
       <h1 className="text-4xl font-semibold tracking-tight">Questions fréquentes</h1>
       <p className="mt-3 text-muted-foreground">Tout ce que vous devez savoir avant de commencer.</p>
       <div className="mt-10">

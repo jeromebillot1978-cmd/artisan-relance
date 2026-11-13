@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { getUser } from "@/lib/supabase/server";
 
 const links = [
   { href: "/#fonctionnement", label: "Fonctionnement" },
@@ -10,8 +9,9 @@ const links = [
   { href: "/faq", label: "FAQ" },
 ];
 
-export async function SiteHeader() {
-  const { user } = await getUser();
+// Composant statique : aucune requête Supabase -> pages marketing servies depuis le CDN.
+// Un utilisateur déjà connecté qui clique sur « Connexion » est redirigé vers son tableau de bord.
+export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-lg">
@@ -26,20 +26,12 @@ export async function SiteHeader() {
         </nav>
         <div className="flex items-center gap-1">
           <ThemeToggle />
-          {user ? (
-            <Button asChild size="sm">
-              <Link href="/dashboard">Mon espace</Link>
-            </Button>
-          ) : (
-            <>
-              <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
-                <Link href="/connexion">Connexion</Link>
-              </Button>
-              <Button asChild size="sm">
-                <Link href="/inscription">Essayer</Link>
-              </Button>
-            </>
-          )}
+          <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
+            <Link href="/connexion">Connexion</Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link href="/inscription">Essayer</Link>
+          </Button>
         </div>
       </div>
       <nav className="container flex gap-5 overflow-x-auto pb-2 text-sm text-muted-foreground md:hidden">

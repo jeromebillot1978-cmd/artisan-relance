@@ -15,12 +15,16 @@ export const metadata: Metadata = {
   description:
     "Artisans : vos devis sont relancés automatiquement par e-mail à J+4 et J+10. Plus de devis signés, zéro temps passé.",
   applicationName: "Artisan Relance",
+  alternates: { canonical: "/" },
   openGraph: {
     title: "Artisan Relance",
     description: "Relancez automatiquement vos devis et signez plus de chantiers.",
+    url: "/",
+    siteName: "Artisan Relance",
     locale: "fr_FR",
     type: "website",
   },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = {
