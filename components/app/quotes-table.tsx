@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import {
+  AlertTriangle,
   CheckCircle2,
   Clock,
   FileText,
@@ -63,6 +64,16 @@ function nextReminderOf(quote: QuoteWithEmails) {
 function ReminderInfo({ quote }: { quote: QuoteWithEmails }) {
   const next = nextReminderOf(quote);
   const sentCount = quote.scheduled_emails.filter((e) => e.status === "sent").length;
+  const failed = quote.scheduled_emails.find((e) => e.status === "failed");
+
+  if (quote.status === "pending" && failed) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-destructive">
+        <AlertTriangle className="h-3 w-3" />
+        Envoi échoué · vérifiez l'e-mail du client
+      </span>
+    );
+  }
 
   if (next) {
     return (
