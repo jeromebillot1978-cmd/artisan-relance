@@ -1,0 +1,16 @@
+# --- Supabase (Project Settings > API) ---
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
+# Clé secrète : JAMAIS côté navigateur, uniquement sur Vercel (serveur)
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...
+
+# --- URL publique de l'application (sans / final) ---
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
+# --- Resend (resend.com > API Keys) ---
+RESEND_API_KEY=re_xxxxxxxxxxxx
+# Adresse d'un domaine VÉRIFIÉ dans Resend
+RESEND_FROM_EMAIL=relances@votre-domaine.fr
+
+# --- Cron Vercel : chaîne aléatoire d'au moins 16 caractères ---
+CRON_SECRET=remplacez-par-une-longue-chaine-aleatoire
