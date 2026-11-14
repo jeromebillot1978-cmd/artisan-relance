@@ -25,3 +25,23 @@ select cron.schedule(
   );
   $job$
 );
+
+-- Maintenance quotidienne (3 h 30, heure de Paris en hiver) : purge des pièces
+-- jointes au-delà de la durée de conservation et des fichiers orphelins.
+select cron.unschedule(jobid) from cron.job where jobname = 'artisan-relance-maintenance';
+
+select cron.schedule(
+  'artisan-relance-maintenance',
+  '30 2 * * *',
+  $job$
+  select net.http_post(
+    url     := (select decrypted_secret from vault.decrypted_secrets where name = 'mailer_url'),
+    headers := jsonb_build_object(
+                 'Content-Type', 'application/json',
+                 'x-cron-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'mailer_secret')
+               ),
+    body    := '{"mode":"maintenance"}'::jsonb,
+    timeout_milliseconds := 120000
+  );
+  $job$
+);

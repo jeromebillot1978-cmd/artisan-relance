@@ -7,6 +7,35 @@
 create extension if not exists pgcrypto;
 
 -- ---------------------------------------------------------------------
+-- 0. RÉGLAGES DE LA PLATEFORME (garde-fous, modifiables sans redéployer)
+-- ---------------------------------------------------------------------
+create table if not exists public.platform_settings (
+  key         text primary key,
+  value       text not null,
+  description text
+);
+insert into public.platform_settings (key, value, description) values
+  ('daily_email_limit', '90', 'Plafond global d''e-mails par jour, toutes campagnes (offre gratuite Resend : 100/jour, marge pour les e-mails de connexion)'),
+  ('user_daily_email_limit', '30', 'Plafond d''e-mails par artisan et par jour (devis + relances + transferts)'),
+  ('failure_breaker_per_hour', '20', 'Au-delà de N envois en échec sur 1 h, tous les envois sont suspendus (disjoncteur)'),
+  ('reply_forward_daily_limit', '10', 'Transferts de réponses maximum par dossier et par 24 h (anti-boucle)'),
+  ('attachment_retention_months', '12', 'Durée de conservation des pièces jointes après la clôture du dossier'),
+  ('orphan_upload_retention_days', '2', 'Suppression des fichiers téléversés mais jamais rattachés à un devis')
+on conflict (key) do nothing;
+alter table public.platform_settings enable row level security;
+revoke all on public.platform_settings from anon, authenticated;
+
+create or replace function public.setting_int(p_key text, p_default integer)
+returns integer
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce((select value::integer from public.platform_settings where key = p_key), p_default);
+$$;
+
+-- ---------------------------------------------------------------------
 -- 1. TABLES
 -- ---------------------------------------------------------------------
 create table if not exists public.campaigns (
@@ -20,6 +49,8 @@ create table if not exists public.campaigns (
   message             text not null check (char_length(message) between 1 and 5000),
   followup_message    text not null check (char_length(followup_message) between 1 and 5000),
   amount              numeric(12, 2) not null default 0 check (amount >= 0),
+  client_phone        text check (char_length(client_phone) <= 30),
+  notes               text check (char_length(notes) <= 1000),
 
   -- Envoi initial
   send_initial        boolean not null default true,         -- false = devis déjà envoyé hors appli
@@ -59,6 +90,10 @@ create index if not exists campaigns_user_status_idx on public.campaigns (user_i
 create index if not exists campaigns_user_created_idx on public.campaigns (user_id, created_at desc);
 create index if not exists campaigns_due_idx on public.campaigns (next_followup_at)
   where status = 'active' and followup_enabled;
+create index if not exists campaigns_draft_idx on public.campaigns (updated_at) where status = 'draft';
+create index if not exists campaigns_closed_idx on public.campaigns
+  (coalesce(won_at, lost_at, stopped_at, completed_at, replied_at, updated_at))
+  where status in ('replied', 'won', 'lost', 'completed', 'stopped');
 
 create table if not exists public.campaign_attachments (
   id            uuid primary key default gen_random_uuid(),
@@ -91,7 +126,8 @@ create table if not exists public.campaign_sends (
   created_at    timestamptz not null default now(),
   unique (campaign_id, sequence)
 );
-create index if not exists campaign_sends_user_idx on public.campaign_sends (user_id);
+create index if not exists campaign_sends_user_idx on public.campaign_sends (user_id, claimed_at);
+create index if not exists campaign_sends_claimed_idx on public.campaign_sends (claimed_at, status);
 
 -- Journal complet (historique affiché à l'artisan + logs)
 create table if not exists public.campaign_events (
@@ -117,7 +153,8 @@ create table if not exists public.inbound_replies (
   forward_error      text,
   created_at         timestamptz not null default now()
 );
-create index if not exists inbound_replies_campaign_idx on public.inbound_replies (campaign_id);
+create index if not exists inbound_replies_campaign_idx on public.inbound_replies (campaign_id, created_at);
+create index if not exists inbound_replies_created_idx on public.inbound_replies (created_at) where forwarded;
 create index if not exists inbound_replies_user_idx on public.inbound_replies (user_id);
 
 -- ---------------------------------------------------------------------
@@ -125,7 +162,7 @@ create index if not exists inbound_replies_user_idx on public.inbound_replies (u
 -- ---------------------------------------------------------------------
 insert into public.campaigns (
   user_id, idempotency_key, reference, prospect_name, recipients, subject, message,
-  followup_message, amount, send_initial, initial_send_status, initial_sent_at,
+  followup_message, amount, client_phone, notes, send_initial, initial_send_status, initial_sent_at,
   followup_enabled, interval_days, max_followups, followups_sent, last_followup_at,
   status, won_at, lost_at, legacy_quote_id, created_at
 )
@@ -134,7 +171,7 @@ select
   'Votre devis' || coalesce(' n° ' || q.reference, ''),
   'Devis envoyé hors application.',
   E'Bonjour {client},\n\nJe me permets de revenir vers vous au sujet de notre devis envoyé le {date_envoi}.\n\nAvez-vous eu le temps d''en prendre connaissance ? Je reste disponible pour en discuter ou l''adapter à vos besoins.',
-  q.amount, false, 'skipped',
+  q.amount, q.client_phone, q.notes, false, 'skipped',
   (q.quote_date + time '09:00') at time zone 'Europe/Paris',
   true, 6, 2,
   (select count(*) from public.scheduled_emails se where se.quote_id = q.id and se.status = 'sent'),
@@ -144,12 +181,30 @@ select
   case when q.status = 'lost' then q.updated_at end,
   q.id, q.created_at
 from public.quotes q
-where to_regclass('public.quotes') is not null
+-- un devis recréé par le script de retour arrière porte l'id de sa campagne : pas de doublon
+where not exists (select 1 from public.campaigns c2 where c2.id = q.id)
 on conflict (legacy_quote_id) do nothing;
 
--- L'ancien moteur J+4/J+10 s'arrête : ses relances en attente sont annulées
-update public.scheduled_emails set status = 'cancelled'
+-- L'ancien moteur J+4/J+10 s'arrête. Les relances annulées sont marquées
+-- « v2_migration » pour pouvoir être restaurées par le retour arrière.
+update public.scheduled_emails set status = 'cancelled', last_error = 'v2_migration'
  where status in ('pending', 'failed', 'processing');
+
+-- Contrôle d'intégrité : chaque ancien devis a exactement une campagne,
+-- montants identiques. Sinon toute la migration est annulée.
+do $$
+declare
+  n_quotes integer; n_conv integer; sum_quotes numeric; sum_conv numeric;
+begin
+  select count(*), coalesce(sum(amount), 0) into n_quotes, sum_quotes
+    from public.quotes q where not exists (select 1 from public.campaigns c2 where c2.id = q.id);
+  select count(*), coalesce(sum(amount), 0) into n_conv, sum_conv
+    from public.campaigns where legacy_quote_id is not null;
+  if n_quotes <> n_conv or sum_quotes <> sum_conv then
+    raise exception 'Migration interrompue : % devis pour % campagnes converties (montants % / %)',
+      n_quotes, n_conv, sum_quotes, sum_conv;
+  end if;
+end $$;
 
 -- ---------------------------------------------------------------------
 -- 3. PLANIFICATION
@@ -254,7 +309,14 @@ begin
   end if;
 
   -- Adresses : minuscules, sans doublon, format valide
-  new.recipients := array(select distinct lower(trim(r)) from unnest(new.recipients) r where trim(r) <> '');
+  -- minuscules, sans doublon, ordre de saisie conservé (le 1er reste le destinataire principal)
+  new.recipients := array(
+    select e from (
+      select lower(trim(x)) as e, min(ord) as first_pos
+        from unnest(new.recipients) with ordinality as t(x, ord)
+       where trim(x) <> ''
+       group by lower(trim(x))
+    ) d order by first_pos);
   if cardinality(new.recipients) = 0 or exists (
     select 1 from unnest(new.recipients) r where r !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$'
   ) then
@@ -326,6 +388,78 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------
+-- 4 bis. BUDGET D'ENVOI (anti-coût, anti-boucle)
+-- Un e-mail = un destinataire (+ la copie de l'artisan pour le devis initial).
+-- ---------------------------------------------------------------------
+create or replace function public.paris_day_start()
+returns timestamptz
+language sql
+stable
+set search_path = public
+as $$ select (public.today_paris())::timestamp at time zone 'Europe/Paris'; $$;
+
+create or replace function public.emails_used_today(p_user uuid default null)
+returns integer
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select (
+    coalesce((select sum(cardinality(s.recipients) + case when s.kind = 'initial' then 1 else 0 end)
+                from public.campaign_sends s
+               where s.claimed_at >= public.paris_day_start()
+                 and s.status in ('sent', 'processing')
+                 and (p_user is null or s.user_id = p_user)), 0)
+  + coalesce((select count(*) from public.inbound_replies r
+               where r.forwarded and r.created_at >= public.paris_day_start()
+                 and (p_user is null or r.user_id = p_user)), 0)
+  )::integer;
+$$;
+
+create or replace function public.mailer_breaker_open()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select count(*) >= public.setting_int('failure_breaker_per_hour', 20)
+    from public.campaign_sends
+   where status = 'failed' and claimed_at > now() - interval '1 hour';
+$$;
+
+-- Budget restant, pour l'artisan connecté (affiché et vérifié avant l'envoi)
+create or replace function public.my_send_budget()
+returns table (user_remaining integer, global_remaining integer, user_limit integer, paused boolean)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select greatest(public.setting_int('user_daily_email_limit', 30) - public.emails_used_today(auth.uid()), 0),
+         greatest(public.setting_int('daily_email_limit', 90) - public.emails_used_today(null), 0),
+         public.setting_int('user_daily_email_limit', 30),
+         public.mailer_breaker_open();
+$$;
+
+-- État du moteur (journalisé à chaque passage du cron)
+create or replace function public.mailer_status()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select jsonb_build_object(
+    'used_today', public.emails_used_today(null),
+    'daily_limit', public.setting_int('daily_email_limit', 90),
+    'breaker_open', public.mailer_breaker_open(),
+    'due_now', (select count(*) from public.campaigns
+                 where status = 'active' and followup_enabled and next_followup_at <= now()));
+$$;
+
+-- ---------------------------------------------------------------------
 -- 5. MOTEUR D'ENVOI (appelé uniquement par l'Edge Function, service_role)
 -- ---------------------------------------------------------------------
 do $$ begin
@@ -369,7 +503,19 @@ set search_path = public
 as $$
 declare
   v_ids uuid[];
+  v_weight integer;
+  v_user uuid;
 begin
+  -- Garde-fous : disjoncteur, plafond global, plafond de l'artisan.
+  -- Si dépassé, l'envoi reste en attente et repart au prochain passage du cron.
+  select cardinality(recipients) + 1, user_id into v_weight, v_user
+    from public.campaigns where id = p_campaign_id;
+  if v_user is null or public.mailer_breaker_open()
+     or public.emails_used_today(null) + v_weight > public.setting_int('daily_email_limit', 90)
+     or public.emails_used_today(v_user) + v_weight > public.setting_int('user_daily_email_limit', 30) then
+    return;
+  end if;
+
   with c as (
     select * from public.campaigns
      where id = p_campaign_id and send_initial
@@ -402,33 +548,65 @@ security definer
 set search_path = public
 as $$
 declare
-  v_ids uuid[];
+  v_global     integer := public.setting_int('daily_email_limit', 90) - public.emails_used_today(null);
+  v_user_limit integer := public.setting_int('user_daily_email_limit', 30);
+  v_used       jsonb := '{}'::jsonb;
+  v_ids        uuid[] := '{}';
+  v_id         uuid;
+  v_weight     integer;
+  v_u          integer;
+  r            record;
 begin
-  with due as (
-    select id from public.campaigns
-     where status = 'active' and followup_enabled
-       and next_followup_at is not null and next_followup_at <= now()
-       and followups_sent < max_followups
-     order by next_followup_at
-     limit p_limit
-     for update skip locked
-  ), ins as (
+  if public.mailer_breaker_open() or v_global <= 0 then
+    return;
+  end if;
+
+  -- Consommation du jour par artisan, calculée une seule fois
+  select coalesce(jsonb_object_agg(user_id::text, used), '{}'::jsonb) into v_used
+    from (select s.user_id, sum(cardinality(s.recipients) + case when s.kind = 'initial' then 1 else 0 end) as used
+            from public.campaign_sends s
+           where s.claimed_at >= public.paris_day_start() and s.status in ('sent', 'processing')
+           group by s.user_id) u;
+
+  for r in
+    select c.id, c.user_id, c.followups_sent, c.recipients
+      from public.campaigns c
+     where c.status = 'active' and c.followup_enabled
+       and c.next_followup_at is not null and c.next_followup_at <= now()
+       and c.followups_sent < c.max_followups
+       and coalesce((v_used ->> c.user_id::text)::integer, 0) < v_user_limit
+     order by c.next_followup_at
+     limit p_limit * 3
+     for update of c skip locked
+  loop
+    v_weight := cardinality(r.recipients);
+    exit when v_global < v_weight;
+    v_u := coalesce((v_used ->> r.user_id::text)::integer, 0);
+    continue when v_u + v_weight > v_user_limit;
+
+    v_id := null;
     insert into public.campaign_sends (campaign_id, user_id, sequence, kind, recipients)
-    select c.id, c.user_id, c.followups_sent + 1, 'followup', c.recipients
-      from public.campaigns c join due on due.id = c.id
+    values (r.id, r.user_id, r.followups_sent + 1, 'followup', r.recipients)
     on conflict (campaign_id, sequence) do update
       set status = 'processing', attempts = campaign_sends.attempts + 1,
           claimed_at = now(), error = null
     where (campaign_sends.status = 'failed' and campaign_sends.attempts < 3)
        or (campaign_sends.status = 'processing' and campaign_sends.claimed_at < now() - interval '15 minutes')
-    returning id
-  )
-  select array_agg(id) into v_ids from ins;
+    returning id into v_id;
+
+    if v_id is not null then
+      v_ids := v_ids || v_id;
+      v_global := v_global - v_weight;
+      v_used := jsonb_set(v_used, array[r.user_id::text], to_jsonb(v_u + v_weight));
+    end if;
+    exit when cardinality(v_ids) >= p_limit;
+  end loop;
+
   return query select * from public.mailer_jobs(v_ids);
 end;
 $$;
 
--- Envois initiaux restés en attente (crash, timeout) : repris par le cron
+-- Envois initiaux restés en attente (crash, timeout, budget) : repris par le cron
 create or replace function public.pending_initial_campaigns(p_limit integer default 10)
 returns setof uuid
 language sql
@@ -521,12 +699,13 @@ end;
 $$;
 
 -- Réponse du prospect (webhook) : arrête les relances, renvoie de quoi transférer
+drop function if exists public.register_reply(text, text, text, text);
 create or replace function public.register_reply(
   p_token text, p_provider_email_id text, p_from text, p_subject text
 )
 returns table (
   campaign_id uuid, prospect_name text, subject text, user_email text,
-  reply_to_email text, company_name text, already_processed boolean
+  reply_to_email text, company_name text, already_processed boolean, can_forward boolean
 )
 language plpgsql
 security definer
@@ -558,7 +737,12 @@ begin
   end if;
 
   return query
-    select c.id, c.prospect_name, c.subject, p.email, p.reply_to_email, p.company_name, not inserted
+    select c.id, c.prospect_name, c.subject, p.email, p.reply_to_email, p.company_name, not inserted,
+           -- anti-boucle et anti-coût : transferts limités par dossier, budget global respecté
+           (select count(*) from public.inbound_replies r
+             where r.campaign_id = c.id and r.created_at > now() - interval '24 hours')
+             <= public.setting_int('reply_forward_daily_limit', 10)
+           and public.emails_used_today(null) < public.setting_int('daily_email_limit', 90)
       from public.profiles p where p.id = c.user_id;
 end;
 $$;
@@ -572,6 +756,65 @@ as $$
   update public.inbound_replies
      set forwarded = (p_error is null), forward_error = left(p_error, 500)
    where provider_email_id = p_provider_email_id;
+$$;
+
+-- ---------------------------------------------------------------------
+-- 5 bis. CONSERVATION : purge des pièces jointes (appelée chaque nuit)
+-- Les fichiers sont supprimés via l'API Storage par l'Edge Function, puis
+-- les lignes sont retirées ici. Supabase interdit la suppression SQL directe.
+-- ---------------------------------------------------------------------
+create or replace function public.attachments_to_purge(p_limit integer default 200)
+returns table (id uuid, storage_path text)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select a.id, a.storage_path
+    from public.campaign_attachments a
+    join public.campaigns c on c.id = a.campaign_id
+   where c.status in ('replied', 'won', 'lost', 'completed', 'stopped')
+     -- date de clôture réelle (updated_at bouge à chaque modification)
+     and coalesce(c.won_at, c.lost_at, c.stopped_at, c.completed_at, c.replied_at, c.updated_at)
+         < now() - make_interval(months => public.setting_int('attachment_retention_months', 12))
+   order by 1
+   limit p_limit;
+$$;
+
+create or replace function public.orphan_uploads(p_limit integer default 200)
+returns setof text
+language sql
+stable
+security definer
+set search_path = public, storage
+as $$
+  select o.name
+    from storage.objects o
+   where o.bucket_id = 'devis'
+     and o.created_at < now() - make_interval(days => public.setting_int('orphan_upload_retention_days', 2))
+     and not exists (select 1 from public.campaign_attachments a where a.storage_path = o.name)
+   order by o.created_at
+   limit p_limit;
+$$;
+
+create or replace function public.forget_attachments(p_ids uuid[])
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  n integer;
+begin
+  insert into public.campaign_events (campaign_id, user_id, type, detail)
+  select a.campaign_id, a.user_id, 'attachments_purged',
+         jsonb_build_object('files', jsonb_agg(a.file_name), 'retention_months', public.setting_int('attachment_retention_months', 12))
+    from public.campaign_attachments a where a.id = any(p_ids)
+   group by a.campaign_id, a.user_id;
+  delete from public.campaign_attachments where id = any(p_ids);
+  get diagnostics n = row_count;
+  return n;
+end;
 $$;
 
 -- ---------------------------------------------------------------------
@@ -719,7 +962,7 @@ create policy replies_select_own on public.inbound_replies
 -- par les fonctions ci-dessus.
 revoke insert, update, delete on public.campaigns from anon, authenticated;
 grant insert (user_id, idempotency_key, reference, prospect_name, recipients, subject, message,
-              followup_message, amount, send_initial, initial_sent_at, followup_enabled,
+              followup_message, amount, client_phone, notes, send_initial, initial_sent_at, followup_enabled,
               interval_days, max_followups, end_date, max_days, attach_on_followups)
   on public.campaigns to authenticated;
 grant delete on public.campaigns to authenticated;
@@ -744,10 +987,20 @@ revoke execute on function public.fail_send(uuid, text)                     from
 revoke execute on function public.register_reply(text, text, text, text)    from public, anon, authenticated;
 revoke execute on function public.mark_reply_forwarded(text, text)          from public, anon, authenticated;
 revoke execute on function public.pending_initial_campaigns(integer)         from public, anon, authenticated;
+revoke execute on function public.setting_int(text, integer)                 from public, anon, authenticated;
+revoke execute on function public.emails_used_today(uuid)                    from public, anon, authenticated;
+revoke execute on function public.mailer_breaker_open()                      from public, anon, authenticated;
+revoke execute on function public.mailer_status()                            from public, anon, authenticated;
+revoke execute on function public.attachments_to_purge(integer)              from public, anon, authenticated;
+revoke execute on function public.orphan_uploads(integer)                    from public, anon, authenticated;
+revoke execute on function public.forget_attachments(uuid[])                 from public, anon, authenticated;
+revoke execute on function public.my_send_budget()                           from public, anon;
+grant execute on function public.my_send_budget() to authenticated;
 grant execute on function public.mailer_jobs(uuid[]), public.claim_initial_send(uuid),
   public.claim_due_followups(integer), public.complete_send(uuid, text), public.fail_send(uuid, text),
   public.register_reply(text, text, text, text), public.mark_reply_forwarded(text, text),
-  public.pending_initial_campaigns(integer)
+  public.pending_initial_campaigns(integer), public.mailer_status(),
+  public.attachments_to_purge(integer), public.orphan_uploads(integer), public.forget_attachments(uuid[])
   to service_role;
 
 -- Actions artisan : utilisateurs connectés uniquement

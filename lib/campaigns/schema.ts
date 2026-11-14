@@ -29,6 +29,8 @@ export const campaignSchema = z
       .transform((list) => Array.from(new Set(list))),
     reference: z.string().trim().max(50).optional().transform((v) => v || null),
     amount: z.number().min(0).max(10_000_000),
+    clientPhone: z.string().trim().max(30).optional().transform((v) => v || null),
+    notes: z.string().trim().max(1000).optional().transform((v) => v || null),
     subject: z.string().trim().min(3, "Objet requis.").max(200),
     message: z.string().trim().min(10, "Message trop court.").max(5000),
     followupMessage: z.string().trim().min(10, "Message de relance trop court.").max(5000),

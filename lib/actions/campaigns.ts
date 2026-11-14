@@ -47,6 +47,25 @@ export async function createCampaign(input: CampaignInput): Promise<CampaignActi
     .maybeSingle();
   if (existing) return { ok: true, id: existing.id, message: "Ce devis a déjà été enregistré." };
 
+  // Garde-fou de coût : vérifie le budget d'envoi du jour avant d'accepter
+  if (v.sendInitial) {
+    const { data: budget } = await supabase.rpc("my_send_budget").single<{
+      user_remaining: number;
+      global_remaining: number;
+      user_limit: number;
+      paused: boolean;
+    }>();
+    const needed = v.recipients.length + 1; // + la copie envoyée à l'artisan
+    if (budget?.paused) {
+      return { error: "Les envois sont momentanément suspendus suite à des erreurs. Réessayez dans une heure." };
+    }
+    if (budget && (budget.user_remaining < needed || budget.global_remaining < needed)) {
+      return {
+        error: `Limite d'envoi du jour atteinte (${budget.user_limit} e-mails par jour). Réessayez demain, ou choisissez « Je l'ai déjà envoyé ».`,
+      };
+    }
+  }
+
   // Pièces jointes : elles doivent exister dans le dossier de cet envoi
   const folder = `${user.id}/${v.idempotencyKey}`;
   const files: { path: string; name: string; size: number; mime: string }[] = [];
@@ -80,6 +99,8 @@ export async function createCampaign(input: CampaignInput): Promise<CampaignActi
       message: v.message,
       followup_message: v.followupMessage,
       amount: v.amount,
+      client_phone: v.clientPhone,
+      notes: v.notes,
       send_initial: v.sendInitial,
       initial_sent_at: v.sendInitial ? null : v.initialSentAt,
       followup_enabled: s.followupEnabled,
@@ -126,6 +147,9 @@ export async function createCampaign(input: CampaignInput): Promise<CampaignActi
   const result = await runMailer({ mode: "initial", campaign_id: created.id });
   revalidateAll(created.id);
   if (result.ok && result.sent) return { ok: true, id: created.id, message: "Devis envoyé ! Les relances sont programmées." };
+  if (result.ok && result.processed === 0) {
+    return { ok: true, id: created.id, message: "Envoi en attente : il partira automatiquement dans les prochaines minutes." };
+  }
   return {
     ok: true,
     id: created.id,

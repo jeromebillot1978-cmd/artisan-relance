@@ -39,6 +39,8 @@ export function CampaignForm({ userId, companyName }: { userId: string; companyN
   const [recipients, setRecipients] = useState<string[]>([]);
   const [reference, setReference] = useState("");
   const [amount, setAmount] = useState("");
+  const [clientPhone, setClientPhone] = useState("");
+  const [notes, setNotes] = useState("");
   const [subjectEdited, setSubjectEdited] = useState(false);
   const [subject, setSubject] = useState(defaultSubject(companyName));
   const [message, setMessage] = useState(DEFAULT_INITIAL_MESSAGE);
@@ -69,6 +71,8 @@ export function CampaignForm({ userId, companyName }: { userId: string; companyN
         recipients,
         reference,
         amount: Number(amount.replace(/\s/g, "").replace(",", ".")) || 0,
+        clientPhone,
+        notes,
         subject,
         message,
         followupMessage,
@@ -122,6 +126,14 @@ export function CampaignForm({ userId, companyName }: { userId: string; companyN
                 <Label htmlFor="amount">Montant TTC (€)</Label>
                 <Input id="amount" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="2 500" />
               </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="clientPhone">Téléphone du client</Label>
+              <Input id="clientPhone" type="tel" inputMode="tel" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} placeholder="06 12 34 56 78" />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="notes">Notes internes</Label>
+              <Textarea id="notes" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Visible uniquement par vous" />
             </div>
           </CardContent>
         </Card>

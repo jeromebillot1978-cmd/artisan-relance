@@ -3,6 +3,10 @@
 //  - mode "initial" : envoie le devis d'une campagne (appelé par l'appli)
 //  - mode "due"     : envoie toutes les relances arrivées à échéance
 //                     (appelé toutes les 15 min par pg_cron, + Vercel Cron)
+//  - mode "maintenance" : purge des pièces jointes expirées et orphelines
+//                     (appelé chaque nuit par pg_cron)
+// Garde-fous de coût : plafonds quotidiens global et par artisan, et
+// disjoncteur sur les échecs, appliqués en base au moment de la réservation.
 // Sécurité : en-tête x-cron-secret obligatoire.
 // Anti-doublon : réservation SQL (FOR UPDATE SKIP LOCKED + clé unique
 // campagne/numéro) + clé d'idempotence Resend par envoi.
@@ -122,6 +126,14 @@ Deno.serve(async (req) => {
 
   const started = Date.now();
   const input = await req.json().catch(() => ({}));
+  if (input?.mode === "maintenance") return await maintenance(started);
+  if (input?.mode === "health") {
+    // Vérification avant mise en production : secrets présents (jamais leurs valeurs)
+    const names = ["CRON_SECRET", "RESEND_API_KEY", "RESEND_FROM_EMAIL", "SITE_URL", "INBOUND_DOMAIN", "RESEND_WEBHOOK_SECRET", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"];
+    const secrets = Object.fromEntries(names.map((n) => [n, Boolean(Deno.env.get(n))]));
+    const { data: status, error } = await admin.rpc("mailer_status");
+    return json({ ok: !error && secrets.RESEND_API_KEY && secrets.RESEND_FROM_EMAIL, secrets, database: error ? error.message : "ok", budget: status });
+  }
   const mode = input?.mode === "initial" ? "initial" : "due";
   const jobs: Job[] = [];
 
@@ -166,9 +178,11 @@ Deno.serve(async (req) => {
     }
   }
 
+  const { data: status } = await admin.rpc("mailer_status");
   const summary = {
     ok: true,
     mode,
+    budget: status,
     processed: results.length,
     sent: results.filter((r) => r.ok).length,
     failed: results.filter((r) => !r.ok).length,
@@ -177,3 +191,47 @@ Deno.serve(async (req) => {
   log("mailer_run", summary);
   return json({ ...summary, results });
 });
+
+/** Purge nocturne : fichiers des dossiers clôturés depuis plus de N mois + téléversements abandonnés. */
+async function maintenance(started: number) {
+  let purged = 0;
+  let orphans = 0;
+  const errors: string[] = [];
+
+  for (let round = 0; round < 10; round++) {
+    const { data, error } = await admin.rpc("attachments_to_purge", { p_limit: 100 });
+    if (error) {
+      errors.push(error.message);
+      break;
+    }
+    const rows = (data ?? []) as { id: string; storage_path: string }[];
+    if (!rows.length) break;
+    const { error: removeError } = await admin.storage.from("devis").remove(rows.map((r) => r.storage_path));
+    if (removeError) {
+      errors.push(removeError.message);
+      break;
+    }
+    const { data: n } = await admin.rpc("forget_attachments", { p_ids: rows.map((r) => r.id) });
+    purged += Number(n ?? 0);
+  }
+
+  for (let round = 0; round < 10; round++) {
+    const { data, error } = await admin.rpc("orphan_uploads", { p_limit: 100 });
+    if (error) {
+      errors.push(error.message);
+      break;
+    }
+    const paths = (data ?? []) as string[];
+    if (!paths.length) break;
+    const { error: removeError } = await admin.storage.from("devis").remove(paths);
+    if (removeError) {
+      errors.push(removeError.message);
+      break;
+    }
+    orphans += paths.length;
+  }
+
+  const summary = { ok: errors.length === 0, mode: "maintenance", purged, orphans, errors, duration_ms: Date.now() - started };
+  log("maintenance_run", summary);
+  return json(summary, errors.length ? 500 : 200);
+}

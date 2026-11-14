@@ -81,6 +81,18 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
               <Row label="Stratégie">{strategyText}</Row>
               {c.ends_at && <Row label="Fin de campagne">{formatDateTime(c.ends_at)}</Row>}
               {c.replied_at && <Row label="Réponse du client">{formatDateTime(c.replied_at)}</Row>}
+              {c.client_phone && (
+                <Row label="Téléphone">
+                  <a href={`tel:${c.client_phone.replace(/\s/g, "")}`} className="underline-offset-4 hover:underline">
+                    {c.client_phone}
+                  </a>
+                </Row>
+              )}
+              {c.notes && (
+                <Row label="Notes">
+                  <span className="whitespace-pre-line">{c.notes}</span>
+                </Row>
+              )}
             </CardContent>
           </Card>
 
@@ -92,7 +104,11 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
             </CardHeader>
             <CardContent>
               {attachments.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Aucune pièce jointe.</p>
+                <p className="text-sm text-muted-foreground">
+                  {events.some((e) => e.type === "attachments_purged")
+                    ? "Pièces jointes supprimées automatiquement (durée de conservation dépassée)."
+                    : "Aucune pièce jointe."}
+                </p>
               ) : (
                 <ul className="divide-y rounded-lg border">
                   {attachments.map((a) => (

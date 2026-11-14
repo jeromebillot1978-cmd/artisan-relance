@@ -24,6 +24,8 @@ export interface Campaign {
   message: string;
   followup_message: string;
   amount: number;
+  client_phone: string | null;
+  notes: string | null;
   send_initial: boolean;
   initial_send_status: InitialSendStatus;
   initial_sent_at: string | null;

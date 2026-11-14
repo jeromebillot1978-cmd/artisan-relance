@@ -37,6 +37,7 @@ interface ReplyRow {
   reply_to_email: string | null;
   company_name: string;
   already_processed: boolean;
+  can_forward: boolean;
 }
 
 async function forward(event: ReceivedEvent, row: ReplyRow) {
@@ -79,6 +80,14 @@ Deno.serve(async (req) => {
   const event = JSON.parse(payload) as ReceivedEvent;
   if (event.type !== "email.received") return json({ ignored: event.type });
 
+  // Anti-boucle : jamais de traitement d'un e-mail envoyé par nos propres adresses
+  const fromAddress = event.data.from.toLowerCase();
+  const ownDomains = [FROM_EMAIL.split("@")[1], Deno.env.get("INBOUND_DOMAIN")].filter(Boolean).map((d) => `@${d!.toLowerCase()}`);
+  if (ownDomains.some((d) => fromAddress.includes(d))) {
+    log("inbound_loop_ignored", { email_id: event.data.email_id });
+    return json({ ignored: "own_address" });
+  }
+
   const addresses = [...(event.data.to ?? []), ...(event.data.cc ?? []), ...(event.data.received_for ?? [])];
   const token = addresses.map((a) => TOKEN_RE.exec(a)?.[1]).find(Boolean)?.toLowerCase();
   if (!token) {
@@ -110,6 +119,12 @@ Deno.serve(async (req) => {
       .eq("provider_email_id", event.data.email_id)
       .single();
     if (existing?.forwarded) return json({ ok: true, duplicate: true });
+  }
+
+  if (!row.can_forward) {
+    await admin.rpc("mark_reply_forwarded", { p_provider_email_id: event.data.email_id, p_error: "limite de transferts atteinte" });
+    log("inbound_forward_quota", { campaign_id: row.campaign_id, email_id: event.data.email_id });
+    return json({ ok: true, forwarded: false, reason: "quota" });
   }
 
   try {

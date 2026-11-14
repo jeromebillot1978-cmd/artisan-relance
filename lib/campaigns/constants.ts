@@ -92,6 +92,7 @@ export const EVENT_LABELS: Record<string, string> = {
   reopen: "Dossier rouvert",
   retry_initial: "Nouvel essai d'envoi",
   strategy_updated: "Stratégie de relance modifiée",
+  attachments_purged: "Pièces jointes supprimées (conservation)",
 };
 
 /** Ramène une date dans la plage d'envoi (lun.-sam., 8 h-19 h, heure de Paris) — même règle qu'en base. */

@@ -45,6 +45,7 @@ export async function getCampaigns() {
     .select("*, campaign_attachments(count)")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
+    .limit(1000) // plafond de l'API Supabase ; au-delà, voir l'export CSV
     .returns<CampaignListItem[]>();
   if (error) throw new Error(error.message);
   return data ?? [];
