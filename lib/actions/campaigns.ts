@@ -6,9 +6,11 @@ import { getUser } from "@/lib/supabase/server";
 import { requestInitialSend } from "@/lib/mailer";
 import { ATTACHMENT_RULES } from "@/lib/campaigns/constants";
 import { campaignSchema, strategySchema, type CampaignInput, type StrategyFormInput } from "@/lib/campaigns/schema";
+import type { CampaignListItem } from "@/types/database";
 
 export type CampaignActionState = {
   ok?: boolean;
+  campaign?: CampaignListItem;
   error?: string;
   message?: string;
   id?: string;
@@ -22,7 +24,7 @@ function revalidateAll(id?: string) {
 }
 
 function dbMessage(message?: string) {
-  if (message && /Limite|invalide|futur|introuvable|clôturée|suspendue|pas encore|Aucun envoi|maximum/i.test(message)) {
+  if (message && /Limite|invalide|futur|introuvable|clôturée|suspendue|pas encore|Aucun envoi|maximum|déjà|requis/i.test(message)) {
     return message.replace(/^.*?: /, "");
   }
   return "Une erreur est survenue. Réessayez.";
@@ -153,7 +155,10 @@ export async function createCampaign(input: CampaignInput): Promise<CampaignActi
   return { ok: true, id: created.id, message: "Envoi en cours : il sera confirmé dans quelques minutes." };
 }
 
-const actionSchema = z.enum(["pause", "resume", "stop", "won", "lost", "replied", "reopen", "retry_initial"]);
+const actionSchema = z.enum([
+  "pause", "resume", "stop", "won", "lost", "replied", "reopen", "retry_initial",
+  "complete", "stop_followups", "resume_followups",
+]);
 
 const ACTION_MESSAGES: Record<z.infer<typeof actionSchema>, string> = {
   pause: "Campagne suspendue.",
@@ -164,6 +169,9 @@ const ACTION_MESSAGES: Record<z.infer<typeof actionSchema>, string> = {
   replied: "Réponse enregistrée, relances arrêtées.",
   reopen: "Dossier rouvert (en pause). Reprenez la campagne quand vous voulez.",
   retry_initial: "Nouvel essai d'envoi lancé.",
+  complete: "Devis marqué terminé : plus aucune relance.",
+  stop_followups: "Relances arrêtées.",
+  resume_followups: "Relances reprises : prochaine date recalculée.",
 };
 
 export async function campaignAction(id: string, action: string): Promise<CampaignActionState> {
@@ -184,7 +192,50 @@ export async function campaignAction(id: string, action: string): Promise<Campai
   }
 
   revalidateAll(id);
-  return { ok: true, message: ACTION_MESSAGES[a.data] };
+  return { ok: true, message: ACTION_MESSAGES[a.data], campaign: await freshCampaign(supabase, id) };
+}
+
+/** Ligne à jour (statut, prochaine relance…) renvoyée au tableau après une action. */
+async function freshCampaign(supabase: Awaited<ReturnType<typeof getUser>>["supabase"], id: string) {
+  const { data } = await supabase
+    .from("campaigns")
+    .select("*, campaign_attachments(count)")
+    .eq("id", id)
+    .maybeSingle<CampaignListItem>();
+  return data ?? undefined;
+}
+
+const detailsSchema = z.object({
+  prospectName: z.string().trim().min(2, "Nom du client requis.").max(120),
+  recipients: z.array(z.string().trim().toLowerCase().email("Adresse e-mail invalide.")).min(1, "Au moins un destinataire.").max(5),
+  reference: z.string().trim().max(50),
+  amount: z.number().min(0).max(10_000_000),
+  clientPhone: z.string().trim().max(30),
+  notes: z.string().trim().max(1000),
+});
+
+export async function updateCampaignDetails(id: string, input: z.input<typeof detailsSchema>): Promise<CampaignActionState> {
+  const { supabase, user } = await getUser();
+  if (!user) return { error: "Session expirée. Reconnectez-vous." };
+  if (!z.string().uuid().safeParse(id).success) return { error: "Devis invalide." };
+  const parsed = detailsSchema.safeParse(input);
+  if (!parsed.success) {
+    const flat = parsed.error.flatten();
+    return { error: Object.values(flat.fieldErrors).flat()[0] ?? "Vérifiez les champs.", fieldErrors: flat.fieldErrors };
+  }
+  const v = parsed.data;
+  const { error } = await supabase.rpc("campaign_update_details", {
+    p_id: id,
+    p_prospect_name: v.prospectName,
+    p_recipients: v.recipients,
+    p_reference: v.reference,
+    p_amount: v.amount,
+    p_client_phone: v.clientPhone,
+    p_notes: v.notes,
+  });
+  if (error) return { error: dbMessage(error.message) };
+  revalidateAll(id);
+  return { ok: true, message: "Devis modifié.", campaign: await freshCampaign(supabase, id) };
 }
 
 export async function updateStrategy(id: string, input: StrategyFormInput): Promise<CampaignActionState> {

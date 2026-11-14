@@ -52,27 +52,31 @@ export function filterOf(c: Pick<Campaign, "status" | "next_followup_at">): Excl
   }
 }
 
-export type BadgeTone = "pending" | "signed" | "lost" | "secondary" | "outline" | "info";
+export type BadgeTone = "pending" | "signed" | "lost" | "secondary" | "outline" | "info" | "neutral" | "violet";
 
 export function statusDisplay(
   c: Pick<Campaign, "status" | "next_followup_at" | "initial_send_status" | "pause_reason" | "followup_enabled">,
 ): { label: string; tone: BadgeTone } {
+  // Couleurs : En attente gris · Relance prévue orange · Répondu bleu · Gagné vert · Perdu rouge · Terminé violet
   const map: Record<CampaignStatus, { label: string; tone: BadgeTone }> = {
-    draft: { label: "Envoi en cours", tone: "secondary" },
+    draft: { label: "Envoi en cours", tone: "neutral" },
     active: { label: "Relance prévue", tone: "pending" },
-    paused: { label: "Suspendu", tone: "outline" },
+    paused: { label: "Suspendu", tone: "neutral" },
     replied: { label: "Répondu", tone: "info" },
     won: { label: "Gagné", tone: "signed" },
     lost: { label: "Perdu", tone: "lost" },
-    completed: { label: "Terminé", tone: "secondary" },
-    stopped: { label: "Arrêté", tone: "secondary" },
+    completed: { label: "Terminé", tone: "violet" },
+    stopped: { label: "Arrêté", tone: "violet" },
   };
   if (c.status === "draft" && c.initial_send_status === "failed") return { label: "Échec d'envoi", tone: "lost" };
-  if (c.status === "active" && !c.next_followup_at) {
-    return { label: c.followup_enabled ? "En attente" : "Relances désactivées", tone: "outline" };
-  }
+  if (c.status === "active" && !c.next_followup_at) return { label: "En attente", tone: "neutral" };
   if (c.status === "paused" && c.pause_reason === "send_failed") return { label: "Suspendu (échec)", tone: "lost" };
   return map[c.status];
+}
+
+/** Badge « Relances arrêtées » : relances désactivées sur un dossier encore ouvert. */
+export function followupsStopped(c: Pick<Campaign, "status" | "followup_enabled" | "initial_sent_at">) {
+  return !c.followup_enabled && Boolean(c.initial_sent_at) && ["active", "paused", "replied"].includes(c.status);
 }
 
 export const EVENT_LABELS: Record<string, string> = {
@@ -83,6 +87,10 @@ export const EVENT_LABELS: Record<string, string> = {
   followup_failed: "Échec d'une relance",
   reply_received: "Réponse reçue du client",
   completed: "Campagne terminée",
+  complete: "Marqué terminé",
+  stop_followups: "Relances arrêtées",
+  resume_followups: "Relances reprises",
+  details_updated: "Devis modifié",
   pause: "Campagne suspendue",
   resume: "Campagne reprise",
   stop: "Campagne arrêtée",

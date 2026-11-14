@@ -14,6 +14,8 @@ const badgeVariants = cva(
         signed: "border-success/30 bg-success/10 text-success",
         lost: "border-destructive/30 bg-destructive/10 text-destructive",
         info: "border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-400",
+        neutral: "border-zinc-400/30 bg-zinc-500/10 text-zinc-600 dark:text-zinc-400",
+        violet: "border-violet-500/30 bg-violet-500/10 text-violet-600 dark:text-violet-400",
       },
     },
     defaultVariants: { variant: "default" },
