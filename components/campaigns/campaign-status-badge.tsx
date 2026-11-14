@@ -5,8 +5,7 @@ import type { Campaign } from "@/types/database";
 export function CampaignStatusBadge({
   campaign,
 }: {
-  campaign: Pick<Campaign, "status" | "next_followup_at" | "initial_send_status" | "pause_reason" | "followup_enabled"> &
-    Partial<Pick<Campaign, "followups_sent" | "max_followups">>;
+  campaign: Pick<Campaign, "status" | "next_followup_at" | "initial_send_status" | "pause_reason" | "followup_enabled">;
 }) {
   const { label, tone } = statusDisplay(campaign);
   return (

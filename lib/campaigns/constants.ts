@@ -54,28 +54,8 @@ export function filterOf(c: Pick<Campaign, "status" | "next_followup_at">): Excl
 
 export type BadgeTone = "pending" | "signed" | "lost" | "secondary" | "outline" | "info";
 
-export const STATUS_LABELS: Record<CampaignStatus, string> = {
-  draft: "Envoi en cours",
-  active: "Relance prévue",
-  paused: "Suspendu",
-  replied: "Répondu",
-  won: "Gagné",
-  lost: "Perdu",
-  completed: "Terminé",
-  stopped: "Arrêté",
-};
-
-export const SOURCE_LABELS: Record<string, string> = {
-  artisan: "Vous",
-  client: "Le client (en ligne)",
-  email: "Réponse e-mail du client",
-  system: "Automatique",
-  migration: "Reprise des anciens devis",
-};
-
 export function statusDisplay(
-  c: Pick<Campaign, "status" | "next_followup_at" | "initial_send_status" | "pause_reason" | "followup_enabled"> &
-    Partial<Pick<Campaign, "followups_sent" | "max_followups">>,
+  c: Pick<Campaign, "status" | "next_followup_at" | "initial_send_status" | "pause_reason" | "followup_enabled">,
 ): { label: string; tone: BadgeTone } {
   const map: Record<CampaignStatus, { label: string; tone: BadgeTone }> = {
     draft: { label: "Envoi en cours", tone: "secondary" },
@@ -89,11 +69,7 @@ export function statusDisplay(
   };
   if (c.status === "draft" && c.initial_send_status === "failed") return { label: "Échec d'envoi", tone: "lost" };
   if (c.status === "active" && !c.next_followup_at) {
-    if (!c.followup_enabled) return { label: "Relances désactivées", tone: "outline" };
-    if (c.followups_sent !== undefined && c.max_followups !== undefined && c.followups_sent >= c.max_followups) {
-      return { label: "Attente de réponse", tone: "outline" };
-    }
-    return { label: "En attente", tone: "outline" };
+    return { label: c.followup_enabled ? "En attente" : "Relances désactivées", tone: "outline" };
   }
   if (c.status === "paused" && c.pause_reason === "send_failed") return { label: "Suspendu (échec)", tone: "lost" };
   return map[c.status];
@@ -107,10 +83,6 @@ export const EVENT_LABELS: Record<string, string> = {
   followup_failed: "Échec d'une relance",
   reply_received: "Réponse reçue du client",
   completed: "Campagne terminée",
-  complete: "Marqué terminé",
-  reactivate: "Relances réactivées",
-  client_accepted: "Devis accepté par le client (en ligne)",
-  client_refused: "Devis refusé par le client (en ligne)",
   pause: "Campagne suspendue",
   resume: "Campagne reprise",
   stop: "Campagne arrêtée",

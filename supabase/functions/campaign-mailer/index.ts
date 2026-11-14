@@ -13,12 +13,11 @@
 // =====================================================================
 import { admin, json, log } from "../_shared/admin.ts";
 import { senderName, sendEmail, type OutgoingAttachment } from "../_shared/resend.ts";
-import { fillVariables, followupSubject, renderDecisionNotice, renderProspectEmail } from "../_shared/templates.ts";
+import { fillVariables, followupSubject, renderProspectEmail } from "../_shared/templates.ts";
 
 const CRON_SECRET = Deno.env.get("CRON_SECRET") ?? "";
 const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") ?? "";
 const INBOUND_DOMAIN = Deno.env.get("INBOUND_DOMAIN") ?? ""; // ex. reponses.jercat.fr (optionnel)
-const SITE_URL = (Deno.env.get("SITE_URL") ?? "https://artisan-relance.jercat.fr").replace(/\/$/, "");
 const PAUSE_MS = 150; // limite Resend : 10 requêtes / seconde
 
 interface Job {
@@ -96,7 +95,6 @@ async function deliver(job: Job): Promise<string> {
       replyEmail: artisanEmail,
     },
     attachmentNames: names,
-    decisionUrl: `${SITE_URL}/d/${job.reply_token}`,
   });
 
   return await sendEmail(
@@ -129,7 +127,6 @@ Deno.serve(async (req) => {
   const started = Date.now();
   const input = await req.json().catch(() => ({}));
   if (input?.mode === "maintenance") return await maintenance(started);
-  if (input?.mode === "notify_decision") return await notifyDecision(String(input.campaign_id ?? ""));
   if (input?.mode === "health") {
     // Vérification avant mise en production : secrets présents (jamais leurs valeurs)
     const names = ["CRON_SECRET", "RESEND_API_KEY", "RESEND_FROM_EMAIL", "SITE_URL", "INBOUND_DOMAIN", "RESEND_WEBHOOK_SECRET", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"];
@@ -237,47 +234,4 @@ async function maintenance(started: number) {
   const summary = { ok: errors.length === 0, mode: "maintenance", purged, orphans, errors, duration_ms: Date.now() - started };
   log("maintenance_run", summary);
   return json(summary, errors.length ? 500 : 200);
-}
-
-/** Prévient l'artisan que son client a accepté ou refusé le devis en ligne. */
-async function notifyDecision(campaignId: string) {
-  if (!/^[0-9a-f-]{36}$/i.test(campaignId)) return json({ error: "campaign_id invalide" }, 400);
-  const { data: c, error } = await admin
-    .from("campaigns")
-    .select("id, user_id, prospect_name, reference, amount, status, lost_reason, decided_by")
-    .eq("id", campaignId)
-    .maybeSingle();
-  if (error || !c) return json({ error: error?.message ?? "introuvable" }, 404);
-  if (c.decided_by !== "client" || !["won", "lost"].includes(c.status)) return json({ ignored: true });
-  const { data: p } = await admin.from("profiles").select("email, reply_to_email, company_name").eq("id", c.user_id).single();
-  if (!p) return json({ error: "profil introuvable" }, 404);
-
-  const rendered = renderDecisionNotice({
-    accepted: c.status === "won",
-    prospectName: c.prospect_name,
-    reference: c.reference,
-    amount: c.amount,
-    reason: c.lost_reason,
-    companyName: p.company_name,
-    dashboardUrl: `${SITE_URL}/devis/${c.id}`,
-  });
-  try {
-    const id = await sendEmail(
-      {
-        from: `Artisan Relance <${FROM_EMAIL}>`,
-        to: [p.reply_to_email || p.email],
-        subject: rendered.subject,
-        html: rendered.html,
-        text: rendered.text,
-        tags: [{ name: "kind", value: "decision_notice" }],
-      },
-      `decision-${c.id}-${c.status}`,
-    );
-    log("decision_notice_sent", { campaign_id: c.id, status: c.status, provider_id: id });
-    return json({ ok: true });
-  } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
-    log("decision_notice_failed", { campaign_id: c.id, error: message });
-    return json({ error: message }, 500);
-  }
 }
