@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getUser } from "@/lib/supabase/server";
-import { runMailer } from "@/lib/mailer";
+import { requestInitialSend } from "@/lib/mailer";
 import { ATTACHMENT_RULES } from "@/lib/campaigns/constants";
 import { campaignSchema, strategySchema, type CampaignInput, type StrategyFormInput } from "@/lib/campaigns/schema";
 
@@ -144,19 +144,13 @@ export async function createCampaign(input: CampaignInput): Promise<CampaignActi
     return { ok: true, id: created.id, message: "Devis enregistré, relances programmées." };
   }
 
-  const result = await runMailer({ mode: "initial", campaign_id: created.id });
+  const outcome = await requestInitialSend(supabase, created.id);
   revalidateAll(created.id);
-  if (result.ok && result.sent) return { ok: true, id: created.id, message: "Devis envoyé ! Les relances sont programmées." };
-  if (result.ok && result.processed === 0) {
-    return { ok: true, id: created.id, message: "Envoi en attente : il partira automatiquement dans les prochaines minutes." };
+  if (outcome === "sent") return { ok: true, id: created.id, message: "Devis envoyé ! Les relances sont programmées." };
+  if (outcome === "failed") {
+    return { ok: true, id: created.id, message: "L'envoi a échoué. Un nouvel essai sera fait automatiquement." };
   }
-  return {
-    ok: true,
-    id: created.id,
-    message: result.results?.[0]?.error
-      ? "L'envoi a échoué. Un nouvel essai sera fait automatiquement."
-      : "Envoi en cours : il sera confirmé dans quelques minutes.",
-  };
+  return { ok: true, id: created.id, message: "Envoi en cours : il sera confirmé dans quelques minutes." };
 }
 
 const actionSchema = z.enum(["pause", "resume", "stop", "won", "lost", "replied", "reopen", "retry_initial"]);
@@ -182,9 +176,9 @@ export async function campaignAction(id: string, action: string): Promise<Campai
   if (error) return { error: dbMessage(error.message) };
 
   if (a.data === "retry_initial") {
-    const result = await runMailer({ mode: "initial", campaign_id: id });
+    const outcome = await requestInitialSend(supabase, id);
     revalidateAll(id);
-    return result.ok && result.sent
+    return outcome === "sent"
       ? { ok: true, message: "Devis envoyé !" }
       : { ok: true, message: "Nouvel essai programmé." };
   }
