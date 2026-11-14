@@ -19,7 +19,9 @@ const plans = [
     description: "Toutes les fonctionnalités actuelles, sans carte bancaire.",
     features: [
       "Devis illimités",
-      "Relances e-mail automatiques J+4 et J+10",
+      "Envoi du devis avec pièces jointes (PDF)",
+      "Relances automatiques à la fréquence de votre choix",
+      "Arrêt automatique dès que le client répond",
       "Tableau de bord et taux de conversion",
       "E-mails à votre nom, réponses dans votre boîte",
       "Application mobile-first, mode sombre",

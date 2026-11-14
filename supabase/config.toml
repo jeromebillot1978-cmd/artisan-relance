@@ -1,0 +1,7 @@
+# Edge Functions appelées par le cron (secret partagé) et par Resend (signature Svix) :
+# la vérification JWT de Supabase est remplacée par ces contrôles.
+[functions.campaign-mailer]
+verify_jwt = false
+
+[functions.resend-inbound]
+verify_jwt = false

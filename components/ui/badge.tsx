@@ -13,6 +13,7 @@ const badgeVariants = cva(
         pending: "border-warning/30 bg-warning/10 text-warning",
         signed: "border-success/30 bg-success/10 text-success",
         lost: "border-destructive/30 bg-destructive/10 text-destructive",
+        info: "border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-400",
       },
     },
     defaultVariants: { variant: "default" },

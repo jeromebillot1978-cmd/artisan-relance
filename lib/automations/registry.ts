@@ -3,7 +3,7 @@
  *
  * Point d'extension unique : pour ajouter plus tard les SMS, les avis Google
  * ou les relances de factures, on ajoute ici une entrée (+ une ligne dans la
- * table SQL `reminder_steps` et un template dans `lib/email/templates`).
+ * logique SQL et un modèle dans `supabase/functions/_shared/templates.ts`).
  */
 
 export type AutomationKey =
@@ -26,7 +26,7 @@ export const AUTOMATIONS: AutomationDefinition[] = [
   {
     key: "quote_follow_up",
     label: "Relance des devis",
-    description: "Deux relances e-mail automatiques à J+4 et J+10 tant que le devis n'est pas signé.",
+    description: "Envoi du devis avec pièces jointes, puis relances à la fréquence de votre choix, arrêtées dès que le client répond.",
     channels: ["email"],
     available: true,
   },
@@ -52,13 +52,3 @@ export const AUTOMATIONS: AutomationDefinition[] = [
     available: false,
   },
 ];
-
-/** Étapes de relance de devis — doivent correspondre à la table `reminder_steps`. */
-export const QUOTE_REMINDER_STEPS = [
-  { emailType: "quote_reminder_1", delayDays: 4, label: "Relance J+4" },
-  { emailType: "quote_reminder_2", delayDays: 10, label: "Relance J+10" },
-] as const;
-
-export function reminderLabel(emailType: string) {
-  return QUOTE_REMINDER_STEPS.find((s) => s.emailType === emailType)?.label ?? emailType;
-}

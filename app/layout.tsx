@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     template: "%s · Artisan Relance",
   },
   description:
-    "Artisans : vos devis sont relancés automatiquement par e-mail à J+4 et J+10. Plus de devis signés, zéro temps passé.",
+    "Artisans : envoyez vos devis et laissez les relances partir toutes seules, au rythme de votre choix. Plus de devis signés, zéro temps passé.",
   applicationName: "Artisan Relance",
   alternates: { canonical: "/" },
   openGraph: {

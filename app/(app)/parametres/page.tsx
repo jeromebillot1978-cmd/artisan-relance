@@ -1,8 +1,15 @@
 import type { Metadata } from "next";
 import { CheckCircle2, Clock } from "lucide-react";
 import { requireUser } from "@/lib/data";
-import { AUTOMATIONS, QUOTE_REMINDER_STEPS } from "@/lib/automations/registry";
-import { renderQuoteReminder, sampleEmailData } from "@/lib/email/templates";
+import { AUTOMATIONS } from "@/lib/automations/registry";
+import {
+  DEFAULT_FOLLOWUP_MESSAGE,
+  DEFAULT_INITIAL_MESSAGE,
+  defaultSubject,
+  fillVariables,
+  followupSubject,
+  renderProspectEmail,
+} from "@/supabase/functions/_shared/templates";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/app/page-header";
@@ -14,17 +21,25 @@ export const metadata: Metadata = { title: "Paramètres" };
 export default async function SettingsPage() {
   const { profile } = await requireUser();
 
-  const sample = sampleEmailData({
-    companyName: profile.company_name,
+  const sender = {
+    companyName: profile.company_name || "Votre entreprise",
     contactName: profile.contact_name,
     phone: profile.phone,
-    replyTo: profile.reply_to_email || profile.email,
-  });
-
-  const previews = QUOTE_REMINDER_STEPS.map((step) => {
-    const rendered = renderQuoteReminder(step.emailType, sample);
-    return { key: step.emailType, label: step.label, subject: rendered.subject, html: rendered.html };
-  });
+    replyEmail: profile.reply_to_email || profile.email,
+  };
+  const vars = {
+    client: "Mme Martin",
+    entreprise: sender.companyName,
+    dateEnvoi: new Date().toISOString(),
+    reference: "D-2026-042",
+    montant: 4850,
+    numeroRelance: 1,
+  };
+  const subject = defaultSubject(sender.companyName, "D-2026-042");
+  const previews = [
+    { key: "initial", label: "Envoi du devis", ...renderProspectEmail({ subject, body: fillVariables(DEFAULT_INITIAL_MESSAGE, vars), sender, attachmentNames: ["devis-D-2026-042.pdf"] }) },
+    { key: "followup", label: "Relance", ...renderProspectEmail({ subject: followupSubject(subject), body: fillVariables(DEFAULT_FOLLOWUP_MESSAGE, vars), sender }) },
+  ];
 
   return (
     <>
@@ -73,7 +88,7 @@ export default async function SettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Aperçu des e-mails</CardTitle>
-            <CardDescription>Exemple avec un client fictif. Enregistrez le profil pour actualiser.</CardDescription>
+            <CardDescription>Messages par défaut, avec un client fictif. Vous pouvez les personnaliser à chaque envoi.</CardDescription>
           </CardHeader>
           <CardContent>
             <EmailPreview emails={previews} />

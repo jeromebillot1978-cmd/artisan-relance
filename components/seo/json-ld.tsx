@@ -13,7 +13,7 @@ export function SoftwareJsonLd() {
     operatingSystem: "Web",
     inLanguage: "fr-FR",
     description:
-      "Relance automatique des devis par e-mail pour les artisans : J+4 et J+10, annulation dès la signature.",
+      "Envoi et relance automatique des devis par e-mail pour les artisans, arrêt dès que le client répond.",
     offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
     publisher: { "@type": "Organization", name: "Jercat", url: "https://dev.jercat.fr" },
   };

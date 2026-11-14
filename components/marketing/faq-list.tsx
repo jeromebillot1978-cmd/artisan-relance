@@ -3,35 +3,35 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 export const FAQ_ITEMS = [
   {
     q: "Comment fonctionnent les relances ?",
-    a: "Quand vous ajoutez un devis, deux e-mails de relance sont programmés automatiquement : le premier 4 jours après la date du devis, le second 10 jours après. Ils partent chaque matin, à votre nom, tant que le devis n'est pas marqué comme signé ou perdu.",
+    a: "Vous envoyez votre devis depuis l'application (PDF joint) et choisissez la stratégie : tous les 3, 7, 14 ou 30 jours, ou un intervalle personnalisé, avec un nombre maximum de relances et une date ou une durée de fin. Les relances partent ensuite toutes seules, du lundi au samedi entre 8 h et 19 h.",
+  },
+  {
+    q: "Que se passe-t-il quand le client répond ?",
+    a: "Les relances s'arrêtent automatiquement et sa réponse vous est transférée par e-mail : vous lui répondez directement depuis votre messagerie. Vous pouvez aussi marquer le dossier gagné ou perdu en un clic.",
   },
   {
     q: "Mes clients voient-ils que c'est automatique ?",
-    a: "Non. L'e-mail est signé avec le nom de votre entreprise, vos coordonnées, et rédigé sur un ton naturel. Quand le client répond, sa réponse arrive directement dans votre boîte mail.",
-  },
-  {
-    q: "Que se passe-t-il quand le client signe ?",
-    a: "Vous cliquez sur « Marquer comme signé » (1 clic, depuis votre téléphone). Toutes les relances restantes sont annulées immédiatement.",
+    a: "Non. L'e-mail est envoyé au nom de votre entreprise, avec votre signature et le message que vous avez rédigé. Chaque relance est une réponse au premier e-mail, comme si vous l'aviez écrite vous-même.",
   },
   {
     q: "Dois-je changer de logiciel de devis ?",
-    a: "Non. Vous continuez à faire vos devis avec votre outil habituel. Artisan Relance s'occupe uniquement du suivi : vous saisissez le nom du client, son e-mail, le montant et la date. Moins de 30 secondes.",
+    a: "Non. Vous continuez à faire vos devis avec votre outil habituel, vous exportez le PDF et vous le joignez ici. Si vous avez déjà envoyé le devis vous-même, vous pouvez simplement l'enregistrer : seules les relances partiront.",
   },
   {
-    q: "Et si j'ajoute un devis envoyé il y a plusieurs jours ?",
-    a: "Seules les relances dont la date n'est pas encore passée sont programmées. Un devis envoyé il y a 6 jours recevra donc uniquement la relance J+10.",
+    q: "Quels fichiers puis-je joindre ?",
+    a: "Jusqu'à 5 fichiers par devis : PDF en priorité, mais aussi JPG, PNG, DOCX ou XLSX. 10 Mo maximum par fichier, 20 Mo au total. Ils sont stockés de façon privée et ne sont accessibles qu'à vous.",
+  },
+  {
+    q: "Puis-je suspendre ou arrêter une campagne ?",
+    a: "Oui, à tout moment : suspendre, reprendre, arrêter définitivement ou modifier la fréquence. Le calendrier se recalcule tout seul.",
   },
   {
     q: "Mes données sont-elles en sécurité ?",
-    a: "Les données sont hébergées chez Supabase (infrastructure en Europe selon la région choisie), chaque compte est strictement isolé, et nous ne revendons aucune donnée. Vous pouvez supprimer un devis à tout moment.",
+    a: "Les données sont hébergées en Europe (Supabase, Zurich), chaque compte est strictement isolé, et nous ne revendons aucune donnée. Vous pouvez supprimer un dossier et ses fichiers à tout moment.",
   },
   {
     q: "Combien ça coûte ?",
     a: "L'application est gratuite pendant la phase de lancement. Aucune carte bancaire n'est demandée. Vous serez prévenu bien avant l'arrivée d'une offre payante.",
-  },
-  {
-    q: "Puis-je personnaliser le contenu des e-mails ?",
-    a: "Les e-mails reprennent automatiquement le nom de votre entreprise, le nom du contact et votre téléphone renseignés dans les paramètres. La personnalisation complète du texte arrive prochainement.",
   },
 ];
 

@@ -2,7 +2,15 @@ import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/supabase/server";
-import type { Profile, QuoteWithEmails } from "@/types/database";
+import type {
+  Campaign,
+  CampaignAttachment,
+  CampaignEvent,
+  CampaignListItem,
+  CampaignSend,
+  InboundReply,
+  Profile,
+} from "@/types/database";
 
 /** Utilisateur + profil, mis en cache pour la durée d'une requête. */
 export const requireUser = cache(async () => {
@@ -30,46 +38,63 @@ export const requireUser = cache(async () => {
   };
 });
 
-export async function getQuotes() {
+export async function getCampaigns() {
   const { supabase, user } = await requireUser();
   const { data, error } = await supabase
-    .from("quotes")
-    .select("*, scheduled_emails(id, send_date, email_type, status, sent_at)")
+    .from("campaigns")
+    .select("*, campaign_attachments(count)")
     .eq("user_id", user.id)
-    .order("quote_date", { ascending: false })
     .order("created_at", { ascending: false })
-    .returns<QuoteWithEmails[]>();
-
+    .returns<CampaignListItem[]>();
   if (error) throw new Error(error.message);
   return data ?? [];
 }
 
-export function computeStats(quotes: QuoteWithEmails[]) {
-  const pending = quotes.filter((q) => q.status === "pending");
-  const signed = quotes.filter((q) => q.status === "signed");
-  const lost = quotes.filter((q) => q.status === "lost");
-  const closed = signed.length + lost.length;
+export async function getCampaignDetail(id: string) {
+  const { supabase, user } = await requireUser();
+  const { data: campaign } = await supabase
+    .from("campaigns")
+    .select("*")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .maybeSingle<Campaign>();
+  if (!campaign) return null;
+
+  const [attachments, sends, events, replies] = await Promise.all([
+    supabase.from("campaign_attachments").select("*").eq("campaign_id", id).order("created_at").returns<CampaignAttachment[]>(),
+    supabase.from("campaign_sends").select("*").eq("campaign_id", id).order("sequence").returns<CampaignSend[]>(),
+    supabase.from("campaign_events").select("id, type, detail, created_at").eq("campaign_id", id).order("created_at").returns<CampaignEvent[]>(),
+    supabase.from("inbound_replies").select("id, from_address, subject, forwarded, created_at").eq("campaign_id", id).order("created_at").returns<InboundReply[]>(),
+  ]);
+
+  const files = attachments.data ?? [];
+  const signed = files.length
+    ? (await supabase.storage.from("devis").createSignedUrls(files.map((f) => f.storage_path), 600)).data ?? []
+    : [];
 
   return {
-    total: quotes.length,
-    pending: pending.length,
-    signed: signed.length,
-    lost: lost.length,
-    conversionRate: closed > 0 ? Math.round((signed.length / closed) * 100) : null,
-    amountWon: signed.reduce((sum, q) => sum + Number(q.amount), 0),
-    amountPending: pending.reduce((sum, q) => sum + Number(q.amount), 0),
-    remindersSent: quotes.reduce(
-      (sum, q) => sum + q.scheduled_emails.filter((e) => e.status === "sent").length,
-      0,
-    ),
+    campaign,
+    attachments: files.map((f) => ({ ...f, url: signed.find((s) => s.path === f.storage_path)?.signedUrl ?? null })),
+    sends: sends.data ?? [],
+    events: events.data ?? [],
+    replies: replies.data ?? [],
   };
 }
 
-export function nextReminder(quote: QuoteWithEmails) {
-  if (quote.status !== "pending") return null;
-  return (
-    quote.scheduled_emails
-      .filter((e) => e.status === "pending" || e.status === "failed" || e.status === "processing")
-      .sort((a, b) => a.send_date.localeCompare(b.send_date))[0] ?? null
-  );
+export function computeStats(campaigns: Campaign[]) {
+  const sent = campaigns.filter((c) => c.initial_sent_at);
+  const replied = sent.filter((c) => c.replied_at);
+  const won = campaigns.filter((c) => c.status === "won");
+  const lost = campaigns.filter((c) => c.status === "lost");
+  const open = campaigns.filter((c) => ["draft", "active", "paused", "replied"].includes(c.status));
+  return {
+    total: campaigns.length,
+    open: open.length,
+    openAmount: open.reduce((s, c) => s + Number(c.amount), 0),
+    scheduled: campaigns.filter((c) => c.status === "active" && c.next_followup_at).length,
+    replyRate: sent.length ? Math.round((replied.length / sent.length) * 100) : null,
+    winRate: won.length + lost.length ? Math.round((won.length / (won.length + lost.length)) * 100) : null,
+    amountWon: won.reduce((s, c) => s + Number(c.amount), 0),
+    followupsSent: campaigns.reduce((s, c) => s + c.followups_sent, 0),
+  };
 }

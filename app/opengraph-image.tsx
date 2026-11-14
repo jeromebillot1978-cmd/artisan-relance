@@ -41,7 +41,7 @@ export default function OpengraphImage() {
           Vos devis se relancent&nbsp;<span style={{ color: "#f97316" }}>tout seuls.</span>
         </div>
         <div style={{ marginTop: 32, fontSize: 32, color: "#a1a1aa" }}>
-          Relances e-mail automatiques à J+4 et J+10 pour les artisans.
+          Envoi du devis et relances automatiques pour les artisans.
         </div>
       </div>
     ),

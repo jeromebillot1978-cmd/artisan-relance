@@ -20,23 +20,23 @@ import { SoftwareJsonLd } from "@/components/seo/json-ld";
 const steps = [
   {
     icon: FileText,
-    title: "Ajoutez votre devis",
-    text: "Nom du client, e-mail, montant, date. 30 secondes depuis votre téléphone, même sur le chantier.",
+    title: "Envoyez votre devis",
+    text: "Joignez votre PDF, choisissez le client : le devis part depuis l'application, à votre nom.",
   },
   {
     icon: CalendarClock,
     title: "Les relances partent seules",
-    text: "Un e-mail courtois à J+4, un second à J+10. À votre nom, avec vos coordonnées.",
+    text: "Tous les 3, 7, 14 ou 30 jours : vous choisissez le rythme, le nombre de relances et la date de fin.",
   },
   {
     icon: MousePointerClick,
-    title: "Le client signe : 1 clic",
-    text: "Marquez le devis comme signé, les relances s'arrêtent. Vous suivez votre taux de signature en direct.",
+    title: "Le client répond : tout s'arrête",
+    text: "Dès que le client répond, les relances s'arrêtent et sa réponse arrive dans votre boîte mail.",
   },
 ];
 
 const features = [
-  { icon: BellRing, title: "Relances automatiques", text: "J+4 et J+10, envoyées chaque matin sans que vous y pensiez." },
+  { icon: BellRing, title: "Relances automatiques", text: "Au rythme que vous choisissez, du lundi au samedi en journée." },
   { icon: MailCheck, title: "Réponses dans votre boîte", text: "Le client répond à l'e-mail : la réponse arrive directement chez vous." },
   { icon: TrendingUp, title: "Tableau de bord clair", text: "Devis en attente, signés, perdus, taux de conversion et chiffre gagné." },
   { icon: Smartphone, title: "Pensé pour le mobile", text: "Une interface simple, utilisable d'une main entre deux chantiers." },
@@ -46,9 +46,9 @@ const features = [
 
 function DashboardPreview() {
   const rows = [
-    { name: "M. Leroy", amount: "4 850 €", status: "pending", label: "Relance J+4 · demain" },
+    { name: "M. Leroy", amount: "4 850 €", status: "pending", label: "Relance 1/3 · demain" },
     { name: "SCI Les Tilleuls", amount: "12 300 €", status: "signed", label: "Signé" },
-    { name: "Mme Petit", amount: "1 920 €", status: "pending", label: "Relance J+10 · 3 déc." },
+    { name: "Mme Petit", amount: "1 920 €", status: "pending", label: "Relance 2/3 · 3 déc." },
     { name: "M. Garnier", amount: "760 €", status: "lost", label: "Perdu" },
   ] as const;
 
@@ -112,8 +112,8 @@ export default function HomePage() {
             Vos devis se relancent <span className="text-brand">tout seuls</span>.
           </h1>
           <p className="text-balance max-w-xl text-base text-muted-foreground sm:text-lg">
-            Artisan Relance envoie automatiquement des relances à vos clients à J+4 et J+10. Vous restez sur le
-            chantier, vos devis avancent.
+            Envoyez votre devis depuis Artisan Relance : les relances partent toutes seules, au rythme que vous
+            choisissez, et s'arrêtent dès que le client répond.
           </p>
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
             <Button asChild size="lg" variant="brand">

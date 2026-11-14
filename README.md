@@ -203,3 +203,55 @@ Le registre `lib/automations/registry.ts` liste déjà ces automatisations. Elle
 - Configurer le SMTP Resend dans Supabase (section 4, étape 6).
 - Vérifier le domaine d'envoi (SPF, DKIM, DMARC) pour éviter les spams.
 - Faire un test de bout en bout : inscription → confirmation → devis → relance reçue → passage en signé.
+
+---
+
+## v2 — Envoi des devis et campagnes de relance
+
+### Fonctionnement
+
+```
+Artisan ──(formulaire /devis/nouveau)──▶ Next.js (Server Action)
+   │  PDF téléversés directement ──▶ Supabase Storage (bucket privé « devis », dossier <user_id>/)
+   ▼
+campaigns (+ campaign_attachments) ──▶ Edge Function campaign-mailer (mode "initial")
+                                           │  Resend (PJ par URL signée, copie à l'artisan)
+                                           ▼
+                         complete_send : date/heure exactes enregistrées, relances planifiées
+pg_cron (*/15 min) + Vercel Cron (secours, 1/j) ──▶ campaign-mailer (mode "due") ──▶ Resend
+Client répond ──▶ devis-<jeton>@<INBOUND_DOMAIN> ──▶ Resend Inbound ──▶ Edge Function resend-inbound
+                                           │  campagne « Répondu », relances stoppées
+                                           ▼
+                         réponse transférée à l'artisan (Reply-To = le client)
+```
+
+- **Planification** : relance n = envoi initial + n × intervalle, jamais moins d'un intervalle après la précédente, du lundi au samedi entre 8 h et 19 h (Paris). Arrêt au nombre maximum de relances, à la date de fin ou à la durée maximale.
+- **Arrêts automatiques** : réponse du client, gagné, perdu, arrêt manuel, maximum atteint, durée atteinte.
+- **Anti-doublon** : `idempotency_key` unique par formulaire ; `(campaign_id, sequence)` unique ; réservation `FOR UPDATE SKIP LOCKED` ; clé d'idempotence Resend `send-<id>`.
+- **Erreurs** : 3 tentatives par envoi, puis campagne suspendue (« Suspendu (échec) ») avec bouton de reprise ; envoi initial : bouton « Réessayer l'envoi ».
+- **Historique** : table `campaign_events` (affichée sur chaque dossier) + logs JSON des Edge Functions.
+
+### Fichiers
+
+| Élément | Fichier |
+|---|---|
+| Migration principale | `supabase/migrations/20261114120000_campagnes.sql` |
+| Cron Supabase | `supabase/migrations/20261114120100_cron_mailer.sql` |
+| Envoi devis + relances | `supabase/functions/campaign-mailer/index.ts` |
+| Réception des réponses | `supabase/functions/resend-inbound/index.ts` |
+| Modèles d'e-mails (partagés) | `supabase/functions/_shared/templates.ts` |
+| Interface | `app/(app)/devis/*`, `components/campaigns/*` |
+| Server Actions | `lib/actions/campaigns.ts` |
+
+### Secrets des Edge Functions (Supabase → Edge Functions → Secrets)
+
+| Nom | Valeur |
+|---|---|
+| `CRON_SECRET` | même valeur que sur Vercel |
+| `RESEND_API_KEY` | clé Resend « Sending access » sur jercat.fr |
+| `RESEND_FROM_EMAIL` | `relances@jercat.fr` |
+| `SITE_URL` | `https://artisan-relance.jercat.fr` |
+| `INBOUND_DOMAIN` | `reponses.jercat.fr` (après configuration de la réception) |
+| `RESEND_WEBHOOK_SECRET` | `whsec_…` du webhook Resend `email.received` |
+
+Sans `INBOUND_DOMAIN`, les réponses vont directement à l'artisan (pas de détection automatique) : tout le reste fonctionne.
