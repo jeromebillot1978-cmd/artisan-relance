@@ -8,7 +8,8 @@ function iconFor(type: string) {
   if (type === "followup_sent") return { Icon: Mail, tone: "text-foreground" };
   if (type.endsWith("_failed")) return { Icon: AlertTriangle, tone: "text-destructive" };
   if (type === "reply_received" || type === "replied") return { Icon: MessageCircleReply, tone: "text-sky-500" };
-  if (type === "won") return { Icon: CheckCircle2, tone: "text-success" };
+  if (type === "won" || type === "client_accepted") return { Icon: CheckCircle2, tone: "text-success" };
+  if (type === "lost" || type === "client_refused") return { Icon: AlertTriangle, tone: "text-muted-foreground" };
   if (type === "strategy_updated") return { Icon: Settings2, tone: "text-muted-foreground" };
   return { Icon: CircleDot, tone: "text-muted-foreground" };
 }
@@ -25,7 +26,14 @@ function describe(e: CampaignEvent) {
     case "reply_received":
       return `De ${String(d.from ?? "")}${d.subject ? ` — « ${String(d.subject)} »` : ""}`;
     case "completed":
-      return d.reason === "max_followups" ? "Nombre maximum de relances atteint" : "Durée maximale atteinte";
+      return d.reason === "max_followups"
+        ? "Aucune réponse après la dernière relance"
+        : d.reason === "max_duration"
+          ? "Durée maximale atteinte"
+          : null;
+    case "client_refused":
+    case "lost":
+      return d.reason ? `Motif : ${String(d.reason)}` : null;
     case "strategy_updated":
       return d.followup_enabled === false
         ? "Relances désactivées"

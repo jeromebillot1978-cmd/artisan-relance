@@ -122,8 +122,17 @@ export function renderProspectEmail(opts: {
   body: string;
   sender: Sender;
   attachmentNames?: string[];
+  /** Page publique de réponse au devis (…/d/<jeton>) : boutons Accepter / Refuser */
+  decisionUrl?: string | null;
 }): RenderedEmail {
   const { sender } = opts;
+  const decision = opts.decisionUrl
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:22px 0 4px 0;"><tr>
+<td style="border-radius:8px;background:#16a34a;"><a href="${escapeHtml(opts.decisionUrl)}?choix=accepter" style="display:inline-block;padding:11px 18px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;">J'accepte le devis</a></td>
+<td style="width:10px;"></td>
+<td style="border-radius:8px;border:1px solid #d4d4d8;"><a href="${escapeHtml(opts.decisionUrl)}?choix=refuser" style="display:inline-block;padding:10px 16px;font-size:14px;color:#3f3f46;text-decoration:none;">Je ne donne pas suite</a></td>
+</tr></table>`
+    : "";
   const lines = signatureLines(sender);
   const attachments = opts.attachmentNames?.length
     ? `<p style="margin:18px 0 0 0;font-size:13px;color:#52525b;">Pièce(s) jointe(s) : ${opts.attachmentNames
@@ -131,6 +140,7 @@ export function renderProspectEmail(opts: {
         .join(", ")}</p>`
     : "";
   const inner = `${textToHtml(opts.body)}
+${decision}
 <p style="margin:22px 0 4px 0;">Bien cordialement,</p>
 ${lines.map((l, i) => `<p style="margin:0;${i === 0 ? "font-weight:600;" : "color:#52525b;"}">${escapeHtml(l)}</p>`).join("\n")}
 ${attachments}`;
@@ -141,6 +151,9 @@ ${attachments}`;
   const text = [
     opts.body.trim(),
     "",
+    ...(opts.decisionUrl
+      ? [`Accepter le devis : ${opts.decisionUrl}?choix=accepter`, `Ne pas donner suite : ${opts.decisionUrl}?choix=refuser`, ""]
+      : []),
     "Bien cordialement,",
     ...lines,
     opts.attachmentNames?.length ? `\nPièce(s) jointe(s) : ${opts.attachmentNames.join(", ")}` : "",
@@ -186,4 +199,30 @@ Répondez directement à cet e-mail : votre réponse partira vers ${escapeHtml(o
     html: layout(inner, "Transféré automatiquement par Artisan Relance.", subject, opts.companyName),
     text,
   };
+}
+
+/** Alerte envoyée à l'artisan quand son client accepte ou refuse en ligne. */
+export function renderDecisionNotice(opts: {
+  accepted: boolean;
+  prospectName: string;
+  reference?: string | null;
+  amount?: number | null;
+  reason?: string | null;
+  companyName: string;
+  dashboardUrl: string;
+}): RenderedEmail {
+  const ref = opts.reference ? ` n° ${opts.reference}` : "";
+  const subject = opts.accepted
+    ? `✅ ${opts.prospectName} a accepté votre devis${ref}`
+    : `${opts.prospectName} ne donne pas suite à votre devis${ref}`;
+  const lines = opts.accepted
+    ? [`Bonne nouvelle : ${opts.prospectName} vient d'accepter en ligne votre devis${ref} (${formatEur(opts.amount)}).`,
+       "Le dossier est passé en « Gagné » et les relances sont arrêtées. Pensez à le recontacter pour planifier les travaux."]
+    : [`${opts.prospectName} a indiqué en ligne ne pas donner suite à votre devis${ref}.`,
+       opts.reason ? `Motif indiqué : « ${opts.reason} »` : "Aucun motif n'a été indiqué.",
+       "Le dossier est passé en « Perdu » et les relances sont arrêtées."];
+  const inner = `${lines.map((l) => `<p style="margin:0 0 14px 0;">${escapeHtml(l)}</p>`).join("\n")}
+<p style="margin:18px 0 0 0;"><a href="${escapeHtml(opts.dashboardUrl)}" style="color:#16a34a;font-weight:600;">Voir le dossier</a></p>`;
+  const text = [...lines, "", `Dossier : ${opts.dashboardUrl}`].join("\n");
+  return { subject, html: layout(inner, "Notification automatique d'Artisan Relance.", subject, opts.companyName), text };
 }

@@ -46,6 +46,8 @@ export interface Campaign {
   lost_at: string | null;
   stopped_at: string | null;
   completed_at: string | null;
+  lost_reason: string | null;
+  decided_by: "artisan" | "client" | "system" | null;
   created_at: string;
   updated_at: string;
 }
@@ -87,5 +89,14 @@ export interface InboundReply {
   from_address: string | null;
   subject: string | null;
   forwarded: boolean;
+  created_at: string;
+}
+
+export interface CampaignStatusChange {
+  id: number;
+  old_status: CampaignStatus | null;
+  new_status: CampaignStatus;
+  source: "artisan" | "client" | "email" | "system" | "migration";
+  reason: string | null;
   created_at: string;
 }

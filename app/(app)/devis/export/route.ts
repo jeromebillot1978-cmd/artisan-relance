@@ -36,14 +36,14 @@ export async function GET(request: NextRequest) {
           "ID campagne", "Client", "E-mails", "Téléphone", "N° devis", "Montant (EUR)", "Objet", "Statut",
           "Date d'envoi", "Relances activées", "Intervalle (jours)", "Relances max", "Relances envoyées",
           "Prochaine relance", "Dernière relance", "Fin de campagne", "Répondu le", "Gagné le", "Perdu le",
-          "Arrêté le", "Terminé le", "Notes", "Message", "Message de relance", "Créé le",
+          "Arrêté le", "Terminé le", "Motif de perte", "Décision par", "Notes", "Message", "Message de relance", "Créé le",
         ],
         rows.map((c) => [
           c.id, c.prospect_name, c.recipients.join(", "), c.client_phone, c.reference, Number(c.amount).toFixed(2).replace(".", ","),
           c.subject, statusDisplay(c).label, csvDate(c.initial_sent_at), c.followup_enabled ? "oui" : "non",
           c.interval_days, c.max_followups, c.followups_sent, csvDate(c.next_followup_at), csvDate(c.last_followup_at),
           csvDate(c.ends_at), csvDate(c.replied_at), csvDate(c.won_at), csvDate(c.lost_at), csvDate(c.stopped_at),
-          csvDate(c.completed_at), c.notes, c.message, c.followup_message, csvDate(c.created_at),
+          csvDate(c.completed_at), c.lost_reason, c.decided_by === "client" ? "client" : c.decided_by === "artisan" ? "artisan" : "", c.notes, c.message, c.followup_message, csvDate(c.created_at),
         ]),
       );
       return new NextResponse(csv, {

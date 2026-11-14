@@ -22,7 +22,7 @@ function revalidateAll(id?: string) {
 }
 
 function dbMessage(message?: string) {
-  if (message && /Limite|invalide|futur|introuvable|clôturée|suspendue|pas encore|Aucun envoi|maximum/i.test(message)) {
+  if (message && /Limite|invalide|futur|introuvable|clôturé|suspendue|pas encore|Aucun envoi|maximum|déjà/i.test(message)) {
     return message.replace(/^.*?: /, "");
   }
   return "Une erreur est survenue. Réessayez.";
@@ -153,7 +153,7 @@ export async function createCampaign(input: CampaignInput): Promise<CampaignActi
   return { ok: true, id: created.id, message: "Envoi en cours : il sera confirmé dans quelques minutes." };
 }
 
-const actionSchema = z.enum(["pause", "resume", "stop", "won", "lost", "replied", "reopen", "retry_initial"]);
+const actionSchema = z.enum(["pause", "resume", "stop", "won", "lost", "replied", "reopen", "retry_initial", "complete", "reactivate"]);
 
 const ACTION_MESSAGES: Record<z.infer<typeof actionSchema>, string> = {
   pause: "Campagne suspendue.",
@@ -164,15 +164,21 @@ const ACTION_MESSAGES: Record<z.infer<typeof actionSchema>, string> = {
   replied: "Réponse enregistrée, relances arrêtées.",
   reopen: "Dossier rouvert (en pause). Reprenez la campagne quand vous voulez.",
   retry_initial: "Nouvel essai d'envoi lancé.",
+  complete: "Dossier marqué terminé, relances arrêtées.",
+  reactivate: "Relances réactivées.",
 };
 
-export async function campaignAction(id: string, action: string): Promise<CampaignActionState> {
+export async function campaignAction(id: string, action: string, reason?: string): Promise<CampaignActionState> {
   const { supabase, user } = await getUser();
   if (!user) return { error: "Session expirée. Reconnectez-vous." };
   const a = actionSchema.safeParse(action);
   if (!a.success || !z.string().uuid().safeParse(id).success) return { error: "Action invalide." };
 
-  const { error } = await supabase.rpc("campaign_action", { p_id: id, p_action: a.data });
+  const { error } = await supabase.rpc("campaign_action", {
+    p_id: id,
+    p_action: a.data,
+    p_reason: reason?.trim().slice(0, 500) || null,
+  });
   if (error) return { error: dbMessage(error.message) };
 
   if (a.data === "retry_initial") {

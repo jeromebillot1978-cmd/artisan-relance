@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarClock, Download, FileText, Mail, Paperclip } from "lucide-react";
 import { getCampaignDetail } from "@/lib/data";
-import { formatBytes, formatDateTime } from "@/lib/campaigns/constants";
+import { formatBytes, formatDateTime, SOURCE_LABELS, STATUS_LABELS } from "@/lib/campaigns/constants";
 import { formatCurrency } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CampaignStatusBadge } from "@/components/campaigns/campaign-status-badge";
@@ -27,7 +27,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const detail = await getCampaignDetail(id);
   if (!detail) notFound();
-  const { campaign: c, attachments, events, replies } = detail;
+  const { campaign: c, attachments, events, replies, history } = detail;
 
   const strategyText = !c.followup_enabled
     ? "Relances désactivées"
@@ -81,6 +81,20 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
               <Row label="Stratégie">{strategyText}</Row>
               {c.ends_at && <Row label="Fin de campagne">{formatDateTime(c.ends_at)}</Row>}
               {c.replied_at && <Row label="Réponse du client">{formatDateTime(c.replied_at)}</Row>}
+              {c.won_at && (
+                <Row label="Devis accepté le">
+                  {formatDateTime(c.won_at)}
+                  {c.decided_by === "client" && <span className="block text-xs text-muted-foreground">par le client, en ligne</span>}
+                </Row>
+              )}
+              {c.lost_at && (
+                <Row label="Devis refusé le">
+                  {formatDateTime(c.lost_at)}
+                  {c.decided_by === "client" && <span className="block text-xs text-muted-foreground">par le client, en ligne</span>}
+                </Row>
+              )}
+              {c.lost_reason && <Row label="Motif du refus">{c.lost_reason}</Row>}
+              {c.completed_at && c.status === "completed" && <Row label="Terminé le">{formatDateTime(c.completed_at)}</Row>}
               {c.client_phone && (
                 <Row label="Téléphone">
                   <a href={`tel:${c.client_phone.replace(/\s/g, "")}`} className="underline-offset-4 hover:underline">
@@ -168,6 +182,24 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
               </div>
             )}
             <CampaignTimeline events={events} />
+            {history.length > 0 && (
+              <div className="mt-6 border-t pt-4">
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Changements de statut</p>
+                <ul className="space-y-2 text-sm">
+                  {history.map((h) => (
+                    <li key={h.id} className="flex flex-wrap items-baseline justify-between gap-x-3">
+                      <span>
+                        {h.old_status ? `${STATUS_LABELS[h.old_status] ?? h.old_status} → ` : ""}
+                        <span className="font-medium">{STATUS_LABELS[h.new_status] ?? h.new_status}</span>
+                        <span className="text-muted-foreground"> · {SOURCE_LABELS[h.source] ?? h.source}</span>
+                        {h.reason && <span className="block text-xs text-muted-foreground">{h.reason}</span>}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{formatDateTime(h.created_at)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

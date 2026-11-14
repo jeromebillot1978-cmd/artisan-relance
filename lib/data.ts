@@ -8,7 +8,7 @@ import type {
   CampaignEvent,
   CampaignListItem,
   CampaignSend,
-  InboundReply,
+  InboundReply, CampaignStatusChange,
   Profile,
 } from "@/types/database";
 
@@ -61,11 +61,17 @@ export async function getCampaignDetail(id: string) {
     .maybeSingle<Campaign>();
   if (!campaign) return null;
 
-  const [attachments, sends, events, replies] = await Promise.all([
+  const [attachments, sends, events, replies, history] = await Promise.all([
     supabase.from("campaign_attachments").select("*").eq("campaign_id", id).order("created_at").returns<CampaignAttachment[]>(),
     supabase.from("campaign_sends").select("*").eq("campaign_id", id).order("sequence").returns<CampaignSend[]>(),
     supabase.from("campaign_events").select("id, type, detail, created_at").eq("campaign_id", id).order("created_at").returns<CampaignEvent[]>(),
     supabase.from("inbound_replies").select("id, from_address, subject, forwarded, created_at").eq("campaign_id", id).order("created_at").returns<InboundReply[]>(),
+    supabase
+      .from("campaign_status_history")
+      .select("id, old_status, new_status, source, reason, created_at")
+      .eq("campaign_id", id)
+      .order("created_at", { ascending: false })
+      .returns<CampaignStatusChange[]>(),
   ]);
 
   const files = attachments.data ?? [];
@@ -79,6 +85,7 @@ export async function getCampaignDetail(id: string) {
     sends: sends.data ?? [],
     events: events.data ?? [],
     replies: replies.data ?? [],
+    history: history.data ?? [],
   };
 }
 
