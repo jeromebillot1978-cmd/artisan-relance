@@ -329,7 +329,7 @@ begin
   new.next_followup_at := null;
   new.replied_at := null; new.won_at := null; new.lost_at := null;
   new.stopped_at := null; new.completed_at := null; new.pause_reason := null;
-  new.reply_token := encode(gen_random_bytes(12), 'hex');
+  new.reply_token := encode(extensions.gen_random_bytes(12), 'hex');
   new.created_at := now();
 
   if new.send_initial then
