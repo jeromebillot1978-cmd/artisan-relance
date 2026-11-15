@@ -21,7 +21,8 @@ export function productFacts() {
       "Il n'envoie pas de SMS : les relances partent par e-mail.",
     ],
     features: [
-      "Envoi du devis PDF par e-mail, au nom et avec la signature de l'artisan, jusqu'à 5 destinataires et 5 pièces jointes.",
+      "Nombre de devis illimité.",
+      "Envoi du devis PDF par e-mail, au nom et avec la signature de l'artisan. Pour chaque devis : jusqu'à 5 adresses de destinataires et 5 fichiers joints (10 Mo par fichier).",
       "Relances automatiques tous les 3, 7, 14 ou 30 jours ou selon un intervalle personnalisé, avec un nombre maximum de relances et une date de fin.",
       "Envois du lundi au samedi entre 8 h et 19 h, heure de Paris.",
       "Le client répond directement à l'artisan ; un clic (répondu, gagné, perdu, terminé) arrête les relances.",
