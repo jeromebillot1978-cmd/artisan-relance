@@ -8,6 +8,7 @@ const links = [
   { href: "/#fonctionnement", label: "Fonctionnement" },
   { href: "/relance-devis", label: "Métiers" },
   { href: "/guides", label: "Guides" },
+  { href: "/comparatif", label: "Comparatif" },
   { href: "/tarifs", label: "Tarifs" },
   { href: "/faq", label: "FAQ" },
 ];

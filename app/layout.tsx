@@ -1,10 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
+import localFont from "next/font/local";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/sonner";
 import { siteUrl } from "@/lib/utils";
 import "./globals.css";
+
+// Geist en « optional » : si la police n'est pas là tout de suite (4G lente), le texte reste
+// dans la police système, sans changement visible ni décalage : le contenu s'affiche immédiatement.
+const geistSans = localFont({
+  src: "./fonts/Geist-Variable.woff2",
+  variable: "--font-geist-sans",
+  weight: "100 900",
+  display: "optional",
+  adjustFontFallback: "Arial",
+  preload: false,
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
@@ -34,11 +43,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" suppressHydrationWarning className={`${GeistSans.variable} ${GeistMono.variable}`}>
+    <html lang="fr" suppressHydrationWarning className={geistSans.variable}>
       <body className="min-h-dvh font-sans">
         <ThemeProvider>
           {children}
-          <Toaster />
         </ThemeProvider>
       </body>
     </html>

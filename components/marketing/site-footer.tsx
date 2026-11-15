@@ -23,6 +23,8 @@ export function SiteFooter() {
           <ul className={col}>
             <li><Link href="/#fonctionnement" className="hover:text-foreground">Fonctionnement</Link></li>
             <li><Link href="/tarifs" className="hover:text-foreground">Tarifs</Link></li>
+            <li><Link href="/comparatif" className="hover:text-foreground">Comparatif</Link></li>
+            <li><Link href="/presentation" className="hover:text-foreground">Présentation</Link></li>
             <li><Link href="/faq" className="hover:text-foreground">FAQ</Link></li>
             <li><Link href="/contact" className="hover:text-foreground">Contact</Link></li>
           </ul>

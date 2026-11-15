@@ -5,21 +5,29 @@ import {
   BellRing,
   CalendarClock,
   CheckCircle2,
-  Clock,
   FileText,
+  Gauge,
+  Lock,
   MailCheck,
   MousePointerClick,
   ShieldCheck,
   Smartphone,
+  Star,
   TrendingUp,
+  X,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { FaqList } from "@/components/marketing/faq-list";
 import { CtaBlock, CtaButtons } from "@/components/marketing/cta-block";
+import { SpeedChart } from "@/components/marketing/speed-chart";
+import { PriceCompare } from "@/components/marketing/price-compare";
+import { RoiSimulator } from "@/components/marketing/roi-simulator";
+import { AnimatedNumber } from "@/components/marketing/animated-number";
 import { FaqJsonLd, SoftwareJsonLd } from "@/components/seo/json-ld";
-import { FAQ_HOME } from "@/lib/content/faq";
+import { FAQ_ALL, FAQ_HOME } from "@/lib/content/faq";
 import { METIERS } from "@/lib/content/metiers";
 import { GUIDES } from "@/lib/content/guides";
+import { TESTIMONIALS } from "@/lib/content/testimonials";
+import { BENCH_DATE, SPEED, speedSelf, weightRatio } from "@/lib/content/benchmarks";
 import { pageMetadata } from "@/lib/seo";
 import dashboardImg from "@/public/captures/tableau-de-bord.png";
 import formImg from "@/public/captures/nouveau-devis.png";
@@ -28,204 +36,317 @@ import emailImg from "@/public/captures/email-client.png";
 
 export const metadata = pageMetadata({
   title: "Logiciel de relance de devis pour artisans | Artisan Relance",
-  ogTitle: "Artisan Relance — vos devis se relancent tout seuls",
+  ogTitle: "Artisan Relance — vos devis deviennent des chantiers signés",
   description:
-    "Logiciel gratuit de relance de devis pour artisans du bâtiment : envoi du devis PDF, relances automatiques par e-mail à votre nom, suivi des réponses.",
+    "Gardez votre logiciel de devis : Artisan Relance envoie vos devis et relance vos clients automatiquement jusqu'à la signature. Gratuit, rapide même en 4G.",
   path: "/",
 });
+
+const TOOLS = ["Obat", "Batappli", "Tolteck", "EBP", "Excel", "Word", "Google Docs", "Tout devis en PDF"];
 
 const steps = [
   {
     icon: FileText,
-    title: "Envoyez votre devis",
-    text: "Joignez le PDF de votre devis, fait avec votre logiciel habituel, et l'adresse du client : il part à votre nom, avec votre signature.",
+    title: "Joignez votre devis",
+    text: "Le PDF fait avec votre logiciel habituel, et l'adresse du client. Il part à votre nom, avec votre signature.",
   },
   {
     icon: CalendarClock,
     title: "Les relances partent seules",
-    text: "Tous les 3, 7, 14 ou 30 jours : vous choisissez le rythme, le nombre de relances et la date de fin. Envois du lundi au samedi, en journée.",
+    text: "Tous les 3, 7, 14 ou 30 jours, le nombre de relances que vous voulez. Du lundi au samedi, en journée.",
   },
   {
     icon: MousePointerClick,
-    title: "Le client répond, vous arrêtez en un clic",
-    text: "Sa réponse arrive directement dans votre boîte mail. Un clic sur « Répondu », « Gagné » ou « Perdu » et les relances s'arrêtent.",
+    title: "Le client répond, un clic arrête tout",
+    text: "Sa réponse arrive dans votre boîte mail. « Répondu », « Gagné » ou « Perdu » : les relances s'arrêtent.",
+  },
+  {
+    icon: Star,
+    title: "Chantier fini, avis Google demandé",
+    text: "Quelques jours après « Terminé », votre client reçoit le lien vers votre fiche Google. Vous suivez les clics.",
   },
 ];
 
 const features = [
-  { icon: BellRing, title: "Relances automatiques", text: "Au rythme que vous choisissez, du lundi au samedi entre 8 h et 19 h, jamais la nuit ni le dimanche." },
-  { icon: MailCheck, title: "Réponses dans votre boîte", text: "Le client vous répond directement, sur votre adresse habituelle." },
-  { icon: TrendingUp, title: "Tableau de bord clair", text: "Devis en attente, gagnés, perdus, taux de signature et montant signé." },
-  { icon: Smartphone, title: "Pensé pour le mobile", text: "Envoyez un devis depuis le chantier, d'une main, en moins d'une minute." },
-  { icon: Clock, title: "Zéro oubli", text: "Plus de carnet ni de rappels dans le téléphone : chaque devis a ses relances programmées." },
-  { icon: ShieldCheck, title: "Données en Europe", text: "Hébergement à Zurich, chaque compte isolé, aucune donnée revendue." },
+  { icon: BellRing, title: "Relances automatiques", text: "Au rythme choisi, jamais la nuit ni le dimanche, arrêtées en un clic." },
+  { icon: MailCheck, title: "À votre nom", text: "Votre signature, votre adresse de réponse : le client ne voit pas d'outil." },
+  { icon: Star, title: "Avis Google", text: "Demande d'avis après le chantier, 3 modèles d'e-mail, suivi des clics." },
+  { icon: TrendingUp, title: "Tableau de bord", text: "Devis en attente, gagnés, perdus, taux de signature, montant signé." },
+  { icon: Smartphone, title: "Fait pour le chantier", text: "Une application légère : un devis envoyé d'une main, même en 4G." },
+  { icon: ShieldCheck, title: "Données en Europe", text: "Hébergement à Zurich, comptes isolés, aucune donnée revendue." },
 ];
 
 const shots = [
-  { img: formImg, alt: "Formulaire d'envoi d'un devis avec choix du rythme des relances", caption: "Création d'un devis et de ses relances" },
-  { img: listImg, alt: "Liste des devis avec statut, nombre de relances et prochaine date", caption: "Suivi des relances devis par devis" },
-  { img: emailImg, alt: "E-mail de relance reçu par le client, au nom de l'artisan", caption: "L'e-mail reçu par votre client" },
+  { img: formImg, alt: "Formulaire d'envoi d'un devis avec choix du rythme des relances", caption: "Un devis et ses relances, en une minute" },
+  { img: listImg, alt: "Liste des devis avec statut, nombre de relances et prochaine date", caption: "Le suivi de chaque devis" },
+  { img: emailImg, alt: "E-mail de relance reçu par le client, au nom de l'artisan", caption: "L'e-mail que reçoit votre client" },
 ];
 
 export default function HomePage() {
+  const self = speedSelf();
+  const ratio = weightRatio();
+  const slowest = Math.max(...SPEED.filter((r) => !r.self).map((r) => r.lcp));
+
   return (
     <>
       <SoftwareJsonLd />
       <FaqJsonLd items={FAQ_HOME} />
 
-      {/* HERO */}
+      {/* HERO : texte seul au-dessus de la ligne de flottaison (affichage immédiat sur mobile) */}
       <section className="relative overflow-hidden">
         <div className="bg-grid absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]" />
-        <div className="container flex flex-col items-center gap-7 pb-14 pt-12 text-center md:pb-20 md:pt-20">
-          <Badge variant="outline" className="gap-2 px-3 py-1 text-xs">
+        <div className="container flex flex-col items-center gap-6 pb-10 pt-10 text-center md:pb-14 md:pt-20">
+          <p className="inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs font-medium">
             <span className="h-1.5 w-1.5 rounded-full bg-brand" />
-            Logiciel gratuit pendant le lancement
-          </Badge>
+            Logiciel de relance de devis pour artisans du bâtiment
+          </p>
           <h1 className="text-balance max-w-4xl text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
-            Relance automatique de vos devis : <span className="text-brand">plus de chantiers signés</span>, zéro oubli
+            Vous faites les devis. <span className="text-brand">Nous les transformons en chantiers signés.</span>
           </h1>
           <p className="text-balance max-w-2xl text-base text-muted-foreground sm:text-lg">
-            Artisan Relance envoie votre devis par e-mail à votre nom, puis relance votre client au rythme que vous
-            choisissez. Ses réponses arrivent dans votre boîte mail ; un clic arrête les relances.
+            Gardez Obat, Batappli, Tolteck ou Excel pour faire vos devis. Artisan Relance s'occupe uniquement de les
+            envoyer et de relancer vos clients jusqu'à leur réponse.
           </p>
           <CtaButtons />
-          <p className="text-sm text-muted-foreground">
-            Sans carte bancaire · Prêt en 2 minutes · Fonctionne avec vos devis Obat, Batappli, Excel ou Word (PDF)
-          </p>
-          <figure className="mt-6 w-full max-w-5xl">
-            <div className="overflow-hidden rounded-xl border shadow-2xl shadow-black/10">
-              <Image
-                src={dashboardImg}
-                alt="Tableau de bord d'Artisan Relance : devis en cours, relances prévues, taux de signature"
-                priority
-                sizes="(min-width: 1024px) 1024px, 100vw"
-                className="h-auto w-full"
-              />
-            </div>
-            <figcaption className="mt-3 text-xs text-muted-foreground">
-              Interface réelle d'Artisan Relance, avec des données d'exemple.
-            </figcaption>
-          </figure>
-        </div>
-      </section>
-
-      {/* PROBLÈME */}
-      <section className="border-y bg-muted/30">
-        <div className="container grid gap-10 py-16 md:grid-cols-2 md:items-center md:py-20">
-          <div className="space-y-4">
-            <h2 className="text-3xl font-semibold tracking-tight">Un devis sans relance, c'est souvent un chantier perdu</h2>
-            <p className="text-muted-foreground">
-              Le client compare, hésite, oublie… et signe souvent avec l'artisan qui l'a recontacté en premier. Entre
-              les chantiers, les urgences et la paperasse, relancer chaque devis au bon moment est presque impossible.
-            </p>
-            <p className="text-muted-foreground">
-              Artisan Relance ne remplace pas votre logiciel de devis : il s'occupe seulement de ce que personne n'a le
-              temps de faire, le suivi après l'envoi.
-            </p>
-          </div>
-          <ul className="space-y-3">
-            {[
-              "Vous n'avez plus à noter qui relancer, ni quand.",
-              "Chaque devis reçoit ses relances, même en pleine saison.",
-              "Vos clients sentent que leur projet compte pour vous.",
-              "Vous voyez en un coup d'œil le montant des devis qui attendent.",
-            ].map((t) => (
-              <li key={t} className="flex gap-3 rounded-lg border bg-card p-4 text-sm">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" />
-                {t}
-              </li>
-            ))}
+          <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+            <li className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-success" /> Gratuit, sans carte bancaire</li>
+            <li className="inline-flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-success" /> Prêt en 2 minutes</li>
+            <li className="inline-flex items-center gap-1.5"><Gauge className="h-4 w-4 text-success" /> Rapide même en 4G sur le chantier</li>
           </ul>
         </div>
       </section>
 
-      {/* FONCTIONNEMENT */}
-      <section id="fonctionnement" className="container scroll-mt-20 py-16 md:py-24">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-semibold tracking-tight">Comment fonctionne la relance automatique de devis</h2>
-          <p className="mt-3 text-muted-foreground">Trois étapes, aucune formation nécessaire.</p>
-        </div>
-        <ol className="mt-12 grid gap-4 md:grid-cols-3">
-          {steps.map((s, i) => (
-            <li key={s.title} className="relative rounded-xl border bg-card p-6">
-              <span className="font-mono text-xs text-muted-foreground">Étape {i + 1}</span>
-              <s.icon className="mt-4 h-6 w-6 text-brand" />
-              <h3 className="mt-4 font-semibold">{s.title}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">{s.text}</p>
-            </li>
-          ))}
-        </ol>
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
-          {shots.map((s) => (
-            <figure key={s.caption}>
-              <div className="overflow-hidden rounded-lg border">
-                <Image src={s.img} alt={s.alt} sizes="(min-width: 768px) 33vw, 100vw" className="h-auto w-full" />
-              </div>
-              <figcaption className="mt-2 text-sm text-muted-foreground">{s.caption}</figcaption>
-            </figure>
-          ))}
+      {/* COMPATIBLE AVEC VOS OUTILS */}
+      <section aria-labelledby="outils" className="border-y bg-muted/30">
+        <div className="container py-8">
+          <h2 id="outils" className="text-center text-sm font-medium text-muted-foreground">
+            Compatible avec vos outils actuels : vous joignez le PDF, rien à changer
+          </h2>
+          <ul className="mt-4 flex flex-wrap justify-center gap-2">
+            {TOOLS.map((t) => (
+              <li key={t} className="rounded-full border bg-background px-3.5 py-1.5 text-sm font-medium">{t}</li>
+            ))}
+          </ul>
+          <p className="mt-3 text-center text-xs text-muted-foreground">
+            Aucun partenariat ni intégration requise : Artisan Relance fonctionne avec le PDF exporté par n'importe quel logiciel.
+          </p>
         </div>
       </section>
 
-      {/* FONCTIONNALITÉS */}
-      <section className="border-y bg-muted/30">
+      {/* CAPTURE */}
+      <section className="container pt-12 md:pt-16">
+        <figure className="mx-auto max-w-5xl">
+          <div className="overflow-hidden rounded-xl border shadow-2xl shadow-black/10">
+            <Image
+              src={dashboardImg}
+              alt="Tableau de bord d'Artisan Relance : devis en cours, relances prévues, taux de signature"
+              sizes="(min-width: 1024px) 1024px, 100vw"
+              className="h-auto w-full"
+              placeholder="blur"
+            />
+          </div>
+          <figcaption className="mt-3 text-center text-xs text-muted-foreground">Interface réelle d'Artisan Relance, avec des données d'exemple.</figcaption>
+        </figure>
+      </section>
+
+      {/* POSITIONNEMENT */}
+      <section className="container py-16 md:py-24">
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="text-3xl font-semibold tracking-tight">Pas un logiciel de devis de plus. Le chaînon qui manquait.</h2>
+          <p className="mt-3 text-muted-foreground">
+            Votre logiciel chiffre et édite. Mais une fois le devis envoyé, personne ne relance : c'est là que les chantiers se perdent.
+          </p>
+        </div>
+        <div className="mx-auto mt-10 grid max-w-4xl gap-4 md:grid-cols-2">
+          <div className="rounded-xl border bg-card p-6">
+            <p className="text-sm font-medium text-muted-foreground">Votre logiciel de devis</p>
+            <ul className="mt-4 space-y-2.5 text-sm">
+              {["Chiffrer les travaux", "Éditer le devis et la facture", "Gérer la TVA et les acomptes"].map((t) => (
+                <li key={t} className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" /> {t}</li>
+              ))}
+              <li className="flex gap-2 text-muted-foreground"><X className="mt-0.5 h-4 w-4 shrink-0 text-destructive" /> Relancer chaque client au bon moment</li>
+              <li className="flex gap-2 text-muted-foreground"><X className="mt-0.5 h-4 w-4 shrink-0 text-destructive" /> Demander un avis après le chantier</li>
+            </ul>
+          </div>
+          <div className="rounded-xl border-2 border-brand bg-brand/5 p-6">
+            <p className="text-sm font-semibold text-brand">Artisan Relance</p>
+            <ul className="mt-4 space-y-2.5 text-sm">
+              {[
+                "Envoyer le devis à votre nom",
+                "Relancer automatiquement jusqu'à la réponse",
+                "Arrêter en un clic quand le client répond",
+                "Suivre les devis gagnés, perdus, en attente",
+                "Demander l'avis Google une fois le chantier fini",
+              ].map((t) => (
+                <li key={t} className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" /> {t}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* FONCTIONNEMENT */}
+      <section id="fonctionnement" className="scroll-mt-20 border-y bg-muted/30">
         <div className="container py-16 md:py-24">
-          <h2 className="text-center text-3xl font-semibold tracking-tight">Tout ce qu'il faut pour relancer, rien de plus</h2>
-          <div className="mt-12 grid gap-px overflow-hidden rounded-xl border bg-border sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((f) => (
-              <div key={f.title} className="bg-card p-6">
-                <f.icon className="h-5 w-5 text-brand" />
-                <h3 className="mt-4 font-medium">{f.title}</h3>
-                <p className="mt-1.5 text-sm text-muted-foreground">{f.text}</p>
-              </div>
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-semibold tracking-tight">Comment fonctionne la relance automatique de devis</h2>
+            <p className="mt-3 text-muted-foreground">Quatre étapes, aucune formation.</p>
+          </div>
+          <ol className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {steps.map((s, i) => (
+              <li key={s.title} className="rounded-xl border bg-card p-6">
+                <span className="font-mono text-xs text-muted-foreground">Étape {i + 1}</span>
+                <s.icon className="mt-4 h-6 w-6 text-brand" />
+                <h3 className="mt-4 font-semibold">{s.title}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">{s.text}</p>
+              </li>
+            ))}
+          </ol>
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {shots.map((s) => (
+              <figure key={s.caption}>
+                <div className="overflow-hidden rounded-lg border bg-background">
+                  <Image src={s.img} alt={s.alt} sizes="(min-width: 768px) 33vw, 100vw" className="h-auto w-full" />
+                </div>
+                <figcaption className="mt-2 text-sm text-muted-foreground">{s.caption}</figcaption>
+              </figure>
             ))}
           </div>
         </div>
       </section>
 
-      {/* MÉTIERS */}
-      <section className="container py-16 md:py-24">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-semibold tracking-tight">Un logiciel de relance pour tous les métiers du bâtiment</h2>
-          <p className="mt-3 text-muted-foreground">
-            Un devis de toiture ne se relance pas comme un devis de peinture. Retrouvez le calendrier et le modèle de
-            mail adaptés à votre métier.
-          </p>
+      {/* VITESSE */}
+      <section id="vitesse" className="container scroll-mt-20 py-16 md:py-24">
+        <div className="grid gap-10 lg:grid-cols-[1fr_1.3fr] lg:items-center">
+          <div>
+            <p className="text-sm font-medium text-brand">Pas d'attente, pas d'écran blanc</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight">Conçu pour s'ouvrir vite, même en 4G sur un chantier</h2>
+            <p className="mt-3 text-muted-foreground">
+              Un logiciel complet charge des centaines de fonctions dont vous n'avez pas besoin pour relancer un devis.
+              Artisan Relance n'en garde que l'essentiel : la page s'affiche avant que vous ayez rangé votre téléphone.
+            </p>
+            <dl className="mt-8 grid grid-cols-3 gap-3">
+              <div className="rounded-lg border bg-card p-4">
+                <dt className="text-xs text-muted-foreground">Premier affichage</dt>
+                <dd className="mt-1 text-2xl font-semibold"><AnimatedNumber value={self.fcp} decimals={1} suffix=" s" /></dd>
+              </div>
+              <div className="rounded-lg border bg-card p-4">
+                <dt className="text-xs text-muted-foreground">Page plus légère</dt>
+                <dd className="mt-1 text-2xl font-semibold"><AnimatedNumber value={ratio} prefix="×" /></dd>
+              </div>
+              <div className="rounded-lg border bg-card p-4">
+                <dt className="text-xs text-muted-foreground">Contenu affiché</dt>
+                <dd className="mt-1 text-2xl font-semibold"><AnimatedNumber value={self.lcp} decimals={1} suffix=" s" /></dd>
+              </div>
+            </dl>
+            <p className="mt-3 text-xs text-muted-foreground">
+              Sur mobile en 4G simulée, mesure du {BENCH_DATE}. « Page plus légère » : face au site de logiciel de devis le plus lourd mesuré.
+              Le plus lent affichait son contenu en {slowest.toLocaleString("fr-FR")} s.
+            </p>
+          </div>
+          <div className="rounded-xl border bg-card p-5 md:p-6">
+            <SpeedChart metric="lcp" />
+          </div>
         </div>
-        <ul className="mx-auto mt-10 grid max-w-4xl gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {METIERS.map((m) => (
-            <li key={m.slug}>
-              <Link href={`/relance-devis/${m.slug}`} className="flex items-center justify-between rounded-lg border bg-card p-4 text-sm font-medium hover:bg-muted/50">
-                Relance de devis {m.metier}
-                <ArrowRight className="h-4 w-4 text-muted-foreground" />
-              </Link>
+      </section>
+
+      {/* PRIX */}
+      <section className="border-y bg-muted/30">
+        <div className="container py-16 md:py-24">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-balance text-3xl font-semibold tracking-tight">
+              Ne payez pas un logiciel complet si votre problème est seulement de relancer vos devis
+            </h2>
+            <p className="mt-3 text-muted-foreground">
+              Gratuit aujourd'hui. Demain, une offre unique prévue à 19 € HT par mois, annoncée 30 jours à l'avance.
+            </p>
+          </div>
+          <div className="mx-auto mt-10 max-w-4xl">
+            <PriceCompare compact />
+          </div>
+          <div className="mt-8 flex justify-center">
+            <CtaButtons />
+          </div>
+        </div>
+      </section>
+
+      {/* FONCTIONNALITÉS */}
+      <section className="container py-16 md:py-24">
+        <h2 className="text-center text-3xl font-semibold tracking-tight">Tout pour faire signer vos devis, rien de plus</h2>
+        <div className="mt-12 grid gap-px overflow-hidden rounded-xl border bg-border sm:grid-cols-2 lg:grid-cols-3">
+          {features.map((f) => (
+            <div key={f.title} className="bg-card p-6">
+              <f.icon className="h-5 w-5 text-brand" />
+              <h3 className="mt-4 font-medium">{f.title}</h3>
+              <p className="mt-1.5 text-sm text-muted-foreground">{f.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* SIMULATEUR */}
+      <section className="border-y bg-muted/30">
+        <div className="container py-16 md:py-24">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-sm font-medium text-brand">Cas pratique, avec vos chiffres</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight">Combien vous coûtent les devis jamais relancés ?</h2>
+            <p className="mt-3 text-muted-foreground">Un seul chantier récupéré rembourse des années d'abonnement. Faites le calcul.</p>
+          </div>
+          <div className="mx-auto mt-10 max-w-4xl">
+            <RoiSimulator />
+          </div>
+        </div>
+      </section>
+
+      {/* CONFIANCE (preuves vérifiables ; témoignages affichés seulement s'ils existent) */}
+      <section className="container py-16 md:py-24">
+        <h2 className="text-center text-3xl font-semibold tracking-tight">Pourquoi vous pouvez nous confier vos clients</h2>
+        {TESTIMONIALS.length > 0 && (
+          <ul className="mx-auto mt-10 grid max-w-5xl gap-4 md:grid-cols-3">
+            {TESTIMONIALS.map((t) => (
+              <li key={t.name + t.date} className="rounded-xl border bg-card p-6">
+                <blockquote className="text-sm">« {t.quote} »</blockquote>
+                <p className="mt-4 text-sm font-medium">{t.name}</p>
+                <p className="text-xs text-muted-foreground">{t.trade}{t.city ? `, ${t.city}` : ""}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+        <ul className="mx-auto mt-10 grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { icon: Lock, title: "Vos clients restent les vôtres", text: "Aucune donnée revendue ni utilisée pour de la publicité." },
+            { icon: ShieldCheck, title: "RGPD et désinscription", text: "Hébergement en Europe, lien de désinscription dans les demandes d'avis." },
+            { icon: CheckCircle2, title: "Sans engagement", text: "Export CSV et suppression du compte à tout moment." },
+            { icon: MailCheck, title: "Un vrai interlocuteur", text: "Une question ? Réponse directe de l'éditeur, par e-mail." },
+          ].map((c) => (
+            <li key={c.title} className="rounded-xl border bg-card p-5">
+              <c.icon className="h-5 w-5 text-brand" />
+              <p className="mt-3 font-medium">{c.title}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{c.text}</p>
             </li>
           ))}
         </ul>
       </section>
 
-      {/* ROI */}
-      <section className="container pb-16 md:pb-24">
-        <div className="mx-auto max-w-3xl rounded-2xl border bg-card p-8 md:p-12">
-          <p className="text-sm font-medium text-brand">Le calcul est vite fait</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight md:text-3xl">
-            Un seul chantier récupéré peut représenter des milliers d'euros
-          </h2>
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            {[
-              ["8", "devis envoyés par mois"],
-              ["+1", "chantier signé grâce aux relances"],
-              ["3 000 €", "de chiffre d'affaires en plus"],
-            ].map(([v, l]) => (
-              <div key={l} className="rounded-lg bg-muted/50 p-4">
-                <p className="text-2xl font-semibold tabular-nums">{v}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{l}</p>
-              </div>
-            ))}
+      {/* MÉTIERS */}
+      <section className="border-t">
+        <div className="container py-16 md:py-24">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-semibold tracking-tight">Comment relancer un devis dans votre métier</h2>
+            <p className="mt-3 text-muted-foreground">
+              Délais idéaux, modèles d'e-mail et de SMS, erreurs à éviter et générateur gratuit pour chaque métier.
+            </p>
           </div>
-          <p className="mt-6 text-xs text-muted-foreground">
-            Exemple illustratif : les résultats dépendent de votre activité et de vos devis.
-          </p>
+          <ul className="mx-auto mt-10 grid max-w-4xl gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {METIERS.map((m) => (
+              <li key={m.slug}>
+                <Link href={`/relance-devis/${m.slug}`} className="flex items-center justify-between rounded-lg border bg-card p-4 text-sm font-medium hover:bg-muted/50">
+                  Relance de devis : {m.short.toLowerCase()}
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
@@ -235,7 +356,7 @@ export default function HomePage() {
           <div>
             <h2 className="text-3xl font-semibold tracking-tight">Questions fréquentes</h2>
             <Link href="/faq" className="mt-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-              Les 18 questions et réponses <ArrowRight className="h-4 w-4" />
+              Les {FAQ_ALL.length} questions et réponses <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
           <FaqList items={FAQ_HOME} />
@@ -255,6 +376,12 @@ export default function HomePage() {
                 </Link>
               </li>
             ))}
+            <li>
+              <Link href="/comparatif" className="block h-full rounded-lg border bg-card p-4 hover:bg-muted/50">
+                <span className="font-medium">Comparatif des outils de relance</span>
+                <span className="mt-1 block text-sm text-muted-foreground">Prix, vitesse et fonctions face à Obat, Tolteck, Batappli, Abby et Sellsy.</span>
+              </Link>
+            </li>
           </ul>
         </div>
       </section>
@@ -262,8 +389,8 @@ export default function HomePage() {
       {/* CTA */}
       <section className="container py-20">
         <CtaBlock
-          title="Arrêtez de perdre des devis par manque de temps"
-          text="Créez votre compte et ajoutez votre premier devis en 2 minutes. Une question avant ? Demandez une démonstration de 10 minutes."
+          title="Vos prochains devis méritent une relance"
+          text="Créez votre compte et envoyez votre premier devis en 2 minutes, depuis votre téléphone. Une question avant ? Demandez une démonstration de 10 minutes."
         />
       </section>
     </>

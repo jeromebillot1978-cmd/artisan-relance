@@ -542,6 +542,91 @@ export const METIERS: (ContentPage & { metier: string; short: string })[] = [
     related: [{ href: "/relance-devis/couvreur", label: "Relance de devis pour couvreur" }, ...commonRelated],
     date: DATE,
   },
+  // ------------------------------------------------------------------ RÉNOVATION
+  {
+    slug: "renovation",
+    metier: "entreprise de rénovation",
+    short: "Rénovation",
+    title: "Relance de devis rénovation : méthode, modèles et outil gratuit",
+    description:
+      "Entreprises de rénovation : relancez vos devis de maison, appartement ou cuisine au bon rythme. Calendrier, modèles de mail et SMS, relances automatiques.",
+    h1: "Relance de devis de rénovation : accompagner le client jusqu'à la signature",
+    answer:
+      "Un devis de rénovation se relance 5 jours après l'envoi, puis toutes les une à deux semaines, trois à quatre fois sur un mois et demi. Le client ne refuse pas : il a besoin de comprendre un devis long, de boucler son financement et de se projeter dans le planning. Chaque relance doit l'aider sur l'un de ces trois points.",
+    sections: [
+      {
+        h2: "Pourquoi les devis de rénovation mettent si longtemps à se signer",
+        paragraphs: [
+          "Une rénovation, c'est souvent le plus gros achat du foyer après le logement lui-même. Le devis compte des dizaines de lignes, plusieurs corps d'état, des options et des variantes. Le client le lit le soir, en famille, sans toujours comprendre ce qui distingue une ligne de plâtrerie d'une autre ou pourquoi l'électricité doit passer avant la peinture.",
+          "Il compare aussi : deux ou trois entreprises ont été consultées, avec des devis présentés différemment. Comparer devient difficile, et la décision se repousse. Ajoutez le financement (prêt travaux, aides à la rénovation énergétique, déblocage d'une épargne), et un devis envoyé en mars peut se signer en mai.",
+          "Pendant ce temps, l'entreprise de rénovation a d'autres chantiers à mener. Sans organisation, la relance devient un appel passé au hasard, entre deux livraisons. C'est précisément là que les devis se perdent : non pas parce que le client a dit non, mais parce que personne ne l'a aidé à dire oui.",
+        ],
+      },
+      {
+        h2: "Le bon rythme de relance pour une rénovation",
+        paragraphs: [
+          "Le rythme doit être plus lent que pour un petit dépannage, mais plus long dans la durée. L'objectif n'est pas d'obtenir une réponse en trois jours, c'est de rester présent pendant toute la phase de réflexion du client, sans jamais devenir insistant.",
+        ],
+        steps: [
+          { title: "Cuisine, salle de bain, pièce unique", text: "Relance à J+5, puis à J+12 avec une information de planning, puis un message de clôture vers J+25." },
+          { title: "Appartement ou maison complète", text: "Relance à J+5, à J+14, à J+30 avec une proposition de phasage, puis clôture vers J+45. Proposez un rendez-vous plutôt qu'une décision." },
+          { title: "Rénovation énergétique avec aides", text: "Relance toutes les deux semaines, en demandant où en est le dossier d'aide plutôt que la signature. Rappelez la durée de validité de votre devis." },
+        ],
+      },
+      {
+        h2: "Que dire dans une relance de devis de rénovation",
+        paragraphs: [
+          "Une relance efficace apporte quelque chose de nouveau à chaque fois. La première propose de parcourir le devis ensemble : vingt minutes au téléphone ou sur place suffisent souvent à lever les doutes. La deuxième donne des repères concrets : date de démarrage possible, durée du chantier, ordre d'intervention des corps d'état. La troisième ouvre une porte quand le montant bloque : un phasage, en commençant par les travaux prioritaires.",
+          "Évitez le message qui ne dit rien (« Avez-vous des nouvelles ? »). Le client n'a pas de nouvelles à vous donner : il attend justement une aide pour avancer. Évitez aussi d'annoncer une hausse de prix pour forcer la décision si elle n'est pas réelle.",
+        ],
+        template: {
+          label: "Modèle de relance — rénovation complète",
+          subject: "Votre projet de rénovation — devis du {date_envoi}",
+          body: "Bonjour {client},\n\nJe reviens vers vous au sujet du devis de rénovation envoyé le {date_envoi}.\n\nUn devis de cette taille comporte beaucoup de lignes : je vous propose de le parcourir ensemble en vingt minutes, au téléphone ou chez vous, pour répondre à vos questions et ajuster ce qui doit l'être.\n\nÀ ce jour, le chantier pourrait démarrer dans six semaines.\n\nBonne journée,",
+        },
+      },
+      {
+        h2: "Relancer sans y penser avec Artisan Relance",
+        paragraphs: [
+          "Artisan Relance envoie votre devis PDF par e-mail à votre nom, puis programme les relances au rythme choisi : tous les 7 ou 14 jours pour une rénovation, avec un nombre maximum de relances et une date de fin. Les messages partent du lundi au samedi en journée. Votre client répond directement sur votre adresse e-mail.",
+          "Vous gardez votre logiciel de devis habituel, qu'il s'agisse d'Obat, de Batappli, de Tolteck ou d'un tableur : vous joignez simplement le PDF. Quand le client signe, un clic sur « Gagné » arrête les relances ; quelques jours après la fin du chantier, Artisan Relance peut même lui demander un avis Google.",
+        ],
+        list: [
+          "Relances espacées et personnalisées, adaptées aux projets longs",
+          "Pièces jointes : devis, plans, photos (5 fichiers, 10 Mo chacun)",
+          "Suivi des devis en attente et du montant à signer",
+          "Gratuit pendant la phase de lancement, sans carte bancaire",
+        ],
+      },
+      {
+        h2: "Exemple : ce qu'une relance régulière peut rapporter",
+        paragraphs: [
+          "Exemple à adapter : 6 devis de rénovation par mois, d'un montant moyen de 18 000 €. Si une relance régulière vous fait signer un seul devis de plus par trimestre, cela représente 4 chantiers et 72 000 € de chiffre d'affaires sur l'année.",
+          "Ce calcul n'est pas une promesse : il montre qu'en rénovation, où chaque devis pèse lourd, quelques minutes d'organisation par dossier ont un effet considérable.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: "Combien de temps un client met-il à signer un devis de rénovation ?",
+        a: "Souvent plusieurs semaines, parfois deux à trois mois quand un financement ou une aide est en jeu. C'est pourquoi les relances doivent être espacées et étalées sur au moins un mois et demi.",
+      },
+      {
+        q: "Faut-il relancer par téléphone ou par e-mail ?",
+        a: "Les deux se complètent : l'e-mail garde une trace et laisse le client répondre quand il veut, le téléphone ou le rendez-vous sur place lève les doutes sur un devis long. Programmez les e-mails, gardez les appels pour les dossiers les plus avancés.",
+      },
+      {
+        q: "Que faire si le montant du devis bloque le client ?",
+        a: "Proposez un phasage : une première tranche avec les travaux prioritaires, le reste plus tard. Cela évite souvent de perdre le chantier entier.",
+      },
+      {
+        q: "Peut-on demander un avis Google après une rénovation ?",
+        a: "Oui. Artisan Relance peut envoyer automatiquement une demande d'avis quelques jours après que vous avez marqué le dossier « Terminé ». Google interdit de ne solliciter que les clients satisfaits : la demande part à tous.",
+      },
+    ],
+    related: [{ href: "/relance-devis/menuisier", label: "Relance de devis pour menuisier" }, ...commonRelated],
+    date: DATE,
+  },
 ];
 
 export function getMetier(slug: string) {

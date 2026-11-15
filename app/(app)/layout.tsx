@@ -4,6 +4,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileTabBar, SidebarNav } from "@/components/app/app-nav";
 import { UserMenu } from "@/components/app/user-menu";
 import { requireUser } from "@/lib/data";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
@@ -45,6 +46,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </main>
 
       <MobileTabBar />
+      <Toaster />
     </div>
   );
 }

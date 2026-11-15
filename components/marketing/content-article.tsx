@@ -11,11 +11,14 @@ export function ContentArticle({
   path,
   crumbs,
   ctaTitle,
+  afterAnswer,
 }: {
   page: ContentPage;
   path: string;
   crumbs: { name: string; path: string }[];
   ctaTitle: string;
+  /** Bloc inséré juste après « En bref » (kit de relance des pages métiers) */
+  afterAnswer?: React.ReactNode;
 }) {
   return (
     <article className="container max-w-3xl py-10 md:py-16">
@@ -48,7 +51,9 @@ export function ContentArticle({
         <p className="mt-2 leading-relaxed">{page.answer}</p>
       </section>
 
-      <div className="mt-10 space-y-10 leading-relaxed">
+      {afterAnswer}
+
+      <div className="mt-12 space-y-10 leading-relaxed">
         {page.sections.map((s) => (
           <section key={s.h2}>
             <h2 className="text-2xl font-semibold tracking-tight">{s.h2}</h2>

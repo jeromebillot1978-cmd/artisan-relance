@@ -25,7 +25,7 @@ export function CtaBlock({ title, text }: { title: string; text: string }) {
       <h2 className="text-balance text-2xl font-semibold tracking-tight md:text-3xl">{title}</h2>
       <p className="mx-auto mt-3 max-w-lg text-muted-foreground">{text}</p>
       <CtaButtons className="mt-8 flex flex-col justify-center gap-3 sm:flex-row" />
-      <p className="mt-4 text-xs text-muted-foreground">Gratuit pendant le lancement · Sans carte bancaire · Prêt en 2 minutes</p>
+      <p className="mt-4 text-xs text-muted-foreground">Gratuit · Sans carte bancaire · Prêt en 2 minutes · Rapide même en 4G</p>
     </section>
   );
 }

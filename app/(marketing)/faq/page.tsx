@@ -6,8 +6,8 @@ import { FAQ_ALL, FAQ_GROUPS } from "@/lib/content/faq";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
-  title: "Relance de devis : 18 questions et réponses | Artisan Relance",
-  description: "Quand relancer un devis, combien de relances, mail de relance, taux de transformation, RGPD : les réponses claires pour les artisans.",
+  title: `Relance de devis : ${FAQ_ALL.length} questions et réponses | Artisan Relance`,
+  description: "Quel outil pour relancer un devis, quand relancer, combien de relances, taux d’acceptation, RGPD : les réponses claires pour les artisans du bâtiment.",
   path: "/faq",
 });
 

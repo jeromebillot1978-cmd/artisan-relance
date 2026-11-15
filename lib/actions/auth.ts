@@ -27,7 +27,6 @@ function translateAuthError(message: string) {
 export async function signUp(_: ActionState, formData: FormData): Promise<ActionState> {
   const parsed = z
     .object({
-      company_name: z.string().trim().min(2, "Nom d'entreprise requis.").max(120),
       email: emailSchema,
       password: passwordSchema,
     })
@@ -42,7 +41,7 @@ export async function signUp(_: ActionState, formData: FormData): Promise<Action
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
-      data: { company_name: parsed.data.company_name },
+      // Le nom de l'entreprise se renseigne ensuite dans Paramètres (rappel au tableau de bord).
       emailRedirectTo: `${siteUrl()}/auth/callback?next=/dashboard`,
     },
   });

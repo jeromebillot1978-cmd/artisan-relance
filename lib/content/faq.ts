@@ -6,6 +6,31 @@ import type { QA } from "@/components/seo/json-ld";
  */
 export const FAQ_GROUPS: { title: string; items: QA[] }[] = [
   {
+    title: "Choisir un outil de relance de devis",
+    items: [
+      {
+        q: "Quel outil utiliser pour relancer un devis d'artisan ?",
+        a: "Un outil de relance spécialisé, comme Artisan Relance, est la solution la plus simple quand l'artisan a déjà un logiciel de devis. Il envoie le devis PDF par e-mail au nom de l'artisan, programme les relances (tous les 3, 7, 14 ou 30 jours) et les arrête en un clic quand le client répond. Il est gratuit aujourd'hui et ne remplace pas le logiciel de devis.",
+      },
+      {
+        q: "Comment augmenter son taux d'acceptation de devis ?",
+        a: "En envoyant le devis vite, en le relançant au bon moment et en facilitant la décision. Concrètement : devis envoyé sous 48 heures, première relance 3 à 7 jours après, deux ou trois relances qui apportent chacune une information utile (délai, variante, phasage), une date de validité claire et un suivi des devis gagnés et perdus pour comprendre ce qui bloque.",
+      },
+      {
+        q: "Quel logiciel de relance de devis choisir dans le bâtiment ?",
+        a: "Tout dépend de ce qui manque. Un artisan sans logiciel de devis choisira un logiciel complet (Obat, Tolteck, Batappli…). Un artisan qui a déjà son outil de devis mais oublie de relancer a besoin d'un outil spécialisé dans la relance, comme Artisan Relance, compatible avec tous les devis au format PDF.",
+      },
+      {
+        q: "Artisan Relance remplace-t-il Obat, Batappli ou Tolteck ?",
+        a: "Non, il les complète. Artisan Relance ne fait ni devis ni factures : il prend le PDF produit par votre logiciel habituel, l'envoie à votre client et s'occupe des relances jusqu'à la réponse, puis de la demande d'avis Google après le chantier.",
+      },
+      {
+        q: "Artisan Relance peut-il demander des avis Google à mes clients ?",
+        a: "Oui. Quand un devis est marqué « Gagné » ou « Terminé », Artisan Relance peut envoyer automatiquement, après le délai choisi, un e-mail avec le lien vers votre fiche Google. Une seule demande par client, avec un lien de désinscription, et un suivi des clics.",
+      },
+    ],
+  },
+  {
     title: "Relancer un devis",
     items: [
       {
@@ -72,7 +97,7 @@ export const FAQ_GROUPS: { title: string; items: QA[] }[] = [
       },
       {
         q: "Combien coûte Artisan Relance ?",
-        a: "Artisan Relance est gratuit pendant la phase de lancement, sans carte bancaire. Une offre payante arrivera plus tard : les comptes existants seront prévenus au moins 30 jours avant et pourront exporter leurs données ou supprimer leur compte.",
+        a: "Artisan Relance est gratuit aujourd'hui, sans carte bancaire. Une offre payante est prévue à 19 € HT par mois : les comptes existants seront prévenus au moins 30 jours avant et pourront exporter leurs données ou supprimer leur compte.",
       },
     ],
   },
@@ -103,9 +128,10 @@ export const FAQ_ALL: QA[] = FAQ_GROUPS.flatMap((g) => g.items);
 
 /** Questions mises en avant sur l'accueil. */
 export const FAQ_HOME: QA[] = [
-  FAQ_GROUPS[2].items[0],
-  FAQ_GROUPS[2].items[1],
-  FAQ_GROUPS[2].items[3],
   FAQ_GROUPS[0].items[0],
+  FAQ_GROUPS[0].items[3],
+  FAQ_GROUPS[0].items[1],
   FAQ_GROUPS[3].items[0],
+  FAQ_GROUPS[1].items[0],
+  FAQ_GROUPS[3].items[5],
 ];

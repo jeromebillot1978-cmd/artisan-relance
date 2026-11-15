@@ -61,7 +61,8 @@ export function SoftwareJsonLd() {
         inLanguage: "fr-FR",
         isAccessibleForFree: true,
         description:
-          "Logiciel de relance de devis pour artisans : envoi du devis PDF par e-mail, relances automatiques au rythme choisi, tableau de bord des devis en attente, gagnés et perdus.",
+          "Logiciel de relance de devis pour artisans du bâtiment, en complément de leur logiciel de devis (Obat, Batappli, Tolteck, Excel, Word) : envoi du devis PDF par e-mail, relances automatiques au rythme choisi, arrêt en un clic, demande d'avis Google après le chantier.",
+        alternateName: ["Artisan Relance, logiciel de relance de devis", "Relance de devis automatique pour artisans"],
         audience: { "@type": "BusinessAudience", audienceType: "Artisans et TPE du bâtiment" },
         featureList: [
           "Envoi du devis PDF par e-mail au nom de l'artisan",
@@ -69,7 +70,10 @@ export function SoftwareJsonLd() {
           "Nombre maximum de relances et date de fin",
           "Réponses du client reçues dans la boîte mail de l'artisan",
           "Arrêt des relances en un clic : gagné, perdu, répondu",
+          "Demande d'avis Google automatique après « Gagné » ou « Terminé »",
+          "Suivi des clics et des avis obtenus",
           "Tableau de bord et export CSV",
+          "Compatible avec tout logiciel de devis (envoi du PDF)",
         ],
         screenshot: [
           `${url}/captures/tableau-de-bord.png`,
@@ -77,7 +81,14 @@ export function SoftwareJsonLd() {
           `${url}/captures/suivi-relances.png`,
           `${url}/captures/email-client.png`,
         ],
-        offers: { "@type": "Offer", price: "0", priceCurrency: "EUR", description: "Gratuit pendant la phase de lancement" },
+        offers: {
+          "@type": "Offer",
+          price: "0",
+          priceCurrency: "EUR",
+          availability: "https://schema.org/InStock",
+          url: `${url}/tarifs`,
+          description: "Gratuit pendant la phase de lancement, sans carte bancaire. Offre payante prévue à 19 € HT par mois.",
+        },
         publisher: { "@id": `${url}/#organization` },
       }}
     />
@@ -133,6 +144,21 @@ export function ArticleJsonLd(opts: { title: string; description: string; path: 
         inLanguage: "fr-FR",
         author: { "@type": "Organization", name: SITE.editor, url: SITE.editorUrl },
         publisher: { "@id": `${url}/#organization` },
+      }}
+    />
+  );
+}
+
+/** HowTo : étapes d'une relance (pages métiers). */
+export function HowToJsonLd({ name, steps }: { name: string; steps: { name: string; text: string }[] }) {
+  return (
+    <JsonLd
+      data={{
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        name,
+        inLanguage: "fr-FR",
+        step: steps.map((s, i) => ({ "@type": "HowToStep", position: i + 1, name: s.name, text: s.text })),
       }}
     />
   );
