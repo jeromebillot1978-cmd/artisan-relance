@@ -89,3 +89,62 @@ export interface InboundReply {
   forwarded: boolean;
   created_at: string;
 }
+
+// ---------------------------------------------------------------------
+// Avis Google
+// ---------------------------------------------------------------------
+export type ReviewTemplateChoice = "professionnel" | "court" | "chaleureux" | "personnalise";
+
+export interface ReviewSettings {
+  user_id: string;
+  google_review_url: string | null;
+  company_name: string | null;
+  template_key: ReviewTemplateChoice;
+  subject: string;
+  body: string;
+  auto_on_won: boolean;
+  won_delay_days: number;
+  auto_on_completed: boolean;
+  completed_delay_days: number;
+  google_place_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type ReviewRequestStatus = "scheduled" | "processing" | "sent" | "failed" | "cancelled";
+export type ReviewTrigger = "manual" | "won" | "completed";
+
+export interface ReviewRequest {
+  id: string;
+  user_id: string;
+  campaign_id: string | null;
+  client_name: string;
+  recipients: string[];
+  trigger: ReviewTrigger;
+  status: ReviewRequestStatus;
+  scheduled_at: string;
+  claimed_at: string | null;
+  sent_at: string | null;
+  attempts: number;
+  last_error: string | null;
+  provider_id: string | null;
+  cancel_reason: string | null;
+  subject: string | null;
+  body: string | null;
+  clicks: number;
+  first_clicked_at: string | null;
+  last_clicked_at: string | null;
+  review_status: "unknown" | "received";
+  review_source: "manual" | "google" | null;
+  reviewed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReviewEvent {
+  id: number;
+  request_id: string | null;
+  type: string;
+  detail: Record<string, unknown>;
+  created_at: string;
+}

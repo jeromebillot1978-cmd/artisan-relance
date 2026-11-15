@@ -8,7 +8,7 @@
 
 export type AutomationKey =
   | "quote_follow_up" // relance des devis (actif)
-  | "google_review" // demande d'avis Google (à venir)
+  | "google_review" // demande d'avis Google (actif)
   | "invoice_follow_up" // relance des factures (à venir)
   | "maintenance_reminder"; // rappel d'entretien annuel (à venir)
 
@@ -33,9 +33,9 @@ export const AUTOMATIONS: AutomationDefinition[] = [
   {
     key: "google_review",
     label: "Avis Google",
-    description: "Demande d'avis envoyée automatiquement après le chantier.",
-    channels: ["email", "sms"],
-    available: false,
+    description: "Demande d'avis envoyée par e-mail quelques jours après « Gagné » ou « Terminé », ou en un clic depuis le devis.",
+    channels: ["email"],
+    available: true,
   },
   {
     key: "invoice_follow_up",

@@ -3,8 +3,12 @@
 //  - mode "initial" : envoie le devis d'une campagne (appelé par l'appli)
 //  - mode "due"     : envoie toutes les relances arrivées à échéance
 //                     (appelé toutes les 15 min par pg_cron, + Vercel Cron)
-//  - mode "maintenance" : purge des pièces jointes expirées et orphelines
-//                     (appelé chaque nuit par pg_cron)
+//  - mode "reviews"  : envoie les demandes d'avis Google arrivées à échéance
+//                     (appelé par la base au clic sur « Demander un avis » ;
+//                     le mode "due" les traite aussi toutes les 15 min)
+//  - mode "maintenance" : purge des pièces jointes expirées et orphelines,
+//                     et de l'historique des avis au-delà de la durée de
+//                     conservation (appelé chaque nuit par pg_cron)
 // Garde-fous de coût : plafonds quotidiens global et par artisan, et
 // disjoncteur sur les échecs, appliqués en base au moment de la réservation.
 // Sécurité : en-tête x-cron-secret obligatoire.
@@ -13,11 +17,12 @@
 // =====================================================================
 import { admin, json, log } from "../_shared/admin.ts";
 import { senderName, sendEmail, type OutgoingAttachment } from "../_shared/resend.ts";
-import { fillVariables, followupSubject, renderProspectEmail } from "../_shared/templates.ts";
+import { fillVariables, followupSubject, renderProspectEmail, renderReviewEmail } from "../_shared/templates.ts";
 
 const CRON_SECRET = Deno.env.get("CRON_SECRET") ?? "";
 const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") ?? "";
 const INBOUND_DOMAIN = Deno.env.get("INBOUND_DOMAIN") ?? ""; // ex. reponses.jercat.fr (optionnel)
+const SITE_URL = (Deno.env.get("SITE_URL") ?? "https://artisan-relance.jercat.fr").replace(/\/$/, "");
 const PAUSE_MS = 150; // limite Resend : 10 requêtes / seconde
 
 interface Job {
@@ -118,6 +123,92 @@ async function deliver(job: Job): Promise<string> {
   );
 }
 
+interface ReviewJob {
+  request_id: string;
+  attempts: number;
+  user_id: string;
+  campaign_id: string | null;
+  client_name: string;
+  recipients: string[];
+  click_token: string;
+  google_review_url: string;
+  company_name: string;
+  subject: string;
+  body: string;
+  contact_name: string | null;
+  phone: string | null;
+  user_email: string;
+  reply_to_email: string | null;
+}
+
+async function deliverReview(job: ReviewJob): Promise<{ providerId: string; subject: string; text: string }> {
+  if (!FROM_EMAIL) throw new Error("RESEND_FROM_EMAIL manquant");
+  const artisanEmail = job.reply_to_email || job.user_email;
+  const reviewUrl = `${SITE_URL}/r/${job.click_token}`;
+  const unsubscribeUrl = `${SITE_URL}/r/${job.click_token}/stop`;
+  const rendered = renderReviewEmail({
+    subject: job.subject,
+    body: job.body,
+    companyName: job.company_name,
+    clientName: job.client_name,
+    reviewUrl,
+    unsubscribeUrl,
+  });
+  const providerId = await sendEmail(
+    {
+      from: `${senderName(job.company_name)} <${FROM_EMAIL}>`,
+      to: job.recipients,
+      reply_to: artisanEmail,
+      subject: rendered.subject,
+      html: rendered.html,
+      text: rendered.text,
+      headers: {
+        "List-Unsubscribe": `<${unsubscribeUrl}>`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      },
+      tags: [
+        { name: "kind", value: "review" },
+        { name: "review", value: job.request_id },
+      ],
+    },
+    `review-${job.request_id}`,
+  );
+  return { providerId, subject: rendered.subject, text: rendered.text };
+}
+
+/** Envoie les demandes d'avis dues. Chaque échec est journalisé et reprogrammé (3 essais). */
+async function processReviews(limit: number) {
+  const { data, error } = await admin.rpc("claim_due_review_requests", { p_limit: limit });
+  if (error) {
+    log("review_claim_error", { error: error.message });
+    return { processed: 0, sent: 0, failed: 0, error: error.message };
+  }
+  const jobs = (data ?? []) as ReviewJob[];
+  let sent = 0;
+  let failed = 0;
+  for (const [index, job] of jobs.entries()) {
+    if (index > 0) await sleep(PAUSE_MS);
+    try {
+      const { providerId, subject, text } = await deliverReview(job);
+      const { error: doneError } = await admin.rpc("complete_review_send", {
+        p_id: job.request_id,
+        p_provider_id: providerId,
+        p_subject: subject,
+        p_body: text,
+      });
+      if (doneError) throw new Error(`complete_review_send : ${doneError.message}`);
+      sent++;
+      log("review_sent", { request_id: job.request_id, user_id: job.user_id, attempt: job.attempts, provider_id: providerId });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      failed++;
+      await admin.rpc("fail_review_send", { p_id: job.request_id, p_error: message });
+      log("review_failed", { request_id: job.request_id, user_id: job.user_id, attempt: job.attempts, error: message });
+    }
+  }
+  return { processed: jobs.length, sent, failed };
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Méthode non autorisée" }, 405);
   if (!CRON_SECRET || req.headers.get("x-cron-secret") !== CRON_SECRET) {
@@ -127,6 +218,12 @@ Deno.serve(async (req) => {
   const started = Date.now();
   const input = await req.json().catch(() => ({}));
   if (input?.mode === "maintenance") return await maintenance(started);
+  if (input?.mode === "reviews") {
+    const reviews = await processReviews(20);
+    const summary = { ok: !("error" in reviews), mode: "reviews", reviews, duration_ms: Date.now() - started };
+    log("mailer_run", summary);
+    return json(summary);
+  }
   if (input?.mode === "health") {
     // Vérification avant mise en production : secrets présents (jamais leurs valeurs)
     const names = ["CRON_SECRET", "RESEND_API_KEY", "RESEND_FROM_EMAIL", "SITE_URL", "INBOUND_DOMAIN", "RESEND_WEBHOOK_SECRET", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"];
@@ -178,11 +275,15 @@ Deno.serve(async (req) => {
     }
   }
 
+  // Demandes d'avis Google arrivées à échéance (même cron, même budget)
+  const reviews = mode === "due" ? await processReviews(20) : null;
+
   const { data: status } = await admin.rpc("mailer_status");
   const summary = {
     ok: true,
     mode,
     budget: status,
+    reviews,
     processed: results.length,
     sent: results.filter((r) => r.ok).length,
     failed: results.filter((r) => !r.ok).length,
@@ -231,7 +332,18 @@ async function maintenance(started: number) {
     orphans += paths.length;
   }
 
-  const summary = { ok: errors.length === 0, mode: "maintenance", purged, orphans, errors, duration_ms: Date.now() - started };
+  const { data: reviewsPurged, error: reviewPurgeError } = await admin.rpc("purge_review_history");
+  if (reviewPurgeError) errors.push(reviewPurgeError.message);
+
+  const summary = {
+    ok: errors.length === 0,
+    mode: "maintenance",
+    purged,
+    orphans,
+    reviews_purged: Number(reviewsPurged ?? 0),
+    errors,
+    duration_ms: Date.now() - started,
+  };
   log("maintenance_run", summary);
   return json(summary, errors.length ? 500 : 200);
 }

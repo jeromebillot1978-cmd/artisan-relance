@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CheckCircle2, Clock } from "lucide-react";
-import { requireUser } from "@/lib/data";
+import { getReviewData } from "@/lib/data";
+import { defaultReviewSettings } from "@/lib/reviews";
 import { AUTOMATIONS } from "@/lib/automations/registry";
 import {
   DEFAULT_FOLLOWUP_MESSAGE,
@@ -15,11 +16,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { PageHeader } from "@/components/app/page-header";
 import { ProfileForm } from "@/components/app/profile-form";
 import { EmailPreview } from "@/components/app/email-preview";
+import { ReviewSettingsForm } from "@/components/reviews/review-settings-form";
 
 export const metadata: Metadata = { title: "Paramètres" };
 
 export default async function SettingsPage() {
-  const { profile } = await requireUser();
+  const { profile, settings } = await getReviewData({ eventsLimit: 1 });
+  const reviewSettings = settings ?? defaultReviewSettings(profile.id, profile.company_name);
 
   const sender = {
     companyName: profile.company_name || "Votre entreprise",
@@ -95,6 +98,18 @@ export default async function SettingsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card id="avis-google" className="mt-4 scroll-mt-20">
+        <CardHeader>
+          <CardTitle className="text-base">Avis Google</CardTitle>
+          <CardDescription>
+            Lien de votre fiche, modèle d'e-mail et envoi automatique après un devis gagné ou des travaux terminés.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ReviewSettingsForm settings={reviewSettings} profileCompany={profile.company_name} />
+        </CardContent>
+      </Card>
     </>
   );
 }

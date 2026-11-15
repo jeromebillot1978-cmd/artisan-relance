@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, LayoutDashboard, Settings } from "lucide-react";
+import { FileText, LayoutDashboard, Settings, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const NAV_ITEMS = [
   { href: "/dashboard", label: "Tableau de bord", short: "Accueil", icon: LayoutDashboard },
   { href: "/devis", label: "Devis", short: "Devis", icon: FileText },
+  { href: "/avis-google", label: "Avis Google", short: "Avis", icon: Star },
   { href: "/parametres", label: "Paramètres", short: "Réglages", icon: Settings },
 ];
 
@@ -41,7 +42,7 @@ export function MobileTabBar() {
   const pathname = usePathname();
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg md:hidden">
-      <div className="grid grid-cols-3">
+      <div className="grid grid-cols-4">
         {NAV_ITEMS.map((item) => {
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (

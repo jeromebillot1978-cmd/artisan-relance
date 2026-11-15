@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarClock, Download, FileText, Mail, Paperclip } from "lucide-react";
-import { getCampaignDetail } from "@/lib/data";
+import { ArrowLeft, CalendarClock, Download, FileText, Mail, MousePointerClick, Paperclip, Star } from "lucide-react";
+import { getCampaignDetail, getCampaignReviews } from "@/lib/data";
+import { CANCEL_REASONS, REVIEW_TRIGGER } from "@/lib/reviews";
+import { ReviewStatusBadge } from "@/components/reviews/review-status-badge";
+import { RequestReviewButton } from "@/components/reviews/request-review-dialog";
 import { formatBytes, formatDateTime } from "@/lib/campaigns/constants";
 import { formatCurrency } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,7 +28,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 export default async function CampaignPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
-  const detail = await getCampaignDetail(id);
+  const [detail, reviews] = await Promise.all([getCampaignDetail(id), getCampaignReviews(id)]);
   if (!detail) notFound();
   const { campaign: c, attachments, events, replies } = detail;
 
@@ -95,6 +98,52 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
               )}
             </CardContent>
           </Card>
+
+          {(c.status === "won" || c.status === "completed" || reviews.length > 0) && (
+            <Card>
+              <CardHeader className="flex-row items-center justify-between space-y-0">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Star className="h-4 w-4 text-amber-500" /> Avis Google
+                </CardTitle>
+                {reviews[0] && <ReviewStatusBadge request={reviews[0]} />}
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                {reviews[0] ? (
+                  <div className="divide-y">
+                    <Row label="Origine">{REVIEW_TRIGGER[reviews[0].trigger]}</Row>
+                    <Row label={reviews[0].status === "sent" ? "Envoyée le" : "Prévue le"}>
+                      {formatDateTime(reviews[0].status === "sent" ? reviews[0].sent_at : reviews[0].scheduled_at)}
+                    </Row>
+                    {reviews[0].status === "sent" && (
+                      <Row label="Clics sur le lien">
+                        <span className="inline-flex items-center gap-1">
+                          <MousePointerClick className="h-3.5 w-3.5" /> {reviews[0].clicks}
+                        </span>
+                      </Row>
+                    )}
+                    {reviews[0].review_status === "received" && <Row label="Avis">⭐ Reçu</Row>}
+                    {reviews[0].status === "failed" && reviews[0].last_error && (
+                      <Row label="Erreur"><span className="text-destructive">{reviews[0].last_error}</span></Row>
+                    )}
+                    {reviews[0].status === "cancelled" && (
+                      <Row label="Motif">{CANCEL_REASONS[reviews[0].cancel_reason ?? ""] ?? "Annulée"}</Row>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">Aucune demande d'avis pour ce client.</p>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  {(c.status === "won" || c.status === "completed") &&
+                    !reviews.some((r) => r.status === "sent" || r.status === "processing") && (
+                      <RequestReviewButton campaign={c} />
+                    )}
+                  <Link href="/avis-google" className="inline-flex items-center text-xs text-muted-foreground underline-offset-4 hover:underline">
+                    Suivi des avis
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader>

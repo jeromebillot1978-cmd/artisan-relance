@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ArrowRight, CalendarClock, CheckCircle2, Euro, FolderOpen, MessageCircleReply, Plus, Send } from "lucide-react";
-import { computeStats, getCampaigns, requireUser } from "@/lib/data";
+import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, Euro, FolderOpen, MessageCircleReply, MousePointerClick, Plus, Send, Star } from "lucide-react";
+import { computeStats, getCampaigns, getReviewData, requireUser } from "@/lib/data";
+import { computeReviewStats } from "@/lib/reviews";
+import { ReviewHistory } from "@/components/reviews/review-history";
 import { formatDateTime } from "@/lib/campaigns/constants";
 import { formatCurrencyRounded } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -15,7 +17,13 @@ import { CampaignStatusBadge } from "@/components/campaigns/campaign-status-badg
 export const metadata: Metadata = { title: "Tableau de bord" };
 
 export default async function DashboardPage() {
-  const [{ profile }, campaigns] = await Promise.all([requireUser(), getCampaigns()]);
+  const [{ profile }, campaigns, reviewData] = await Promise.all([requireUser(), getCampaigns(), getReviewData({ eventsLimit: 30 })]);
+  const reviewStats = computeReviewStats(reviewData.requests);
+  // Notifications : événements marquants des 14 derniers jours
+  const since = Date.now() - 14 * 86_400_000;
+  const notifications = reviewData.events
+    .filter((e) => ["sent", "clicked", "send_failed", "opted_out", "mark_received"].includes(e.type) && new Date(e.created_at).getTime() >= since)
+    .slice(0, 6);
   const stats = computeStats(campaigns);
   const upcoming = campaigns
     .filter((c) => c.status === "active" && c.next_followup_at)
@@ -138,6 +146,55 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="mt-4">
+        <CardHeader className="flex-row items-center justify-between space-y-0">
+          <div className="space-y-1">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Star className="h-4 w-4 text-amber-500" /> Avis Google
+            </CardTitle>
+            <CardDescription>
+              {reviewData.settings?.google_review_url
+                ? "Demandes envoyées après les chantiers, clics et avis obtenus."
+                : "Pas encore configuré : ajoutez le lien de votre fiche Google."}
+            </CardDescription>
+          </div>
+          <Button asChild variant="ghost" size="sm">
+            <Link href={reviewData.settings?.google_review_url ? "/avis-google" : "/parametres#avis-google"}>
+              {reviewData.settings?.google_review_url ? "Tout voir" : "Configurer"} <ArrowRight />
+            </Link>
+          </Button>
+        </CardHeader>
+        <CardContent className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+          <div className="grid grid-cols-3 gap-2 self-start">
+            <MiniStat icon={Send} label="Envoyées" value={String(reviewStats.sent)} hint={`${reviewStats.pending} en attente`} />
+            <MiniStat icon={MousePointerClick} label="Taux de clic" value={reviewStats.clickRate === null ? "—" : `${reviewStats.clickRate} %`} />
+            <MiniStat icon={Star} label="Avis obtenus" value={String(reviewStats.reviews)} />
+          </div>
+          <div>
+            <p className="mb-3 flex items-center gap-2 text-sm font-medium">
+              Notifications
+              {reviewStats.failed > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-xs text-destructive">
+                  <AlertTriangle className="h-3 w-3" /> {reviewStats.failed} échec{reviewStats.failed > 1 ? "s" : ""}
+                </span>
+              )}
+            </p>
+            <ReviewHistory events={notifications} requests={reviewData.requests} empty="Rien de nouveau ces 14 derniers jours." />
+          </div>
+        </CardContent>
+      </Card>
     </>
+  );
+}
+
+function MiniStat({ icon: Icon, label, value, hint }: { icon: typeof Send; label: string; value: string; hint?: string }) {
+  return (
+    <div className="rounded-lg border p-3">
+      <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+      <p className="mt-2 text-xl font-semibold tabular-nums">{value}</p>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
+    </div>
   );
 }

@@ -34,6 +34,10 @@ export default function ConfidentialitePage() {
           <li>Compte : adresse e-mail, nom de l'entreprise, et si vous les renseignez, nom du contact, téléphone et adresse de réponse.</li>
           <li>Devis : nom du client, adresses e-mail des destinataires, téléphone (facultatif), montant, référence, notes internes, messages, pièces jointes, dates et statut des envois.</li>
           <li>Réponses et événements : date d'envoi, de relance, de réponse, de décision (gagné, perdu).</li>
+          <li>
+            Demandes d'avis Google : nom et e-mail du client, date d'envoi, nombre de clics sur le lien de l'e-mail (sans
+            pixel de suivi ni cookie), avis signalé comme reçu par l'artisan, et désinscriptions.
+          </li>
           <li>Page contact : nom, e-mail, téléphone (facultatif), métier, message.</li>
           <li>Données techniques : journaux de connexion et d'envoi conservés par nos prestataires pour la sécurité.</li>
         </ul>
@@ -45,6 +49,11 @@ export default function ConfidentialitePage() {
         <ul>
           <li>Fournir le service (compte, envoi des devis et des relances, tableau de bord) : exécution du contrat (CGU).</li>
           <li>Sécurité, prévention des abus et limitation des envois : intérêt légitime.</li>
+          <li>
+            Demande d'avis envoyée par l'artisan à son client après une prestation : intérêt légitime de l'artisan. Une seule
+            demande par dossier ; chaque e-mail contient un lien de désinscription, respecté pour toutes les demandes
+            suivantes de cet artisan.
+          </li>
           <li>Répondre à une demande de contact ou de démonstration : mesures précontractuelles à votre demande.</li>
           <li>Vous informer d'un changement important du service ou des tarifs : exécution du contrat.</li>
         </ul>
@@ -57,6 +66,7 @@ export default function ConfidentialitePage() {
           <li>Pièces jointes : supprimées automatiquement 12 mois après la clôture du dossier (gagné, perdu, terminé, arrêté ou répondu).</li>
           <li>Fichiers téléversés mais jamais rattachés à un devis : supprimés après 2 jours.</li>
           <li>Messages de la page contact : 12 mois après le dernier échange.</li>
+          <li>Historique des demandes d'avis : 24 mois, ou plus tôt si le devis concerné est supprimé.</li>
           <li>Vous pouvez supprimer un devis, ses fichiers et son historique à tout moment, et exporter vos données au format CSV.</li>
         </ul>
       </section>

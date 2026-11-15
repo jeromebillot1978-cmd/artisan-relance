@@ -10,6 +10,9 @@ import type {
   CampaignSend,
   InboundReply,
   Profile,
+  ReviewEvent,
+  ReviewRequest,
+  ReviewSettings,
 } from "@/types/database";
 
 /** Utilisateur + profil, mis en cache pour la durée d'une requête. */
@@ -98,4 +101,45 @@ export function computeStats(campaigns: Campaign[]) {
     amountWon: won.reduce((s, c) => s + Number(c.amount), 0),
     followupsSent: campaigns.reduce((s, c) => s + c.followups_sent, 0),
   };
+}
+
+/** Avis Google : réglages, demandes (avec le dossier lié) et journal récent. */
+export async function getReviewData(opts: { eventsLimit?: number } = {}) {
+  const { supabase, user, profile } = await requireUser();
+  const [settings, requests, events] = await Promise.all([
+    supabase.from("review_settings").select("*").eq("user_id", user.id).maybeSingle<ReviewSettings>(),
+    supabase
+      .from("review_requests")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1000)
+      .returns<ReviewRequest[]>(),
+    supabase
+      .from("review_events")
+      .select("id, request_id, type, detail, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(opts.eventsLimit ?? 50)
+      .returns<ReviewEvent[]>(),
+  ]);
+  return {
+    profile,
+    settings: settings.data ?? null,
+    requests: requests.data ?? [],
+    events: events.data ?? [],
+  };
+}
+
+/** Demandes d'avis d'un dossier (la plus récente d'abord). */
+export async function getCampaignReviews(campaignId: string) {
+  const { supabase, user } = await requireUser();
+  const { data } = await supabase
+    .from("review_requests")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("campaign_id", campaignId)
+    .order("created_at", { ascending: false })
+    .returns<ReviewRequest[]>();
+  return data ?? [];
 }

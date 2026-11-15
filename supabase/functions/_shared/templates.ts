@@ -187,3 +187,138 @@ Répondez directement à cet e-mail : votre réponse partira vers ${escapeHtml(o
     text,
   };
 }
+
+// =====================================================================
+// Demande d'avis Google
+// =====================================================================
+
+export type ReviewTemplateKey = "professionnel" | "court" | "chaleureux";
+
+export const REVIEW_TEMPLATES: { key: ReviewTemplateKey; label: string; body: string }[] = [
+  {
+    key: "professionnel",
+    label: "Professionnel",
+    body: `Bonjour,
+
+Nous espérons que notre intervention vous a donné entière satisfaction.
+
+Votre avis compte énormément pour notre entreprise et nous aiderait à continuer à améliorer nos services.
+
+Vous pouvez laisser votre avis en cliquant sur le lien ci-dessous :
+{{google_review_link}}
+
+Merci pour votre confiance.
+
+Cordialement,
+{{company_name}}`,
+  },
+  {
+    key: "court",
+    label: "Court",
+    body: `Bonjour,
+
+Merci pour votre confiance.
+
+Si vous avez été satisfait de notre prestation, un avis Google nous aiderait énormément.
+
+{{google_review_link}}
+
+Merci beaucoup.
+{{company_name}}`,
+  },
+  {
+    key: "chaleureux",
+    label: "Chaleureux",
+    body: `Bonjour,
+
+Ce fut un plaisir de travailler avec vous.
+
+Quelques secondes suffisent pour partager votre expérience et aider d'autres clients à nous faire confiance.
+
+Cliquez simplement ici :
+{{google_review_link}}
+
+Un grand merci pour votre soutien.
+{{company_name}}`,
+  },
+];
+
+export const DEFAULT_REVIEW_SUBJECT = "Votre avis compte pour nous — {{company_name}}";
+export const REVIEW_LINK_TOKEN = "{{google_review_link}}";
+
+export const REVIEW_VARIABLES = [
+  { key: "{{google_review_link}}", label: "Lien vers votre fiche Google (obligatoire)" },
+  { key: "{{company_name}}", label: "Nom de votre entreprise" },
+  { key: "{{client_name}}", label: "Nom du client" },
+] as const;
+
+/** Remplace les variables texte (le lien est traité à part, en bouton). */
+export function fillReviewVariables(text: string, v: { companyName: string; clientName: string }) {
+  return text.replaceAll("{{company_name}}", v.companyName).replaceAll("{{client_name}}", v.clientName);
+}
+
+/** E-mail de demande d'avis : le lien apparaît comme un bouton (et en clair dans la version texte). */
+export function renderReviewEmail(opts: {
+  subject: string;
+  body: string;
+  companyName: string;
+  clientName: string;
+  reviewUrl: string; // lien de suivi (redirige vers Google)
+  unsubscribeUrl?: string;
+}): RenderedEmail {
+  const vars = { companyName: opts.companyName, clientName: opts.clientName };
+  const subject = fillReviewVariables(opts.subject, vars).replace(/[\r\n]+/g, " ").trim().slice(0, 200);
+  const body = fillReviewVariables(opts.body, vars).trim();
+  const href = escapeHtml(opts.reviewUrl);
+  const button = `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px 0 18px 0;"><tr><td style="border-radius:8px;background:#1a73e8;">
+<a href="${href}" style="display:inline-block;padding:12px 22px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">⭐ Laisser un avis Google</a>
+</td></tr></table>`;
+  const inlineLink = `<a href="${href}" style="color:#1a73e8;font-weight:600;">laisser un avis Google</a>`;
+
+  const html = body
+    .split(/\n{2,}/)
+    .map((paragraph) => {
+      const lines = paragraph.split("\n");
+      const out: string[] = [];
+      let buffer: string[] = [];
+      const flush = () => {
+        if (buffer.length) {
+          out.push(
+            `<p style="margin:0 0 14px 0;">${buffer
+              .map((l) => escapeHtml(l).replaceAll(escapeHtml(REVIEW_LINK_TOKEN), inlineLink))
+              .join("<br>")}</p>`,
+          );
+          buffer = [];
+        }
+      };
+      for (const line of lines) {
+        if (line.trim() === REVIEW_LINK_TOKEN) {
+          flush();
+          out.push(button);
+        } else {
+          buffer.push(line);
+        }
+      }
+      flush();
+      return out.join("\n");
+    })
+    .join("\n");
+
+  const footer = `Vous recevez ce message car ${escapeHtml(opts.companyName)} est intervenu pour vous.${
+    opts.unsubscribeUrl
+      ? ` <a href="${escapeHtml(opts.unsubscribeUrl)}" style="color:#a1a1aa;">Ne plus recevoir de demande d'avis</a>.`
+      : ""
+  }`;
+
+  const text = [
+    body.replaceAll(REVIEW_LINK_TOKEN, opts.reviewUrl),
+    "",
+    "—",
+    `Vous recevez ce message car ${opts.companyName} est intervenu pour vous.`,
+    opts.unsubscribeUrl ? `Ne plus recevoir de demande d'avis : ${opts.unsubscribeUrl}` : "",
+  ]
+    .filter((l, i, a) => !(l === "" && i === a.length - 1))
+    .join("\n");
+
+  return { subject, html: layout(html, footer, subject, opts.companyName), text };
+}

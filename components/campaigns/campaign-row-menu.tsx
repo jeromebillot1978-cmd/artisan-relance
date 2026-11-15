@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { CampaignEditDialog } from "@/components/campaigns/campaign-edit-dialog";
+import { RequestReviewDialog } from "@/components/reviews/request-review-dialog";
 
 export type RowAction = "won" | "lost" | "replied" | "complete" | "stop_followups" | "resume_followups";
 
@@ -37,6 +38,8 @@ interface Props {
 export function CampaignRowMenu({ campaign: c, disabled, onAction, onDelete, onEdited }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
+  const canReview = c.status === "won" || c.status === "completed";
   const sent = Boolean(c.initial_sent_at);
   const followupsRunning = c.status === "active" && c.followup_enabled && Boolean(c.next_followup_at);
 
@@ -72,6 +75,11 @@ export function CampaignRowMenu({ campaign: c, disabled, onAction, onDelete, onE
             </DropdownMenuItem>
           ))}
           <DropdownMenuSeparator />
+          <DropdownMenuItem disabled={!canReview} onSelect={() => setReviewing(true)} className="gap-2.5 py-2">
+            <span aria-hidden className="w-5 text-center">⭐</span>
+            Demander un avis Google
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => setEditing(true)} className="gap-2.5 py-2">
             <span aria-hidden className="w-5 text-center">✏️</span>
             Modifier le devis
@@ -84,6 +92,7 @@ export function CampaignRowMenu({ campaign: c, disabled, onAction, onDelete, onE
       </DropdownMenu>
 
       <CampaignEditDialog campaign={c} open={editing} onOpenChange={setEditing} onSaved={onEdited} />
+      <RequestReviewDialog campaign={c} open={reviewing} onOpenChange={setReviewing} />
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
