@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { ArrowRight, CalendarClock, CheckCircle2, Euro, FolderOpen, MessageCircleReply, Plus, Send } from "lucide-react";
 import { computeStats, getCampaigns, requireUser } from "@/lib/data";
 import { formatDateTime } from "@/lib/campaigns/constants";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrencyRounded } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/app/page-header";
@@ -56,7 +56,7 @@ export default async function DashboardPage() {
       )}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <StatCard label="Devis en cours" value={stats.open} hint={formatCurrency(stats.openAmount)} icon={FolderOpen} tone="pending" />
+        <StatCard label="Devis en cours" value={stats.open} hint={formatCurrencyRounded(stats.openAmount)} icon={FolderOpen} tone="pending" />
         <StatCard label="Relances prévues" value={stats.scheduled} hint={`${stats.followupsSent} envoyée(s)`} icon={Send} />
         <StatCard
           label="Taux de réponse"
@@ -71,7 +71,7 @@ export default async function DashboardPage() {
           icon={CheckCircle2}
           tone="signed"
         />
-        <StatCard label="Montant gagné" value={formatCurrency(stats.amountWon)} icon={Euro} tone="brand" />
+        <StatCard label="Montant gagné" value={formatCurrencyRounded(stats.amountWon)} icon={Euro} tone="brand" />
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
@@ -113,7 +113,7 @@ export default async function DashboardPage() {
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <div className="space-y-1">
               <CardTitle className="text-base">Dernières réponses</CardTitle>
-              <CardDescription>Les relances s'arrêtent dès qu'un client répond.</CardDescription>
+              <CardDescription>Pensez à arrêter les relances d'un client qui vous a répondu.</CardDescription>
             </div>
             <Button asChild variant="ghost" size="sm">
               <Link href="/devis?filtre=replied">

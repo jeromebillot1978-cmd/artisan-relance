@@ -208,7 +208,7 @@ export function CampaignForm({ userId, companyName }: { userId: string; companyN
         <Card>
           <CardHeader>
             <CardTitle className="text-base">3. Les relances</CardTitle>
-            <CardDescription>Elles s'arrêtent seules dès que le client répond.</CardDescription>
+            <CardDescription>Le client vous répond directement ; un clic arrête ensuite les relances.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <StrategyFields value={strategy} onChange={setStrategy} startFrom={startFrom} />

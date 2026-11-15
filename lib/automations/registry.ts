@@ -26,7 +26,7 @@ export const AUTOMATIONS: AutomationDefinition[] = [
   {
     key: "quote_follow_up",
     label: "Relance des devis",
-    description: "Envoi du devis avec pièces jointes, puis relances à la fréquence de votre choix, arrêtées dès que le client répond.",
+    description: "Envoi du devis avec pièces jointes, puis relances à la fréquence de votre choix, arrêtées en un clic quand le client répond.",
     channels: ["email"],
     available: true,
   },

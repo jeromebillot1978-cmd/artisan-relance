@@ -111,7 +111,7 @@ export function StrategyFields({
               />
             </div>
             <div className="space-y-2">
-              <Label>Arrêt automatique</Label>
+              <Label>Fin de la campagne</Label>
               <div className="grid grid-cols-3 gap-2">
                 <Choice active={value.endMode === "none"} onClick={() => set({ endMode: "none" })}>Aucun</Choice>
                 <Choice active={value.endMode === "days"} onClick={() => set({ endMode: "days", maxDays: value.maxDays ?? 35 })}>Après…</Choice>
@@ -173,7 +173,7 @@ export function StrategyFields({
               </ol>
             )}
             <p className="mt-2 text-xs text-muted-foreground">
-              Envois du lundi au samedi, entre 8 h et 19 h. Arrêt immédiat si le client répond, ou si vous marquez le dossier gagné ou perdu.
+              Envois du lundi au samedi, entre 8 h et 19 h. Elles s'arrêtent dès que vous marquez le dossier répondu, gagné, perdu ou terminé.
             </p>
           </div>
         </>

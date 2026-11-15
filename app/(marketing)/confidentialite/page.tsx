@@ -1,43 +1,105 @@
-import type { Metadata } from "next";
+import Link from "next/link";
+import { LegalPage } from "@/components/marketing/legal-page";
+import { pageMetadata } from "@/lib/seo";
+import { SITE } from "@/lib/site";
 
-export const metadata: Metadata = { title: "Confidentialité" };
+export const metadata = pageMetadata({
+  title: "Politique de confidentialité (RGPD) — Artisan Relance",
+  description: "Données collectées, finalités, durées de conservation, hébergement en Europe et droits RGPD des utilisateurs d'Artisan Relance et de leurs clients.",
+  path: "/confidentialite",
+});
 
-// ⚠️ Faire relire cette page avant la mise en ligne publique.
-export default function PrivacyPage() {
+export default function ConfidentialitePage() {
+  const mail = <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>;
   return (
-    <article className="container max-w-3xl space-y-6 py-16 text-sm leading-relaxed text-muted-foreground">
-      <h1 className="text-3xl font-semibold tracking-tight text-foreground">Politique de confidentialité</h1>
-      <section className="space-y-2">
-        <h2 className="text-base font-semibold text-foreground">Données collectées</h2>
+    <LegalPage title="Politique de confidentialité">
+      <section>
+        <h2>Qui est responsable de vos données ?</h2>
         <p>
-          Compte : adresse e-mail, nom de l'entreprise et, si renseignés, nom du contact et téléphone.
-          Devis : nom, e-mail et téléphone du client final, montant, date et statut du devis.
+          <strong>Pour les données de votre compte</strong> (artisan utilisateur) et pour les messages envoyés via
+          la page contact, le responsable de traitement est {SITE.editor}, éditeur d'Artisan Relance, joignable à{" "}
+          {mail}.
+        </p>
+        <p>
+          <strong>Pour les données de vos clients</strong> (les personnes à qui vous envoyez vos devis), c'est vous,
+          artisan, qui êtes responsable de traitement. Artisan Relance agit en tant que sous-traitant au sens de
+          l'article 28 du RGPD, uniquement selon vos instructions, dans les conditions prévues par les{" "}
+          <Link href="/cgu">CGU</Link>.
         </p>
       </section>
-      <section className="space-y-2">
-        <h2 className="text-base font-semibold text-foreground">Finalité</h2>
+
+      <section>
+        <h2>Données collectées</h2>
+        <ul>
+          <li>Compte : adresse e-mail, nom de l'entreprise, et si vous les renseignez, nom du contact, téléphone et adresse de réponse.</li>
+          <li>Devis : nom du client, adresses e-mail des destinataires, téléphone (facultatif), montant, référence, notes internes, messages, pièces jointes, dates et statut des envois.</li>
+          <li>Réponses et événements : date d'envoi, de relance, de réponse, de décision (gagné, perdu).</li>
+          <li>Page contact : nom, e-mail, téléphone (facultatif), métier, message.</li>
+          <li>Données techniques : journaux de connexion et d'envoi conservés par nos prestataires pour la sécurité.</li>
+        </ul>
+        <p>Aucune donnée de paiement n'est collectée. Aucune donnée n'est revendue ni utilisée à des fins publicitaires.</p>
+      </section>
+
+      <section>
+        <h2>Finalités et bases légales</h2>
+        <ul>
+          <li>Fournir le service (compte, envoi des devis et des relances, tableau de bord) : exécution du contrat (CGU).</li>
+          <li>Sécurité, prévention des abus et limitation des envois : intérêt légitime.</li>
+          <li>Répondre à une demande de contact ou de démonstration : mesures précontractuelles à votre demande.</li>
+          <li>Vous informer d'un changement important du service ou des tarifs : exécution du contrat.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Durées de conservation</h2>
+        <ul>
+          <li>Compte et devis : tant que le compte est actif ; suppression sous 30 jours après la suppression du compte.</li>
+          <li>Pièces jointes : supprimées automatiquement 12 mois après la clôture du dossier (gagné, perdu, terminé, arrêté ou répondu).</li>
+          <li>Fichiers téléversés mais jamais rattachés à un devis : supprimés après 2 jours.</li>
+          <li>Messages de la page contact : 12 mois après le dernier échange.</li>
+          <li>Vous pouvez supprimer un devis, ses fichiers et son historique à tout moment, et exporter vos données au format CSV.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Destinataires et hébergement</h2>
+        <ul>
+          <li>Supabase : base de données, authentification et stockage des fichiers, hébergés à Zurich (Suisse), pays reconnu par la Commission européenne comme offrant une protection adéquate.</li>
+          <li>Resend : envoi des e-mails, région Irlande (Union européenne).</li>
+          <li>Vercel Inc. : hébergement de l'application, exécution en Europe (Francfort). Les transferts éventuels vers les États-Unis sont encadrés par les clauses contractuelles types de la Commission européenne.</li>
+        </ul>
+        <p>Les données ne sont accessibles qu'à vous et, pour la maintenance et la sécurité, à l'éditeur.</p>
+      </section>
+
+      <section>
+        <h2>Cookies</h2>
         <p>
-          Les données servent uniquement à fournir le service : affichage du tableau de bord et envoi des
-          relances de devis au nom de l'utilisateur. Elles ne sont ni revendues ni utilisées à des fins
-          publicitaires.
+          Le site n'utilise ni cookie publicitaire ni outil de suivi tiers. Seuls des cookies strictement
+          nécessaires sont déposés : la session de connexion à votre compte et la mémorisation du thème clair ou
+          sombre. Ils ne nécessitent pas de consentement.
         </p>
       </section>
-      <section className="space-y-2">
-        <h2 className="text-base font-semibold text-foreground">Rôles</h2>
+
+      <section>
+        <h2>Sécurité</h2>
         <p>
-          Pour les données de ses clients, l'artisan utilisateur est responsable de traitement ; Artisan Relance
-          agit en tant que sous-traitant. Les sous-traitants techniques sont Supabase (base de données), Vercel
-          (hébergement) et Resend (envoi des e-mails).
+          Connexion chiffrée (HTTPS), isolement strict des comptes en base de données, fichiers stockés dans un
+          espace privé accessible par liens temporaires, limitation du nombre d'envois par compte et par jour.
         </p>
       </section>
-      <section className="space-y-2">
-        <h2 className="text-base font-semibold text-foreground">Durée et droits</h2>
+
+      <section>
+        <h2>Vos droits</h2>
         <p>
-          Les données sont conservées tant que le compte est actif. Vous pouvez supprimer vos devis à tout
-          moment et demander la suppression de votre compte ou exercer vos droits (accès, rectification,
-          effacement) à l'adresse : [À COMPLÉTER].
+          Vous disposez des droits d'accès, de rectification, d'effacement, de limitation, d'opposition et de
+          portabilité de vos données. Pour les exercer, écrivez à {mail}. Une réponse vous est apportée sous un
+          mois. Si un de vos clients nous contacte au sujet de ses données, nous vous transmettons sa demande.
+        </p>
+        <p>
+          Vous pouvez introduire une réclamation auprès de la CNIL, 3 place de Fontenoy, TSA 80715, 75334 Paris
+          Cedex 07 — <a href="https://www.cnil.fr">cnil.fr</a>.
         </p>
       </section>
-    </article>
+    </LegalPage>
   );
 }

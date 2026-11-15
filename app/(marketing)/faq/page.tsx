@@ -1,30 +1,39 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { FaqList } from "@/components/marketing/faq-list";
-import { FaqJsonLd } from "@/components/seo/json-ld";
+import { CtaBlock } from "@/components/marketing/cta-block";
+import { BreadcrumbJsonLd, FaqJsonLd } from "@/components/seo/json-ld";
+import { FAQ_ALL, FAQ_GROUPS } from "@/lib/content/faq";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "FAQ",
-  description: "Toutes les réponses sur Artisan Relance : relances, e-mails, données, tarifs.",
-  alternates: { canonical: "/faq" },
-};
+export const metadata = pageMetadata({
+  title: "Relance de devis : 18 questions et réponses | Artisan Relance",
+  description: "Quand relancer un devis, combien de relances, mail de relance, taux de transformation, RGPD : les réponses claires pour les artisans.",
+  path: "/faq",
+});
 
 export default function FaqPage() {
   return (
-    <section className="container max-w-3xl py-16 md:py-24">
-      <FaqJsonLd />
-      <h1 className="text-4xl font-semibold tracking-tight">Questions fréquentes</h1>
-      <p className="mt-3 text-muted-foreground">Tout ce que vous devez savoir avant de commencer.</p>
-      <div className="mt-10">
-        <FaqList />
-      </div>
-      <div className="mt-12 rounded-xl border bg-card p-6 text-center">
-        <p className="font-medium">Une autre question ?</p>
-        <p className="mt-1 text-sm text-muted-foreground">Le plus simple est encore d'essayer : c'est gratuit.</p>
-        <Button asChild variant="brand" className="mt-4">
-          <Link href="/inscription">Créer mon compte</Link>
-        </Button>
+    <section className="container max-w-3xl py-14 md:py-20">
+      <FaqJsonLd items={FAQ_ALL} />
+      <BreadcrumbJsonLd items={[{ name: "Accueil", path: "/" }, { name: "FAQ", path: "/faq" }]} />
+      <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">Relance de devis : vos questions, nos réponses</h1>
+      <p className="mt-3 text-muted-foreground">
+        Délais, nombre de relances, modèles de mail, taux de transformation, RGPD et fonctionnement d'Artisan Relance.
+        Pour aller plus loin, consultez nos <Link href="/guides" className="underline underline-offset-4">guides</Link>.
+      </p>
+      <nav aria-label="Thèmes" className="mt-8 flex flex-wrap gap-2 text-sm">
+        {FAQ_GROUPS.map((g, i) => (
+          <a key={g.title} href={`#theme-${i}`} className="rounded-full border px-3 py-1 hover:bg-muted">{g.title}</a>
+        ))}
+      </nav>
+      {FAQ_GROUPS.map((g, i) => (
+        <div key={g.title} id={`theme-${i}`} className="mt-12 scroll-mt-20">
+          <h2 className="mb-4 text-2xl font-semibold tracking-tight">{g.title}</h2>
+          <FaqList items={g.items} />
+        </div>
+      ))}
+      <div className="mt-16">
+        <CtaBlock title="Une autre question ?" text="Écrivez-nous ou demandez une démonstration de 10 minutes. Ou testez directement : c'est gratuit." />
       </div>
     </section>
   );

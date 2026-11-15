@@ -11,6 +11,13 @@ const currencyFormatter = new Intl.NumberFormat("fr-FR", {
   maximumFractionDigits: 2,
 });
 
+const roundedFormatter = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+
+/** Montant arrondi à l'euro, pour les indicateurs du tableau de bord. */
+export function formatCurrencyRounded(value: number | string | null | undefined) {
+  return roundedFormatter.format(Number(value ?? 0));
+}
+
 export function formatCurrency(value: number | string | null | undefined) {
   return currencyFormatter.format(Number(value ?? 0));
 }

@@ -31,7 +31,7 @@ export function StatCard({
           <Icon className="h-3.5 w-3.5" />
         </span>
       </div>
-      <p className="mt-3 text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">{value}</p>
+      <p className="mt-3 whitespace-nowrap text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl lg:text-2xl xl:text-3xl">{value}</p>
       {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
     </Card>
   );

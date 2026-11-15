@@ -9,17 +9,15 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
   title: {
-    default: "Artisan Relance — Relancez vos devis automatiquement",
+    default: "Logiciel de relance de devis pour artisans | Artisan Relance",
     template: "%s · Artisan Relance",
   },
   description:
     "Artisans : envoyez vos devis et laissez les relances partir toutes seules, au rythme de votre choix. Plus de devis signés, zéro temps passé.",
   applicationName: "Artisan Relance",
-  alternates: { canonical: "/" },
   openGraph: {
-    title: "Artisan Relance",
-    description: "Relancez automatiquement vos devis et signez plus de chantiers.",
-    url: "/",
+    title: "Artisan Relance — logiciel de relance de devis pour artisans",
+    description: "Envoyez vos devis et laissez les relances partir toutes seules, à votre nom. Gratuit pendant le lancement.",
     siteName: "Artisan Relance",
     locale: "fr_FR",
     type: "website",

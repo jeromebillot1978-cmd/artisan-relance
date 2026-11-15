@@ -1,15 +1,24 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { pageMetadata } from "@/lib/seo";
+import { SITE } from "@/lib/site";
+import { FaqList } from "@/components/marketing/faq-list";
+import { FaqJsonLd } from "@/components/seo/json-ld";
 
-export const metadata: Metadata = {
-  title: "Tarifs",
-  description: "Artisan Relance est gratuit pendant la phase de lancement.",
-  alternates: { canonical: "/tarifs" },
-};
+export const metadata = pageMetadata({
+  title: "Prix du logiciel de relance de devis : gratuit | Artisan Relance",
+  description: "Artisan Relance est gratuit pendant le lancement : devis illimités, relances automatiques, tableau de bord. Sans carte bancaire, sans engagement.",
+  path: "/tarifs",
+});
+
+const PRICING_FAQ = [
+  { q: "Artisan Relance est-il vraiment gratuit ?", a: "Oui. Pendant la phase de lancement, toutes les fonctionnalités sont gratuites, sans carte bancaire et sans limite de nombre de devis. Seul le nombre d'e-mails envoyés par jour est plafonné (30 par compte) pour éviter les abus." },
+  { q: "Que se passera-t-il à la fin du lancement ?", a: "Une offre payante sera proposée. Vous serez prévenu par e-mail au moins 30 jours avant tout changement, avec la possibilité d'exporter vos devis en CSV ou de supprimer votre compte sans frais." },
+  { q: "Faut-il un logiciel de devis en plus ?", a: "Oui, Artisan Relance ne crée pas les devis : vous gardez votre outil habituel et vous joignez le PDF. Il s'occupe uniquement de l'envoi et des relances." },
+];
 
 const plans = [
   {
@@ -21,12 +30,13 @@ const plans = [
       "Devis illimités",
       "Envoi du devis avec pièces jointes (PDF)",
       "Relances automatiques à la fréquence de votre choix",
-      "Arrêt automatique dès que le client répond",
+      "Arrêt des relances en un clic (répondu, gagné, perdu)",
       "Tableau de bord et taux de conversion",
-      "E-mails à votre nom, réponses dans votre boîte",
-      "Application mobile-first, mode sombre",
+      "E-mails à votre nom, réponses dans votre boîte mail",
+      "Application utilisable sur téléphone, mode sombre",
+      "Export CSV de vos devis et de leur historique",
     ],
-    cta: { label: "Créer mon compte", href: "/inscription" },
+    cta: { label: SITE.cta, href: SITE.ctaHref },
     highlighted: true,
     available: true,
   },
@@ -52,9 +62,11 @@ export default function PricingPage() {
   return (
     <section className="container py-16 md:py-24">
       <div className="mx-auto max-w-2xl text-center">
-        <h1 className="text-4xl font-semibold tracking-tight">Des tarifs simples</h1>
+        <FaqJsonLd items={PRICING_FAQ} />
+        <h1 className="text-4xl font-semibold tracking-tight">Tarifs Artisan Relance : 0 € pendant le lancement</h1>
         <p className="mt-3 text-muted-foreground">
-          Artisan Relance est gratuit pendant la phase de lancement. Aucun paiement, aucun engagement.
+          Le logiciel de relance de devis est gratuit pendant la phase de lancement : devis illimités, relances
+          automatiques et tableau de bord. Aucune carte bancaire, aucun engagement.
         </p>
       </div>
 
@@ -98,9 +110,15 @@ export default function PricingPage() {
       </div>
 
       <p className="mx-auto mt-10 max-w-xl text-center text-sm text-muted-foreground">
-        Les utilisateurs inscrits pendant le lancement seront prévenus à l'avance de toute évolution tarifaire
-        et pourront supprimer leur compte à tout moment.
+        Les utilisateurs inscrits pendant le lancement seront prévenus au moins 30 jours avant toute évolution
+        tarifaire et pourront exporter leurs données ou supprimer leur compte à tout moment.{" "}
+        <Link href={SITE.demoHref} className="underline underline-offset-4">Une question ? Demandez une démonstration.</Link>
       </p>
+
+      <div className="mx-auto mt-14 max-w-3xl">
+        <h2 className="mb-5 text-2xl font-semibold tracking-tight">Questions sur les tarifs</h2>
+        <FaqList items={PRICING_FAQ} />
+      </div>
     </section>
   );
 }
