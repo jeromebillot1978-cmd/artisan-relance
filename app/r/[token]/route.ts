@@ -8,7 +8,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { token } = await params;
   if (!TOKEN_RE.test(token)) return invalid();
 
-  const count = !isAutomated(request.headers.get("user-agent"));
+  // Les requêtes HEAD (vérification de lien par une messagerie) ne comptent pas.
+  const count = request.method === "GET" && !isAutomated(request.headers.get("user-agent"));
   const { data: url, error } = await publicClient().rpc("register_review_click", { p_token: token, p_count: count });
   if (error) console.error("register_review_click", error.message);
   if (!url || typeof url !== "string") return invalid();
