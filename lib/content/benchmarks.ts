@@ -9,7 +9,7 @@
 
 export const BENCH_DATE = "15 novembre 2026";
 export const BENCH_METHOD =
-  "Lighthouse 12.8, profil mobile (Moto G Power, 4G lente simulée), page d'accueil, une mesure par site le même jour";
+  "Lighthouse 12.8, profil mobile (Moto G Power, 4G lente simulée), page d'accueil en production, médiane de 3 mesures par site le même jour";
 
 export interface SpeedRow {
   slug: string;
@@ -24,11 +24,11 @@ export interface SpeedRow {
 }
 
 export const SPEED: SpeedRow[] = [
-  { slug: "artisan-relance", name: "Artisan Relance", kb: 424, fcp: 1.0, lcp: 2.6, self: true },
-  { slug: "obat", name: "Obat", kb: 2974, fcp: 2.7, lcp: 3.3 },
-  { slug: "abby", name: "Abby", kb: 842, fcp: 2.7, lcp: 4.7 },
-  { slug: "batappli", name: "Batappli", kb: 3256, fcp: 5.8, lcp: 8.5 },
-  { slug: "tolteck", name: "Tolteck", kb: 2507, fcp: 2.3, lcp: 9.6 },
+  { slug: "artisan-relance", name: "Artisan Relance", kb: 333, fcp: 0.9, lcp: 1.8, self: true },
+  { slug: "obat", name: "Obat", kb: 2974, fcp: 4.3, lcp: 5.4 },
+  { slug: "abby", name: "Abby", kb: 841, fcp: 2.8, lcp: 4.6 },
+  { slug: "batappli", name: "Batappli", kb: 2844, fcp: 5.5, lcp: 5.5 },
+  { slug: "tolteck", name: "Tolteck", kb: 2507, fcp: 2.4, lcp: 9.2 },
 ];
 
 export function speedSelf() {

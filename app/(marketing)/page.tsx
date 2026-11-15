@@ -223,7 +223,8 @@ export default function HomePage() {
             <h2 className="mt-2 text-3xl font-semibold tracking-tight">Conçu pour s'ouvrir vite, même en 4G sur un chantier</h2>
             <p className="mt-3 text-muted-foreground">
               Un logiciel complet charge des centaines de fonctions dont vous n'avez pas besoin pour relancer un devis.
-              Artisan Relance n'en garde que l'essentiel : la page s'affiche avant que vous ayez rangé votre téléphone.
+              Artisan Relance n'en garde que l'essentiel : la page commence à s'afficher en moins d'une seconde, même en
+              4G. Pas d'attente, pas d'écran blanc, vos relances tout de suite.
             </p>
             <dl className="mt-8 grid grid-cols-3 gap-3">
               <div className="rounded-lg border bg-card p-4">

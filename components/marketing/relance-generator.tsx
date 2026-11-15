@@ -37,7 +37,7 @@ export function RelanceGenerator({ works, metier }: { works: string[]; metier: s
   }
 
   const seg = (active: boolean) =>
-    cn("flex-1 rounded-md px-3 py-2 text-sm transition-colors", active ? "bg-background font-medium shadow-sm" : "text-muted-foreground");
+    cn("flex-1 rounded-md px-3 py-2 text-sm transition-colors", active ? "bg-background font-medium shadow-sm" : "text-foreground");
 
   return (
     <div className="rounded-xl border bg-card">
