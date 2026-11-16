@@ -4,6 +4,7 @@ import { VercelAnalytics } from "@/components/stats/vercel-analytics";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SiteVisitTracker } from "@/components/stats/site-visit-tracker";
 import { siteUrl } from "@/lib/utils";
+import { OG_IMAGE } from "@/lib/seo";
 import "./globals.css";
 
 // Geist en « optional » : si la police n'est pas là tout de suite (4G lente), le texte reste
@@ -32,8 +33,15 @@ export const metadata: Metadata = {
     siteName: "Artisan Relance",
     locale: "fr_FR",
     type: "website",
+    url: "/",
+    images: [OG_IMAGE],
   },
-  twitter: { card: "summary_large_image" },
+  twitter: {
+    card: "summary_large_image",
+    title: "Artisan Relance — logiciel de relance de devis pour artisans",
+    description: "Envoyez vos devis et laissez les relances partir toutes seules, à votre nom. Gratuit pendant le lancement.",
+    images: [{ url: OG_IMAGE.url, alt: OG_IMAGE.alt, width: OG_IMAGE.width, height: OG_IMAGE.height }],
+  },
 };
 
 export const viewport: Viewport = {
