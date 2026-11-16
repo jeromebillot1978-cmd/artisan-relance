@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FormMessage } from "@/components/field-error";
-import { RecipientsInput } from "@/components/campaigns/recipients-input";
+import { RecipientsInput, parseRecipients } from "@/components/campaigns/recipients-input";
 import { FileUploader, type UploadedFile } from "@/components/campaigns/file-uploader";
 import { DEFAULT_STRATEGY, StrategyFields } from "@/components/campaigns/strategy-fields";
 import { cn } from "@/lib/utils";
@@ -29,6 +29,15 @@ function nowLocalInput() {
   return d.toISOString().slice(0, 16);
 }
 
+/** « 2 500,00 € », « 2.500,50 », « 2500.5 » → nombre ; 0 si illisible. */
+function parseAmount(raw: string) {
+  let v = raw.replace(/[^\d,.-]/g, "");
+  if (v.includes(",") && v.includes(".")) v = v.lastIndexOf(",") > v.lastIndexOf(".") ? v.replace(/\./g, "").replace(",", ".") : v.replace(/,/g, "");
+  else v = v.replace(",", ".");
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? Math.min(n, 10_000_000) : 0;
+}
+
 export function CampaignForm({ userId, companyName }: { userId: string; companyName: string }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -37,6 +46,16 @@ export function CampaignForm({ userId, companyName }: { userId: string; companyN
 
   const [prospectName, setProspectName] = useState("");
   const [recipients, setRecipients] = useState<string[]>([]);
+  // Adresse saisie mais pas encore validée (Entrée/virgule) : prise en compte à l'envoi.
+  // Lue via une référence pour éviter l'état périmé quand on clique « Envoyer » juste après la saisie.
+  const recipientDraft = useRef("");
+  // Copie synchrone de la liste : la validation au « blur » (clic sur Envoyer) arrive dans le même
+  // geste que le clic, avant que React n'ait rafraîchi l'état.
+  const recipientsRef = useRef<string[]>([]);
+  const updateRecipients = (list: string[]) => {
+    recipientsRef.current = list;
+    setRecipients(list);
+  };
   const [reference, setReference] = useState("");
   const [amount, setAmount] = useState("");
   const [clientPhone, setClientPhone] = useState("");
@@ -64,14 +83,20 @@ export function CampaignForm({ userId, companyName }: { userId: string; companyN
 
   function submit() {
     setErrors({});
+    const pending = parseRecipients(recipientDraft.current);
+    const allRecipients = Array.from(new Set([...recipientsRef.current, ...pending]));
+    if (pending.length) {
+      updateRecipients(allRecipients);
+      recipientDraft.current = "";
+    }
     startTransition(async () => {
       const res = await createCampaign({
         expectedUserId: userId,
         idempotencyKey,
         prospectName,
-        recipients,
+        recipients: allRecipients,
         reference,
-        amount: Number(amount.replace(/\s/g, "").replace(",", ".")) || 0,
+        amount: parseAmount(amount),
         clientPhone,
         notes,
         subject,
@@ -110,31 +135,36 @@ export function CampaignForm({ userId, companyName }: { userId: string; companyN
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="prospectName">Nom du client *</Label>
-              <Input id="prospectName" value={prospectName} onChange={(e) => setProspectName(e.target.value)} placeholder="M. et Mme Dupont" />
+              <Input id="prospectName" name="prospectName" autoComplete="name" value={prospectName} onChange={(e) => setProspectName(e.target.value)} placeholder="M. et Mme Dupont" />
               {fieldError("prospectName") && <p className="text-xs text-destructive">{fieldError("prospectName")}</p>}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="recipients">Destinataire(s) *</Label>
-              <RecipientsInput id="recipients" value={recipients} onChange={setRecipients} />
+              <RecipientsInput
+                id="recipients"
+                value={recipients}
+                onChange={updateRecipients}
+                onDraftChange={(d) => (recipientDraft.current = d)}
+              />
               {fieldError("recipients") && <p className="text-xs text-destructive">{fieldError("recipients")}</p>}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="reference">N° de devis</Label>
-                <Input id="reference" value={reference} onChange={(e) => onReferenceChange(e.target.value)} placeholder="D-2026-001" />
+                <Input id="reference" name="reference" autoComplete="off" value={reference} onChange={(e) => onReferenceChange(e.target.value)} placeholder="D-2026-001" />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="amount">Montant TTC (€)</Label>
-                <Input id="amount" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="2 500" />
+                <Input id="amount" name="amount" autoComplete="off" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="2 500" />
               </div>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="clientPhone">Téléphone du client</Label>
-              <Input id="clientPhone" type="tel" inputMode="tel" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} placeholder="06 12 34 56 78" />
+              <Input id="clientPhone" name="clientPhone" type="tel" inputMode="tel" autoComplete="tel" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} placeholder="06 12 34 56 78" />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="notes">Notes internes</Label>
-              <Textarea id="notes" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Visible uniquement par vous" />
+              <Textarea id="notes" autoComplete="off" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Visible uniquement par vous" />
             </div>
           </CardContent>
         </Card>
@@ -176,6 +206,7 @@ export function CampaignForm({ userId, companyName }: { userId: string; companyN
               <Label htmlFor="subject">{sendInitial ? "Objet *" : "Objet du devis envoyé *"}</Label>
               <Input
                 id="subject"
+                autoComplete="off"
                 value={subject}
                 onChange={(e) => {
                   setSubject(e.target.value);
@@ -197,9 +228,15 @@ export function CampaignForm({ userId, companyName }: { userId: string; companyN
             )}
 
             <div className="grid gap-2">
-              <Label>Pièces jointes{sendInitial ? " *" : ""}</Label>
+              <Label>Pièces jointes{sendInitial ? " (conseillé)" : ""}</Label>
               <FileUploader folder={`${userId}/${idempotencyKey}`} files={files} onChange={setFiles} />
               {fieldError("attachments") && <p className="text-xs text-destructive">{fieldError("attachments")}</p>}
+              {sendInitial && !files.some((f) => f.status === "done") && !uploading && (
+                <p className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-foreground">
+                  Aucune pièce jointe : le message partira sans devis joint.
+                  {/ci-joint/i.test(message) ? " Pensez à retirer « ci-joint » du message ci-dessus." : ""}
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -244,7 +281,7 @@ export function CampaignForm({ userId, companyName }: { userId: string; companyN
         <p className="text-center text-xs text-muted-foreground">
           {sendInitial
             ? "La date et l'heure d'envoi sont enregistrées automatiquement. Vous recevez une copie du message."
-            : "Les relances seront calculées à partir de la date indiquée."}
+            : "Aucun e-mail ne part maintenant : seules les relances seront envoyées, à partir de la date indiquée."}
         </p>
       </div>
     </form>

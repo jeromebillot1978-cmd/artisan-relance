@@ -8,20 +8,32 @@ import { emailIssue } from "@/lib/email-check";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
+/** Adresses valides contenues dans une saisie libre (séparateurs : espace, virgule, point-virgule). */
+export function parseRecipients(raw: string) {
+  return raw.split(/[\s,;]+/).map((p) => p.trim().toLowerCase()).filter(Boolean);
+}
+
 export function RecipientsInput({
   value,
   onChange,
   id,
+  onDraftChange,
 }: {
   value: string[];
   onChange: (list: string[]) => void;
   id?: string;
+  /** Saisie en cours non encore validée (remplissage automatique, suggestion du clavier…). */
+  onDraftChange?: (draft: string) => void;
 }) {
-  const [draft, setDraft] = useState("");
+  const [draft, setDraftState] = useState("");
+  const setDraft = (next: string) => {
+    setDraftState(next);
+    onDraftChange?.(next);
+  };
   const [error, setError] = useState<string | null>(null);
 
   function commit(raw: string) {
-    const parts = raw.split(/[\s,;]+/).map((p) => p.trim().toLowerCase()).filter(Boolean);
+    const parts = parseRecipients(raw);
     if (!parts.length) return true;
     const invalid = parts.find((p) => !EMAIL_RE.test(p));
     if (invalid) {
@@ -70,10 +82,22 @@ export function RecipientsInput({
         id={id}
         type="email"
         inputMode="email"
-        autoComplete="off"
+        autoComplete="email"
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
         placeholder={value.length ? "Ajouter un autre destinataire…" : "client@email.fr"}
         value={draft}
-        onChange={(e) => setDraft(e.target.value)}
+        onChange={(e) => {
+          const next = e.target.value;
+          // Suggestion du clavier mobile ou remplissage automatique : l'adresse arrive d'un bloc,
+          // souvent suivie d'un espace ou d'une virgule, sans événement clavier → on valide tout de suite.
+          if (/[\s,;]$/.test(next) && next.trim()) {
+            if (!commit(next)) setDraft(next);
+            return;
+          }
+          setDraft(next);
+        }}
         onKeyDown={(e) => {
           if (["Enter", ",", ";", " "].includes(e.key)) {
             e.preventDefault();

@@ -53,9 +53,7 @@ export const campaignSchema = z
     strategy: strategySchema,
   })
   .superRefine((v, ctx) => {
-    if (v.sendInitial && v.attachments.length === 0) {
-      ctx.addIssue({ code: "custom", path: ["attachments"], message: "Joignez votre devis (PDF) avant l'envoi." });
-    }
+    // Pièce jointe facultative : un devis peut aussi être envoyé dans le corps du message.
     if (!v.sendInitial && !v.initialSentAt) {
       ctx.addIssue({ code: "custom", path: ["initialSentAt"], message: "Indiquez quand le devis a été envoyé." });
     }
