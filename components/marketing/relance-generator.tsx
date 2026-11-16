@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Check, Copy } from "lucide-react";
 import { generateRelance, type GenChannel, type GenTone } from "@/lib/content/generator";
@@ -10,14 +10,15 @@ const field = "h-10 w-full rounded-md border border-input bg-background px-3 tex
 
 /** Générateur de relance intégré aux pages métiers : tout se passe dans le navigateur. */
 export function RelanceGenerator({ works, metier }: { works: string[]; metier: string }) {
-  const fiveDaysAgo = useMemo(() => {
-    const d = new Date(Date.now() - 5 * 86_400_000);
-    return d.toISOString().slice(0, 10);
-  }, []);
   const [client, setClient] = useState("Madame Martin");
   const [entreprise, setEntreprise] = useState("");
   const [travaux, setTravaux] = useState(works[0] ?? "vos travaux");
-  const [dateDevis, setDateDevis] = useState(fiveDaysAgo);
+  // Date calculée dans le navigateur seulement : le HTML serveur (généré au déploiement)
+  // et le navigateur affichent ainsi le même texte au départ (pas d'erreur d'hydratation).
+  const [dateDevis, setDateDevis] = useState("");
+  useEffect(() => {
+    setDateDevis(new Date(Date.now() - 5 * 86_400_000).toISOString().slice(0, 10));
+  }, []);
   const [numero, setNumero] = useState<1 | 2 | 3>(1);
   const [canal, setCanal] = useState<GenChannel>("email");
   const [ton, setTon] = useState<GenTone>("cordial");

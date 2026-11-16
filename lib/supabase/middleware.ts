@@ -38,7 +38,10 @@ export async function updateSession(request: NextRequest) {
     url.pathname = "/connexion";
     url.search = "";
     url.searchParams.set("next", `${pathname}${search}`);
-    return redirectWithCookies(url, response);
+    const redirect = redirectWithCookies(url, response);
+    // Une page privée redirigée ne doit jamais être indexée, même trouvée par un lien externe
+    redirect.headers.set("X-Robots-Tag", "noindex, nofollow");
+    return redirect;
   }
 
   if (user && isAuthPage) {
@@ -48,6 +51,7 @@ export async function updateSession(request: NextRequest) {
     return redirectWithCookies(url, response);
   }
 
+  if (isProtected) response.headers.set("X-Robots-Tag", "noindex, nofollow");
   return response;
 }
 
