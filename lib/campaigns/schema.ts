@@ -1,7 +1,16 @@
 import { z } from "zod";
 import { ATTACHMENT_RULES, MAX_RECIPIENTS } from "@/lib/campaigns/constants";
+import { emailIssue } from "@/lib/email-check";
 
-const email = z.string().trim().toLowerCase().email("Adresse e-mail invalide.");
+const email = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .email("Adresse e-mail invalide.")
+  .superRefine((value, ctx) => {
+    const issue = emailIssue(value);
+    if (issue) ctx.addIssue({ code: "custom", message: issue });
+  });
 
 export const strategySchema = z
   .object({
@@ -21,6 +30,8 @@ export const strategySchema = z
 export const campaignSchema = z
   .object({
     idempotencyKey: z.string().uuid(),
+    // compte affiché dans le formulaire : refus si la session a changé entre-temps (autre onglet)
+    expectedUserId: z.string().uuid().optional(),
     prospectName: z.string().trim().min(2, "Nom du client requis.").max(120),
     recipients: z
       .array(email)

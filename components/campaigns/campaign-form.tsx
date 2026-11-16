@@ -66,6 +66,7 @@ export function CampaignForm({ userId, companyName }: { userId: string; companyN
     setErrors({});
     startTransition(async () => {
       const res = await createCampaign({
+        expectedUserId: userId,
         idempotencyKey,
         prospectName,
         recipients,

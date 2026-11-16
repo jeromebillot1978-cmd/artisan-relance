@@ -1,13 +1,23 @@
 "use server";
 
 import { z } from "zod";
+import { emailIssue } from "@/lib/email-check";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SITE } from "@/lib/site";
 
 const schema = z.object({
   kind: z.enum(["question", "demo"]),
   name: z.string().trim().min(2, "Indiquez votre nom.").max(120),
-  email: z.string().trim().toLowerCase().email("Adresse e-mail invalide.").max(200),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email("Adresse e-mail invalide.")
+    .max(200)
+    .superRefine((value, ctx) => {
+      const issue = emailIssue(value);
+      if (issue) ctx.addIssue({ code: "custom", message: issue });
+    }),
   phone: z.string().trim().max(30).optional().default(""),
   trade: z.string().trim().max(80).optional().default(""),
   message: z.string().trim().min(5, "Votre message est trop court.").max(4000),

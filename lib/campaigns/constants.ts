@@ -71,6 +71,9 @@ export function statusDisplay(
   if (c.status === "draft" && c.initial_send_status === "failed") return { label: "Échec d'envoi", tone: "lost" };
   if (c.status === "active" && !c.next_followup_at) return { label: "En attente", tone: "neutral" };
   if (c.status === "paused" && c.pause_reason === "send_failed") return { label: "Suspendu (échec)", tone: "lost" };
+  if (c.status === "paused" && c.pause_reason === "bounce") return { label: "Adresse invalide", tone: "lost" };
+  if (c.status === "stopped" && c.pause_reason === "opt_out") return { label: "Désinscrit (STOP)", tone: "neutral" };
+  if (c.status === "stopped" && c.pause_reason === "complaint") return { label: "Signalé comme spam", tone: "lost" };
   return map[c.status];
 }
 
@@ -86,6 +89,14 @@ export const EVENT_LABELS: Record<string, string> = {
   followup_sent: "Relance envoyée",
   followup_failed: "Échec d'une relance",
   reply_received: "Réponse reçue du client",
+  auto_reply_received: "Réponse automatique reçue (relances maintenues)",
+  opt_out: "Le client a demandé l'arrêt (STOP)",
+  artisan_copy_reply: "Réponse à votre propre copie (non envoyée au client)",
+  suspicious_reply: "Message non authentifié reçu (relances maintenues)",
+  delivery_bounced: "Adresse e-mail invalide : relances suspendues",
+  delivery_suppressed: "Adresse bloquée : relances suspendues",
+  delivery_failed: "Échec de distribution : relances suspendues",
+  delivery_complained: "Signalé comme indésirable : devis arrêté",
   completed: "Campagne terminée",
   complete: "Marqué terminé",
   stop_followups: "Relances arrêtées",

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getUser } from "@/lib/supabase/server";
 import { requestInitialSend } from "@/lib/mailer";
+import { emailIssue } from "@/lib/email-check";
 import { ATTACHMENT_RULES } from "@/lib/campaigns/constants";
 import { campaignSchema, strategySchema, type CampaignInput, type StrategyFormInput } from "@/lib/campaigns/schema";
 import type { CampaignListItem } from "@/types/database";
@@ -24,7 +25,7 @@ function revalidateAll(id?: string) {
 }
 
 function dbMessage(message?: string) {
-  if (message && /Limite|invalide|futur|introuvable|clôturée|suspendue|pas encore|Aucun envoi|maximum|déjà|requis/i.test(message)) {
+  if (message && /Relances impossibles|adresse technique|Limite|invalide|futur|introuvable|clôturée|suspendue|pas encore|Aucun envoi|maximum|déjà|requis/i.test(message)) {
     return message.replace(/^.*?: /, "");
   }
   return "Une erreur est survenue. Réessayez.";
@@ -40,6 +41,9 @@ export async function createCampaign(input: CampaignInput): Promise<CampaignActi
     return { error: flat.formErrors[0] ?? "Vérifiez les champs.", fieldErrors: flat.fieldErrors };
   }
   const v = parsed.data;
+  if (v.expectedUserId && v.expectedUserId !== user.id) {
+    return { error: "Vous avez changé de compte dans un autre onglet. Rechargez la page avant d'envoyer ce devis." };
+  }
 
   // Double clic / double soumission : on renvoie la campagne déjà créée
   const { data: existing } = await supabase
@@ -207,7 +211,20 @@ async function freshCampaign(supabase: Awaited<ReturnType<typeof getUser>>["supa
 
 const detailsSchema = z.object({
   prospectName: z.string().trim().min(2, "Nom du client requis.").max(120),
-  recipients: z.array(z.string().trim().toLowerCase().email("Adresse e-mail invalide.")).min(1, "Au moins un destinataire.").max(5),
+  recipients: z
+    .array(
+      z
+        .string()
+        .trim()
+        .toLowerCase()
+        .email("Adresse e-mail invalide.")
+        .superRefine((value, ctx) => {
+          const issue = emailIssue(value);
+          if (issue) ctx.addIssue({ code: "custom", message: issue });
+        }),
+    )
+    .min(1, "Au moins un destinataire.")
+    .max(5),
   reference: z.string().trim().max(50),
   amount: z.number().min(0).max(10_000_000),
   clientPhone: z.string().trim().max(30),

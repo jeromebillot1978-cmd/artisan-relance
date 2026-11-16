@@ -59,6 +59,20 @@ export interface ReceivedEmail {
   subject: string | null;
   text: string | null;
   html: string | null;
+  headers?: Record<string, unknown> | null;
+  authentication?: { spf?: unknown; dkim?: unknown; dmarc?: unknown } | null;
+  message_id?: string | null;
+}
+
+/** Message-ID réel d'un e-mail envoyé (pour relier les relances au devis d'origine). */
+export async function getSentMessageId(id: string): Promise<string | null> {
+  const res = await fetch(`${API}/emails/${encodeURIComponent(id)}`, {
+    headers: { Authorization: `Bearer ${receivingKey()}` },
+  });
+  if (!res.ok) return null;
+  const body = await res.json().catch(() => ({}));
+  const value = typeof body?.message_id === "string" ? body.message_id.trim() : "";
+  return /^<[^<>\s]+@[^<>\s]+>$/.test(value) ? value : null;
 }
 
 export async function getReceivedEmail(id: string): Promise<ReceivedEmail> {

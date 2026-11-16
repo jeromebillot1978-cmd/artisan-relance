@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { MAX_RECIPIENTS } from "@/lib/campaigns/constants";
+import { emailIssue } from "@/lib/email-check";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -26,6 +27,14 @@ export function RecipientsInput({
     if (invalid) {
       setError(`Adresse invalide : ${invalid}`);
       return false;
+    }
+    // faute de frappe dans le domaine (gmail.con…) ou adresse technique : bloqué avant l'envoi
+    for (const p of parts) {
+      const issue = emailIssue(p);
+      if (issue) {
+        setError(issue);
+        return false;
+      }
     }
     const next = Array.from(new Set([...value, ...parts]));
     if (next.length > MAX_RECIPIENTS) {

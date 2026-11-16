@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { z } from "zod";
+import { emailIssue } from "@/lib/email-check";
 import { getUser } from "@/lib/supabase/server";
 import type { ActionState } from "@/lib/actions/types";
 import { notifyProfileCompleted } from "@/lib/notify-admin";
@@ -25,7 +26,16 @@ const profileSchema = z.object({
     .toLowerCase()
     .optional()
     .transform((v) => v || null)
-    .pipe(z.string().email("E-mail invalide.").nullable()),
+    .pipe(
+      z
+        .string()
+        .email("E-mail invalide.")
+        .superRefine((value, ctx) => {
+          const issue = emailIssue(value);
+          if (issue) ctx.addIssue({ code: "custom", message: issue });
+        })
+        .nullable(),
+    ),
 });
 
 export async function updateProfile(_: ActionState, formData: FormData): Promise<ActionState> {

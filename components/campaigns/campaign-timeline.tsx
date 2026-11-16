@@ -6,7 +6,10 @@ import { cn } from "@/lib/utils";
 function iconFor(type: string) {
   if (type === "initial_sent") return { Icon: Send, tone: "text-brand" };
   if (type === "followup_sent") return { Icon: Mail, tone: "text-foreground" };
-  if (type.endsWith("_failed")) return { Icon: AlertTriangle, tone: "text-destructive" };
+  if (type.endsWith("_failed") || type.startsWith("delivery_") || type === "suspicious_reply")
+    return { Icon: AlertTriangle, tone: "text-destructive" };
+  if (type === "auto_reply_received" || type === "artisan_copy_reply" || type === "opt_out")
+    return { Icon: MessageCircleReply, tone: "text-muted-foreground" };
   if (type === "reply_received" || type === "replied") return { Icon: MessageCircleReply, tone: "text-sky-500" };
   if (type === "won") return { Icon: CheckCircle2, tone: "text-success" };
   if (type === "strategy_updated") return { Icon: Settings2, tone: "text-muted-foreground" };
@@ -23,7 +26,18 @@ function describe(e: CampaignEvent) {
     case "followup_failed":
       return `Tentative ${d.attempt}/3${d.final ? " — abandon" : ", nouvel essai automatique"} · ${String(d.error ?? "")}`;
     case "reply_received":
-      return `De ${String(d.from ?? "")}${d.subject ? ` — « ${String(d.subject)} »` : ""}`;
+    case "auto_reply_received":
+    case "opt_out":
+    case "artisan_copy_reply":
+    case "suspicious_reply":
+      return `De ${String(d.from ?? "")}${d.subject ? ` — « ${String(d.subject)} »` : ""}${
+        d.unexpected_sender ? " · expéditeur différent de l'adresse du devis" : ""
+      }`;
+    case "delivery_bounced":
+    case "delivery_suppressed":
+    case "delivery_failed":
+    case "delivery_complained":
+      return Array.isArray(d.recipients) ? `Adresse : ${(d.recipients as string[]).join(", ")}` : null;
     case "completed":
       return d.reason === "max_followups" ? "Nombre maximum de relances atteint" : "Durée maximale atteinte";
     case "strategy_updated":

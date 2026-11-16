@@ -16,7 +16,7 @@
 // campagne/numéro) + clé d'idempotence Resend par envoi.
 // =====================================================================
 import { admin, json, log } from "../_shared/admin.ts";
-import { senderName, sendEmail, type OutgoingAttachment } from "../_shared/resend.ts";
+import { getSentMessageId, senderName, sendEmail, type OutgoingAttachment } from "../_shared/resend.ts";
 import { fillVariables, followupSubject, renderProspectEmail, renderReviewEmail } from "../_shared/templates.ts";
 
 const CRON_SECRET = Deno.env.get("CRON_SECRET") ?? "";
@@ -72,6 +72,34 @@ async function attachmentsFor(job: Job): Promise<{ files: OutgoingAttachment[]; 
   return { files, names: files.map((f) => f.filename) };
 }
 
+/**
+ * En-têtes de fil de discussion : chaque relance « répond » au devis initial,
+ * pour qu'Outlook, Apple Mail et Gmail l'affichent dans la même conversation.
+ * Le Message-ID réel est lu une fois chez Resend puis mémorisé.
+ */
+async function threadHeaders(job: Job): Promise<Record<string, string>> {
+  if (job.kind !== "followup") return {};
+  try {
+    const { data } = await admin
+      .from("campaign_sends")
+      .select("id, provider_id, message_id")
+      .eq("campaign_id", job.campaign_id)
+      .eq("sequence", 0)
+      .eq("status", "sent")
+      .maybeSingle();
+    if (!data?.provider_id) return {};
+    let messageId = data.message_id as string | null;
+    if (!messageId) {
+      messageId = await getSentMessageId(data.provider_id);
+      if (messageId) await admin.from("campaign_sends").update({ message_id: messageId }).eq("id", data.id);
+    }
+    return messageId ? { "In-Reply-To": messageId, References: messageId } : {};
+  } catch (e) {
+    log("thread_headers_failed", { campaign_id: job.campaign_id, error: e instanceof Error ? e.message : String(e) });
+    return {}; // jamais bloquant : l'objet « Re: » regroupe déjà la conversation dans Gmail
+  }
+}
+
 async function deliver(job: Job): Promise<string> {
   if (!FROM_EMAIL) throw new Error("RESEND_FROM_EMAIL manquant");
   const artisanEmail = job.reply_to_email || job.user_email;
@@ -85,10 +113,12 @@ async function deliver(job: Job): Promise<string> {
     montant: job.amount,
     numeroRelance: job.kind === "followup" ? job.sequence : null,
   };
-  const subject =
-    job.kind === "initial" ? fillVariables(job.subject, vars) : followupSubject(fillVariables(job.subject, vars));
+  // objet sur une seule ligne (aucun saut de ligne venant d'un champ saisi)
+  const oneLine = fillVariables(job.subject, vars).replace(/[\r\n]+/g, " ").trim();
+  const subject = job.kind === "initial" ? oneLine : followupSubject(oneLine);
   const body = fillVariables(job.kind === "initial" ? job.message : job.followup_message, vars);
   const { files, names } = await attachmentsFor(job);
+  const thread = await threadHeaders(job);
 
   const rendered = renderProspectEmail({
     subject,
@@ -113,7 +143,7 @@ async function deliver(job: Job): Promise<string> {
       html: rendered.html,
       text: rendered.text,
       attachments: files.length ? files : undefined,
-      headers: { "List-Unsubscribe": `<mailto:${replyTo}?subject=STOP>` },
+      headers: { "List-Unsubscribe": `<mailto:${replyTo}?subject=STOP>`, ...thread },
       tags: [
         { name: "campaign", value: job.campaign_id },
         { name: "kind", value: job.kind },

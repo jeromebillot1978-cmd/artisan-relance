@@ -6,6 +6,7 @@ import { UserMenu } from "@/components/app/user-menu";
 import { requireUser } from "@/lib/data";
 import { isPlatformAdmin } from "@/lib/stats";
 import { Toaster } from "@/components/ui/sonner";
+import { SessionGuard } from "@/components/app/session-guard";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
@@ -49,6 +50,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
       <MobileTabBar isAdmin={isAdmin} />
       <Toaster />
+      <SessionGuard userId={user.id} />
     </div>
   );
 }

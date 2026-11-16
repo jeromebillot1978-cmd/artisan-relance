@@ -152,40 +152,107 @@ ${attachments}`;
   return { subject: opts.subject, html: layout(inner, footer, opts.subject, sender.companyName), text };
 }
 
-/** Transfert à l'artisan d'une réponse reçue de son prospect. */
+export type ForwardKind = "reply" | "auto_reply" | "opt_out" | "suspicious";
+
+/** Objet « Re: … » sans empilement de préfixes (Re: Re: TR: …). */
+export function replySubject(subject: string) {
+  const clean = subject.replace(/^\s*((re|tr|fw|fwd)\s*:\s*)+/i, "").trim();
+  return `Re: ${clean}`.slice(0, 200);
+}
+
+/**
+ * Transfert à l'artisan d'un message reçu de son client.
+ * L'objet reste « Re: <objet du devis> » : quand l'artisan répond, le client retrouve
+ * sa conversation d'origine (et ne voit aucun libellé interne).
+ * Le message reçu est toujours affiché en texte (jamais de HTML externe injecté).
+ */
 export function renderReplyForward(opts: {
   prospectName: string;
   originalSubject: string;
   from: string;
   receivedText?: string | null;
-  receivedHtml?: string | null;
   companyName: string;
   dashboardUrl: string;
+  kind?: ForwardKind;
+  unexpectedSender?: boolean;
+  recipients?: string[];
 }): RenderedEmail {
-  const subject = `Réponse de ${opts.prospectName} : ${opts.originalSubject}`.slice(0, 200);
-  const banner = `<div style="margin:0 0 18px 0;padding:12px 14px;border-radius:8px;background:#ecfdf5;color:#065f46;font-size:14px;">
-<strong>${escapeHtml(opts.prospectName)}</strong> a répondu à votre devis. Les relances automatiques sont arrêtées.<br>
-Répondez directement à cet e-mail : votre réponse partira vers ${escapeHtml(opts.from)}.
-<br><a href="${escapeHtml(opts.dashboardUrl)}" style="color:#065f46;">Voir le dossier</a></div>`;
+  const kind = opts.kind ?? "reply";
+  const base = replySubject(opts.originalSubject);
+  const subject = (
+    kind === "auto_reply" ? `[Réponse automatique] ${base}` : kind === "opt_out" ? `[STOP] ${base}` : kind === "suspicious" ? `[À vérifier] ${base}` : base
+  ).slice(0, 200);
+
+  const tone = {
+    reply: { bg: "#ecfdf5", fg: "#065f46" },
+    auto_reply: { bg: "#f4f4f5", fg: "#3f3f46" },
+    opt_out: { bg: "#fef2f2", fg: "#991b1b" },
+    suspicious: { bg: "#fffbeb", fg: "#92400e" },
+  }[kind];
+  const name = escapeHtml(opts.prospectName);
+  const headline = {
+    reply: `<strong>${name}</strong> a répondu à votre devis. Les relances automatiques sont arrêtées.`,
+    auto_reply: `Réponse automatique reçue de la part de <strong>${name}</strong> (absence, accusé de réception…). <strong>Les relances continuent</strong> : ce n'est pas une vraie réponse.`,
+    opt_out: `<strong>${name}</strong> a demandé à ne plus être relancé (« STOP »). Le devis est arrêté : plus aucune relance ni demande d'avis ne lui sera envoyée.`,
+    suspicious: `Message reçu au nom de <strong>${name}</strong>, mais <strong>l'expéditeur n'a pas pu être authentifié</strong> (possible usurpation). Les relances continuent. Vérifiez avant de répondre.`,
+  }[kind];
+  const warning = opts.unexpectedSender
+    ? `<br><strong>Attention :</strong> ce message vient de ${escapeHtml(opts.from)}, qui n'est pas l'adresse à laquelle le devis a été envoyé${
+        opts.recipients?.length ? ` (${escapeHtml(opts.recipients.join(", "))})` : ""
+      }.`
+    : "";
+  const action =
+    kind === "reply" || kind === "opt_out"
+      ? `<br>Répondez directement à cet e-mail : votre réponse partira vers ${escapeHtml(opts.from)}.`
+      : "";
+  const banner = `<div style="margin:0 0 18px 0;padding:12px 14px;border-radius:8px;background:${tone.bg};color:${tone.fg};font-size:14px;">
+${headline}${warning}${action}
+<br><a href="${escapeHtml(opts.dashboardUrl)}" style="color:${tone.fg};">Voir le dossier</a></div>`;
   const original = opts.receivedText?.trim()
     ? textToHtml(opts.receivedText)
-    : opts.receivedHtml
-      ? `<div>${opts.receivedHtml}</div>`
-      : `<p style="color:#71717a;">(message vide)</p>`;
+    : `<p style="color:#71717a;">(message vide)</p>`;
   const inner = `${banner}<div style="border-left:3px solid #e4e4e7;padding-left:14px;">${original}</div>`;
+  const plainHeadline = {
+    reply: `${opts.prospectName} a répondu à votre devis. Les relances automatiques sont arrêtées.`,
+    auto_reply: `Réponse automatique de ${opts.prospectName} : les relances continuent.`,
+    opt_out: `${opts.prospectName} a demandé à ne plus être relancé (STOP). Le devis est arrêté.`,
+    suspicious: `Message au nom de ${opts.prospectName} dont l'expéditeur n'a pas pu être authentifié. Vérifiez avant de répondre.`,
+  }[kind];
   const text = [
-    `${opts.prospectName} a répondu à votre devis. Les relances automatiques sont arrêtées.`,
-    `Répondez directement à cet e-mail pour lui écrire (${opts.from}).`,
+    plainHeadline,
+    opts.unexpectedSender ? `Attention : ce message vient de ${opts.from}, qui n'est pas l'adresse du devis.` : "",
+    kind === "reply" || kind === "opt_out" ? `Répondez directement à cet e-mail pour lui écrire (${opts.from}).` : "",
     `Dossier : ${opts.dashboardUrl}`,
     "",
     "----- Message reçu -----",
-    opts.receivedText?.trim() || "(voir la version HTML)",
-  ].join("\n");
+    opts.receivedText?.trim() || "(message vide)",
+  ]
+    .filter((l, i) => l !== "" || i > 3)
+    .join("\n");
   return {
     subject,
     html: layout(inner, "Transféré automatiquement par Artisan Relance.", subject, opts.companyName),
     text,
   };
+}
+
+/** Message d'information à l'artisan (copie renvoyée, adresse invalide, signalement…). */
+export function renderArtisanNotice(opts: {
+  subject: string;
+  paragraphs: string[];
+  tone?: "info" | "warning" | "danger";
+  quote?: string | null;
+  dashboardUrl: string;
+  companyName: string;
+}): RenderedEmail {
+  const t = { info: ["#eff6ff", "#1e3a8a"], warning: ["#fffbeb", "#92400e"], danger: ["#fef2f2", "#991b1b"] }[opts.tone ?? "info"];
+  const body = opts.paragraphs.map((p) => `<p style="margin:0 0 10px 0;">${escapeHtml(p)}</p>`).join("");
+  const banner = `<div style="margin:0 0 18px 0;padding:12px 14px;border-radius:8px;background:${t[0]};color:${t[1]};font-size:14px;">${body}<a href="${escapeHtml(opts.dashboardUrl)}" style="color:${t[1]};font-weight:600;">Ouvrir le dossier</a></div>`;
+  const quote = opts.quote?.trim()
+    ? `<div style="border-left:3px solid #e4e4e7;padding-left:14px;">${textToHtml(opts.quote)}</div>`
+    : "";
+  const text = [...opts.paragraphs, `Dossier : ${opts.dashboardUrl}`, ...(opts.quote?.trim() ? ["", "----- Votre message -----", opts.quote.trim()] : [])].join("\n");
+  return { subject: opts.subject.slice(0, 200), html: layout(banner + quote, "Message automatique d'Artisan Relance.", opts.subject, opts.companyName), text };
 }
 
 // =====================================================================

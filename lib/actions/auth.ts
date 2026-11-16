@@ -3,12 +3,23 @@
 import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { emailIssue } from "@/lib/email-check";
 import { createClient } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/utils";
 import type { ActionState } from "@/lib/actions/types";
 import { notifySignup } from "@/lib/notify-admin";
 
-const emailSchema = z.string().trim().toLowerCase().email("Adresse e-mail invalide.");
+const emailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .email("Adresse e-mail invalide.")
+  .superRefine((value, ctx) => {
+    const issue = emailIssue(value);
+    if (issue) ctx.addIssue({ code: "custom", message: issue });
+  });
+// Connexion / mot de passe oublié : format seul (jamais bloquer un compte existant)
+const loginEmailSchema = z.string().trim().toLowerCase().email("Adresse e-mail invalide.");
 const passwordSchema = z.string().min(8, "8 caractères minimum.");
 
 function safeNext(value: FormDataEntryValue | null) {
@@ -70,7 +81,7 @@ export async function signUp(_: ActionState, formData: FormData): Promise<Action
 
 export async function signIn(_: ActionState, formData: FormData): Promise<ActionState> {
   const parsed = z
-    .object({ email: emailSchema, password: z.string().min(1, "Mot de passe requis.") })
+    .object({ email: loginEmailSchema, password: z.string().min(1, "Mot de passe requis.") })
     .safeParse(Object.fromEntries(formData));
 
   if (!parsed.success) {
@@ -85,7 +96,7 @@ export async function signIn(_: ActionState, formData: FormData): Promise<Action
 }
 
 export async function requestPasswordReset(_: ActionState, formData: FormData): Promise<ActionState> {
-  const parsed = emailSchema.safeParse(formData.get("email"));
+  const parsed = loginEmailSchema.safeParse(formData.get("email"));
   if (!parsed.success) return { fieldErrors: { email: ["Adresse e-mail invalide."] } };
 
   const supabase = await createClient();
