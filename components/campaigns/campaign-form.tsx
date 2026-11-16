@@ -196,6 +196,15 @@ export function CampaignForm({ userId, companyName }: { userId: string; companyN
             </div>
 
             {!sendInitial && (
+              <p className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-foreground">
+                <strong>Aucun e-mail ne sera envoyé maintenant.</strong> Choisissez ce mode seulement si vous avez
+                déjà envoyé ce devis vous-même (Obat, Gmail…) : Artisan Relance enverra uniquement les relances.
+                Pour que le client reçoive le devis tout de suite, choisissez « Envoyer le devis maintenant »
+                (la pièce jointe est facultative).
+              </p>
+            )}
+
+            {!sendInitial && (
               <div className="grid gap-2">
                 <Label htmlFor="sentAt">Date et heure d'envoi du devis</Label>
                 <Input id="sentAt" type="datetime-local" value={sentAtLocal} max={nowLocalInput()} onChange={(e) => setSentAtLocal(e.target.value)} />
