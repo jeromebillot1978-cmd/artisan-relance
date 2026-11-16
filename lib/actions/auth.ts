@@ -1,10 +1,12 @@
 "use server";
 
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/utils";
 import type { ActionState } from "@/lib/actions/types";
+import { notifySignup } from "@/lib/notify-admin";
 
 const emailSchema = z.string().trim().toLowerCase().email("Adresse e-mail invalide.");
 const passwordSchema = z.string().min(8, "8 caractères minimum.");
@@ -47,6 +49,15 @@ export async function signUp(_: ActionState, formData: FormData): Promise<Action
   });
 
   if (error) return { error: translateAuthError(error.message) };
+
+  // Alerte à l'administrateur, uniquement pour un vrai nouveau compte (Supabase renvoie un
+  // utilisateur sans identité quand l'e-mail existe déjà). Envoyée après la réponse : aucun délai pour l'artisan.
+  const newUser = data.user;
+  if (newUser?.email && (newUser.identities?.length ?? 0) > 0) {
+    after(() =>
+      notifySignup({ id: newUser.id, email: newUser.email!, createdAt: newUser.created_at, confirmed: Boolean(data.session) }),
+    );
+  }
 
   // Si la confirmation d'e-mail est désactivée dans Supabase, la session existe déjà
   if (data.session) redirect("/dashboard");
