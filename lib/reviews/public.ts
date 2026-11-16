@@ -16,7 +16,7 @@ export const TOKEN_RE = /^[0-9a-f]{32}$/;
 /** Robots, aperçus de liens et scanners de sécurité : on redirige sans compter le clic. */
 export function isAutomated(userAgent: string | null) {
   if (!userAgent) return true;
-  return /bot|crawl|spider|slurp|preview|scanner|safelinks|proofpoint|mimecast|barracuda|headless|python-requests|curl|wget|facebookexternalhit|whatsapp|skypeuripreview/i.test(
+  return /bot|crawl|spider|slurp|preview|scanner|lighthouse|pagespeed|gtmetrix|pingdom|uptimerobot|statuscake|og-capture|safelinks|proofpoint|mimecast|barracuda|headless|python-requests|curl|wget|facebookexternalhit|whatsapp|skypeuripreview/i.test(
     userAgent,
   );
 }
