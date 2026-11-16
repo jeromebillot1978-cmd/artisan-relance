@@ -1,11 +1,14 @@
 import "server-only";
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
 
-/** Client anonyme (sans session) pour les liens publics des e-mails d'avis. */
+/**
+ * Client serveur pour les liens publics des e-mails d'avis (/r/<jeton>).
+ * Les fonctions register_review_click, review_token_company et review_opt_out
+ * ne sont plus appelables par le rôle « anon » via l'API REST (durcissement
+ * du 16/11/2026) : seul le serveur, avec la clé service_role, peut les appeler.
+ */
 export function publicClient() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  return createAdminClient();
 }
 
 export const TOKEN_RE = /^[0-9a-f]{32}$/;
