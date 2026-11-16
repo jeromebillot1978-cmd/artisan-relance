@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { VercelAnalytics } from "@/components/stats/vercel-analytics";
 import { ThemeProvider } from "@/components/theme-provider";
+import { SiteVisitTracker } from "@/components/stats/site-visit-tracker";
 import { siteUrl } from "@/lib/utils";
 import "./globals.css";
 
@@ -48,6 +50,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           {children}
         </ThemeProvider>
+        {/* Statistiques : Vercel Web Analytics + comptage anonyme maison (sans cookie) */}
+        <VercelAnalytics />
+        <SiteVisitTracker />
       </body>
     </html>
   );

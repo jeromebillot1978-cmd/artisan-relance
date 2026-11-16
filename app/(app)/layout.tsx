@@ -4,6 +4,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileTabBar, SidebarNav } from "@/components/app/app-nav";
 import { UserMenu } from "@/components/app/user-menu";
 import { requireUser } from "@/lib/data";
+import { isPlatformAdmin } from "@/lib/stats";
 import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
@@ -11,6 +12,7 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { profile, user } = await requireUser();
   const email = profile.email || user.email || "";
+  const isAdmin = await isPlatformAdmin();
 
   return (
     <div className="min-h-dvh md:grid md:grid-cols-[240px_1fr]">
@@ -20,7 +22,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Logo href="/dashboard" className="text-sm" />
         </div>
         <div className="mt-4 flex-1">
-          <SidebarNav />
+          <SidebarNav isAdmin={isAdmin} />
         </div>
         <div className="flex items-center gap-1 border-t pt-3">
           <div className="min-w-0 flex-1">
@@ -45,7 +47,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div className="mx-auto w-full max-w-6xl">{children}</div>
       </main>
 
-      <MobileTabBar />
+      <MobileTabBar isAdmin={isAdmin} />
       <Toaster />
     </div>
   );

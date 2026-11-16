@@ -11,7 +11,7 @@ import { siteUrl } from "@/lib/utils";
  * dont l'adresse commencerait par « /devis- » (ex. /devis-gratuit) resterait explorable.
  * Les pages de connexion ne sont PAS bloquées : Google doit pouvoir lire leur « noindex ».
  */
-const PRIVATE = ["/dashboard", "/devis", "/parametres", "/avis-google"];
+const PRIVATE = ["/dashboard", "/devis", "/parametres", "/avis-google", "/statistiques"];
 
 export default function robots(): MetadataRoute.Robots {
   return {

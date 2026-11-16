@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, LayoutDashboard, Settings, Star } from "lucide-react";
+import { BarChart3, FileText, LayoutDashboard, Settings, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const NAV_ITEMS = [
@@ -12,11 +12,16 @@ export const NAV_ITEMS = [
   { href: "/parametres", label: "Paramètres", short: "Réglages", icon: Settings },
 ];
 
-export function SidebarNav() {
+/** Entrée réservée à l'administrateur de la plateforme. */
+const ADMIN_ITEM = { href: "/statistiques", label: "Statistiques", short: "Stats", icon: BarChart3 };
+
+const itemsFor = (isAdmin?: boolean) => (isAdmin ? [...NAV_ITEMS, ADMIN_ITEM] : NAV_ITEMS);
+
+export function SidebarNav({ isAdmin }: { isAdmin?: boolean }) {
   const pathname = usePathname();
   return (
     <nav className="flex flex-col gap-0.5">
-      {NAV_ITEMS.map((item) => {
+      {itemsFor(isAdmin).map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
           <Link
@@ -38,12 +43,12 @@ export function SidebarNav() {
   );
 }
 
-export function MobileTabBar() {
+export function MobileTabBar({ isAdmin }: { isAdmin?: boolean }) {
   const pathname = usePathname();
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg md:hidden">
       <div className="grid grid-cols-4">
-        {NAV_ITEMS.map((item) => {
+        {itemsFor(isAdmin).map((item) => {
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (
             <Link
