@@ -256,7 +256,7 @@ Deno.serve(async (req) => {
   }
   if (input?.mode === "health") {
     // Vérification avant mise en production : secrets présents (jamais leurs valeurs)
-    const names = ["CRON_SECRET", "RESEND_API_KEY", "RESEND_FROM_EMAIL", "SITE_URL", "INBOUND_DOMAIN", "RESEND_WEBHOOK_SECRET", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"];
+    const names = ["CRON_SECRET", "RESEND_API_KEY", "RESEND_FROM_EMAIL", "SITE_URL", "INBOUND_DOMAIN", "RESEND_WEBHOOK_SECRET", "RESEND_RECEIVING_API_KEY", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"];
     const secrets = Object.fromEntries(names.map((n) => [n, Boolean(Deno.env.get(n))]));
     const { data: status, error } = await admin.rpc("mailer_status");
     return json({ ok: !error && secrets.RESEND_API_KEY && secrets.RESEND_FROM_EMAIL, secrets, database: error ? error.message : "ok", budget: status });
