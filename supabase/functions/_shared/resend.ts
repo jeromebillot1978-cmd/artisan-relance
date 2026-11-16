@@ -7,6 +7,15 @@ function apiKey() {
   return key;
 }
 
+/**
+ * Lecture des e-mails reçus (réponses des clients). Une clé « Sending access » ne peut pas
+ * les lire (401) : on utilise une clé dédiée RESEND_RECEIVING_API_KEY (« Full access »),
+ * la clé d'envoi restant limitée à l'envoi.
+ */
+function receivingKey() {
+  return Deno.env.get("RESEND_RECEIVING_API_KEY") || apiKey();
+}
+
 export interface OutgoingAttachment {
   filename: string;
   path: string; // URL signée : Resend télécharge lui-même le fichier
@@ -54,7 +63,7 @@ export interface ReceivedEmail {
 
 export async function getReceivedEmail(id: string): Promise<ReceivedEmail> {
   const res = await fetch(`${API}/emails/receiving/${encodeURIComponent(id)}`, {
-    headers: { Authorization: `Bearer ${apiKey()}` },
+    headers: { Authorization: `Bearer ${receivingKey()}` },
   });
   if (!res.ok) throw new Error(`Resend receiving ${res.status}`);
   return await res.json();
@@ -63,7 +72,7 @@ export async function getReceivedEmail(id: string): Promise<ReceivedEmail> {
 /** Pièces jointes d'un e-mail reçu (URL de téléchargement valables 1 h). */
 export async function listReceivedAttachments(id: string): Promise<OutgoingAttachment[]> {
   const res = await fetch(`${API}/emails/receiving/${encodeURIComponent(id)}/attachments`, {
-    headers: { Authorization: `Bearer ${apiKey()}` },
+    headers: { Authorization: `Bearer ${receivingKey()}` },
   });
   if (!res.ok) return [];
   const body = await res.json().catch(() => ({}));
