@@ -13,6 +13,7 @@ import { CampaignStatusBadge } from "@/components/campaigns/campaign-status-badg
 import { CampaignActions } from "@/components/campaigns/campaign-actions";
 import { StrategyDialog } from "@/components/campaigns/strategy-dialog";
 import { CampaignTimeline } from "@/components/campaigns/campaign-timeline";
+import { Conversation } from "@/components/campaigns/conversation";
 
 export const metadata: Metadata = { title: "Dossier devis" };
 
@@ -30,7 +31,14 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const [detail, reviews] = await Promise.all([getCampaignDetail(id), getCampaignReviews(id)]);
   if (!detail) notFound();
-  const { campaign: c, attachments, events, replies } = detail;
+  const { campaign: c, attachments, events, messages } = detail;
+  const blockedReason = events.some((e) => e.type === "opt_out")
+    ? "Ce client a demandé à ne plus recevoir d'e-mails (STOP). Contactez-le par téléphone si besoin."
+    : events.some((e) => e.type === "delivery_complained")
+      ? "Ce client a signalé vos e-mails comme indésirables : plus aucun e-mail ne peut lui être envoyé."
+      : !c.initial_sent_at && !messages.some((m) => m.direction === "in")
+        ? "Vous pourrez écrire au client ici une fois le devis envoyé."
+        : null;
 
   const strategyText = !c.followup_enabled
     ? "Relances désactivées"
@@ -203,22 +211,23 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
           </Card>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Historique</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {replies.length > 0 && (
-              <div className="mb-5 rounded-lg border border-sky-500/30 bg-sky-500/5 p-3 text-sm">
-                <p className="font-medium">
-                  {replies.length} réponse{replies.length > 1 ? "s" : ""} reçue{replies.length > 1 ? "s" : ""}
-                </p>
-                <p className="text-xs text-muted-foreground">Transférée(s) dans votre boîte mail — répondez-y directement.</p>
-              </div>
-            )}
-            <CampaignTimeline events={events} />
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <Conversation
+            campaignId={c.id}
+            prospectName={c.prospect_name}
+            recipients={c.recipients}
+            messages={messages}
+            blockedReason={blockedReason}
+          />
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Historique</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CampaignTimeline events={events} />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </>
   );

@@ -7,6 +7,7 @@ export interface Profile {
   reply_to_email: string | null;
   /** Copie cachée de chaque devis envoyé (désactivée par défaut). */
   send_copy_to_self: boolean;
+  reply_notification?: "alert" | "full" | "none";
   plan: string;
   created_at: string;
   updated_at: string;
@@ -82,6 +83,36 @@ export interface CampaignEvent {
   type: string;
   detail: Record<string, unknown>;
   created_at: string;
+}
+
+export interface CampaignMessageFile {
+  id: string;
+  message_id: string;
+  storage_path: string;
+  file_name: string;
+  mime_type: string;
+  size_bytes: number;
+  original_size_bytes: number | null;
+  url?: string | null;
+}
+
+export interface CampaignMessage {
+  id: string;
+  campaign_id: string;
+  direction: "in" | "out";
+  kind: "reply" | "auto_reply" | "opt_out" | "suspicious" | "artisan";
+  from_address: string | null;
+  to_addresses: string[];
+  subject: string | null;
+  body: string;
+  status: "received" | "queued" | "sending" | "sent" | "failed";
+  attempts?: number;
+  error: string | null;
+  files_note: string | null;
+  read_at: string | null;
+  sent_at: string | null;
+  created_at: string;
+  files: CampaignMessageFile[];
 }
 
 export interface InboundReply {

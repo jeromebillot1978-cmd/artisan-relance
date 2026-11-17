@@ -89,6 +89,7 @@ export const EVENT_LABELS: Record<string, string> = {
   followup_sent: "Relance envoyée",
   followup_failed: "Échec d'une relance",
   reply_received: "Réponse reçue du client",
+  message_sent: "Votre réponse envoyée au client",
   auto_reply_received: "Réponse automatique reçue (relances maintenues)",
   opt_out: "Le client a demandé l'arrêt (STOP)",
   artisan_copy_reply: "Réponse à votre propre copie (non envoyée au client)",

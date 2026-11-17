@@ -176,6 +176,7 @@ export function renderReplyForward(opts: {
   kind?: ForwardKind;
   unexpectedSender?: boolean;
   recipients?: string[];
+  filesNote?: string | null;
 }): RenderedEmail {
   const kind = opts.kind ?? "reply";
   const base = replySubject(opts.originalSubject);
@@ -211,7 +212,10 @@ ${headline}${warning}${action}
   const original = opts.receivedText?.trim()
     ? textToHtml(opts.receivedText)
     : `<p style="color:#71717a;">(message vide)</p>`;
-  const inner = `${banner}<div style="border-left:3px solid #e4e4e7;padding-left:14px;">${original}</div>`;
+  const note = opts.filesNote?.trim()
+    ? `<p style="margin:14px 0 0 0;font-size:13px;color:#52525b;">${escapeHtml(opts.filesNote.trim())}</p>`
+    : "";
+  const inner = `${banner}<div style="border-left:3px solid #e4e4e7;padding-left:14px;">${original}</div>${note}`;
   const plainHeadline = {
     reply: `${opts.prospectName} a répondu à votre devis. Les relances automatiques sont arrêtées.`,
     auto_reply: `Réponse automatique de ${opts.prospectName} : les relances continuent.`,
@@ -226,12 +230,73 @@ ${headline}${warning}${action}
     "",
     "----- Message reçu -----",
     opts.receivedText?.trim() || "(message vide)",
+    opts.filesNote?.trim() ? `\n${opts.filesNote.trim()}` : "",
   ]
     .filter((l, i) => l !== "" || i > 3)
     .join("\n");
   return {
     subject,
     html: layout(inner, "Transféré automatiquement par Artisan Relance.", subject, opts.companyName),
+    text,
+  };
+}
+
+/**
+ * Alerte courte à l'artisan : un client a répondu. Le message complet (et les pièces
+ * jointes) se lit dans le dossier, où l'artisan peut répondre en gardant l'historique.
+ */
+export function renderReplyAlert(opts: {
+  prospectName: string;
+  originalSubject: string;
+  from: string;
+  excerpt: string;
+  fileCount: number;
+  companyName: string;
+  dashboardUrl: string;
+  kind: "reply" | "opt_out" | "suspicious";
+  unexpectedSender?: boolean;
+}): RenderedEmail {
+  const name = opts.prospectName;
+  const subject = (
+    opts.kind === "opt_out"
+      ? `[STOP] ${name} ne souhaite plus être relancé`
+      : opts.kind === "suspicious"
+        ? `[À vérifier] Message reçu au nom de ${name}`
+        : `${name} a répondu à votre devis`
+  ).slice(0, 200);
+  const lead = {
+    reply: `${name} a répondu à votre devis « ${opts.originalSubject} ». Les relances automatiques sont arrêtées.`,
+    opt_out: `${name} a demandé à ne plus être relancé (« STOP »). Le devis est arrêté.`,
+    suspicious: `Un message a été reçu au nom de ${name}, mais l'expéditeur n'a pas pu être authentifié (possible usurpation). Les relances continuent.`,
+  }[opts.kind];
+  const extra = [
+    opts.unexpectedSender ? `Attention : ce message vient de ${opts.from}, qui n'est pas l'adresse à laquelle le devis a été envoyé.` : "",
+    opts.fileCount > 0 ? `${opts.fileCount} pièce${opts.fileCount > 1 ? "s" : ""} jointe${opts.fileCount > 1 ? "s" : ""} disponible${opts.fileCount > 1 ? "s" : ""} dans le dossier.` : "",
+  ].filter(Boolean);
+  const excerpt = opts.excerpt.trim().replace(/\s+/g, " ");
+  const short = excerpt.length > 300 ? `${excerpt.slice(0, 297).trimEnd()}…` : excerpt;
+  const t = opts.kind === "reply" ? ["#ecfdf5", "#065f46"] : opts.kind === "opt_out" ? ["#fef2f2", "#991b1b"] : ["#fffbeb", "#92400e"];
+  const url = escapeHtml(opts.dashboardUrl);
+  const inner = `<div style="margin:0 0 16px 0;padding:12px 14px;border-radius:8px;background:${t[0]};color:${t[1]};font-size:14px;">
+${escapeHtml(lead)}${extra.map((e) => `<br>${escapeHtml(e)}`).join("")}</div>
+${short ? `<div style="border-left:3px solid #e4e4e7;padding-left:14px;color:#3f3f46;font-style:italic;">${escapeHtml(short)}</div>` : ""}
+<p style="margin:22px 0 8px 0;"><a href="${url}" style="display:inline-block;background:#18181b;color:#ffffff;text-decoration:none;font-weight:600;padding:11px 18px;border-radius:8px;">Lire et répondre</a></p>
+<p style="margin:10px 0 0 0;font-size:13px;color:#71717a;">Répondez depuis le dossier pour garder tout l'historique au même endroit${
+    opts.kind === "suspicious" ? "" : " (vous pouvez aussi répondre directement à cet e-mail)"
+  }.</p>`;
+  const text = [
+    lead,
+    ...extra,
+    "",
+    short ? `« ${short} »` : "",
+    "",
+    `Lire et répondre : ${opts.dashboardUrl}`,
+  ]
+    .filter((l, i, a) => l !== "" || (a[i - 1] ?? "") !== "")
+    .join("\n");
+  return {
+    subject,
+    html: layout(inner, "Alerte Artisan Relance. Choisissez le type de notification dans Paramètres.", subject, opts.companyName),
     text,
   };
 }

@@ -3,7 +3,7 @@ import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MobileTabBar, SidebarNav } from "@/components/app/app-nav";
 import { UserMenu } from "@/components/app/user-menu";
-import { requireUser } from "@/lib/data";
+import { getUnreadByCampaign, requireUser } from "@/lib/data";
 import { isPlatformAdmin } from "@/lib/stats";
 import { Toaster } from "@/components/ui/sonner";
 import { SessionGuard } from "@/components/app/session-guard";
@@ -13,7 +13,8 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { profile, user } = await requireUser();
   const email = profile.email || user.email || "";
-  const isAdmin = await isPlatformAdmin();
+  const [isAdmin, unreadMap] = await Promise.all([isPlatformAdmin(), getUnreadByCampaign()]);
+  const unread = Object.values(unreadMap).reduce((a, b) => a + b, 0);
 
   return (
     <div className="min-h-dvh md:grid md:grid-cols-[240px_1fr]">
@@ -23,7 +24,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Logo href="/dashboard" className="text-sm" />
         </div>
         <div className="mt-4 flex-1">
-          <SidebarNav isAdmin={isAdmin} />
+          <SidebarNav isAdmin={isAdmin} unread={unread} />
         </div>
         <div className="flex items-center gap-1 border-t pt-3">
           <div className="min-w-0 flex-1">
@@ -48,7 +49,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div className="mx-auto w-full max-w-6xl">{children}</div>
       </main>
 
-      <MobileTabBar isAdmin={isAdmin} />
+      <MobileTabBar isAdmin={isAdmin} unread={unread} />
       <Toaster />
       <SessionGuard userId={user.id} />
     </div>

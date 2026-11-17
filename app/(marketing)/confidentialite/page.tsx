@@ -34,6 +34,7 @@ export default function ConfidentialitePage() {
           <li>Compte : adresse e-mail, nom de l'entreprise, et si vous les renseignez, nom du contact, téléphone et adresse de réponse.</li>
           <li>Devis : nom du client, adresses e-mail des destinataires, téléphone (facultatif), montant, référence, notes internes, messages, pièces jointes, dates et statut des envois.</li>
           <li>Réponses et événements : date d'envoi, de relance, de réponse, de décision (gagné, perdu).</li>
+          <li>Échanges avec le client : texte des réponses reçues (sans l'historique recopié), pièces jointes acceptées (PDF, photos réduites, documents bureautiques, 5 fichiers et 15 Mo au plus par message) et réponses écrites par l'artisan depuis le site.</li>
           <li>
             Demandes d'avis Google : nom et e-mail du client, date d'envoi, nombre de clics sur le lien de l'e-mail (sans
             pixel de suivi ni cookie), avis signalé comme reçu par l'artisan, et désinscriptions.
@@ -65,6 +66,8 @@ export default function ConfidentialitePage() {
           <li>Compte et devis : tant que le compte est actif ; suppression sous 30 jours après la suppression du compte.</li>
           <li>Pièces jointes : supprimées automatiquement 12 mois après la clôture du dossier (gagné, perdu, terminé, arrêté ou répondu).</li>
           <li>Fichiers téléversés mais jamais rattachés à un devis : supprimés après 2 jours.</li>
+          <li>Pièces jointes reçues des clients : supprimées automatiquement après 6 mois.</li>
+          <li>Texte des échanges avec le client : supprimé automatiquement après 24 mois.</li>
           <li>Messages de la page contact : 12 mois après le dernier échange.</li>
           <li>Historique des demandes d'avis : 24 mois, ou plus tôt si le devis concerné est supprimé.</li>
           <li>Vous pouvez supprimer un devis, ses fichiers et son historique à tout moment, et exporter vos données au format CSV.</li>

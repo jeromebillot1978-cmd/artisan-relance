@@ -6,6 +6,9 @@
 //  - mode "reviews"  : envoie les demandes d'avis Google arrivées à échéance
 //                     (appelé par la base au clic sur « Demander un avis » ;
 //                     le mode "due" les traite aussi toutes les 15 min)
+//  - mode "message" : envoie une réponse écrite par l'artisan dans le site
+//                     (appelé par la base ; les envois manqués sont repris
+//                     par le mode "due")
 //  - mode "maintenance" : purge des pièces jointes expirées et orphelines,
 //                     et de l'historique des avis au-delà de la durée de
 //                     conservation (appelé chaque nuit par pg_cron)
@@ -17,7 +20,7 @@
 // =====================================================================
 import { admin, json, log } from "../_shared/admin.ts";
 import { getSentMessageId, senderName, sendEmail, type OutgoingAttachment } from "../_shared/resend.ts";
-import { fillVariables, followupSubject, renderProspectEmail, renderReviewEmail } from "../_shared/templates.ts";
+import { fillVariables, followupSubject, renderProspectEmail, renderReviewEmail, replySubject } from "../_shared/templates.ts";
 
 const CRON_SECRET = Deno.env.get("CRON_SECRET") ?? "";
 const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") ?? "";
@@ -158,6 +161,109 @@ async function deliver(job: Job): Promise<string> {
   );
 }
 
+// ---------------------------------------------------------------------
+// Réponses de l'artisan écrites dans le site
+// ---------------------------------------------------------------------
+interface MessageJob {
+  message_id: string;
+  body: string;
+  to: string[];
+  attempts: number;
+  campaign_id: string;
+  reference: string | null;
+  prospect_name: string;
+  subject: string;
+  amount: number;
+  initial_sent_at: string | null;
+  reply_token: string;
+  company_name: string;
+  contact_name: string | null;
+  phone: string | null;
+  user_email: string;
+  reply_to_email: string | null;
+  initial_message_id: string | null;
+  initial_provider_id: string | null;
+  thread: string[];
+}
+
+const validMessageId = (v: unknown): v is string => typeof v === "string" && /^<[^<>\s]+@[^<>\s]+>$/.test(v.trim());
+
+async function deliverMessage(job: MessageJob): Promise<string> {
+  if (!FROM_EMAIL) throw new Error("RESEND_FROM_EMAIL manquant");
+  const artisanEmail = job.reply_to_email || job.user_email;
+  const replyTo = INBOUND_DOMAIN ? `devis-${job.reply_token}@${INBOUND_DOMAIN}` : artisanEmail;
+  const vars = {
+    client: job.prospect_name,
+    entreprise: job.company_name,
+    dateEnvoi: job.initial_sent_at ?? new Date().toISOString(),
+    reference: job.reference,
+    montant: job.amount,
+    numeroRelance: null,
+  };
+  const subject = replySubject(fillVariables(job.subject, vars).replace(/[\r\n]+/g, " ").trim());
+
+  // Fil de discussion : réponse au dernier message du client, rattachée au devis d'origine
+  let initial = validMessageId(job.initial_message_id) ? job.initial_message_id.trim() : null;
+  if (!initial && job.initial_provider_id) initial = await getSentMessageId(job.initial_provider_id).catch(() => null);
+  const refs = [...new Set([initial, ...job.thread.filter(validMessageId).map((v) => v.trim())].filter(Boolean) as string[])].slice(-10);
+  const headers: Record<string, string> = { "List-Unsubscribe": `<mailto:${replyTo}?subject=STOP>` };
+  if (refs.length) {
+    headers["In-Reply-To"] = refs[refs.length - 1];
+    headers.References = refs.join(" ");
+  }
+
+  const rendered = renderProspectEmail({
+    subject,
+    body: job.body,
+    sender: { companyName: job.company_name, contactName: job.contact_name, phone: job.phone, replyEmail: artisanEmail },
+  });
+  return await sendEmail(
+    {
+      from: `${senderName(job.company_name)} <${FROM_EMAIL}>`,
+      to: job.to,
+      reply_to: replyTo,
+      subject: rendered.subject,
+      html: rendered.html,
+      text: rendered.text,
+      headers,
+      tags: [
+        { name: "campaign", value: job.campaign_id },
+        { name: "kind", value: "artisan_message" },
+      ],
+    },
+    `message-${job.message_id}`,
+  );
+}
+
+async function sendMessage(id: string): Promise<{ id: string; ok: boolean; skipped?: boolean; error?: string }> {
+  const { data, error } = await admin.rpc("claim_campaign_message", { p_id: id });
+  if (error) return { id, ok: false, error: error.message };
+  const job = data as MessageJob | null;
+  if (!job) return { id, ok: true, skipped: true }; // déjà envoyé ou en cours
+  try {
+    const providerId = await deliverMessage(job);
+    const { error: doneError } = await admin.rpc("complete_campaign_message", { p_id: id, p_provider_id: providerId });
+    if (doneError) throw new Error(`complete_campaign_message : ${doneError.message}`);
+    log("message_sent", { campaign_id: job.campaign_id, message_id: id, provider_id: providerId });
+    return { id, ok: true };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    await admin.rpc("fail_campaign_message", { p_id: id, p_error: message });
+    log("message_failed", { campaign_id: job.campaign_id, message_id: id, attempt: job.attempts, error: message });
+    return { id, ok: false, error: message };
+  }
+}
+
+async function processPendingMessages() {
+  const { data } = await admin.rpc("pending_campaign_messages", { p_limit: 20 });
+  const out = [];
+  for (const id of (data ?? []) as string[]) {
+    out.push(await sendMessage(id));
+    await sleep(PAUSE_MS);
+  }
+  return out;
+}
+
 interface ReviewJob {
   request_id: string;
   attempts: number;
@@ -253,6 +359,12 @@ Deno.serve(async (req) => {
   const started = Date.now();
   const input = await req.json().catch(() => ({}));
   if (input?.mode === "maintenance") return await maintenance(started);
+  if (input?.mode === "message") {
+    if (typeof input.message_id !== "string") return json({ error: "message_id requis" }, 400);
+    const result = await sendMessage(input.message_id);
+    log("mailer_run", { mode: "message", ...result, duration_ms: Date.now() - started });
+    return json(result, result.ok ? 200 : 500);
+  }
   if (input?.mode === "reviews") {
     const reviews = await processReviews(20);
     const summary = { ok: !("error" in reviews), mode: "reviews", reviews, duration_ms: Date.now() - started };
@@ -312,6 +424,8 @@ Deno.serve(async (req) => {
 
   // Demandes d'avis Google arrivées à échéance (même cron, même budget)
   const reviews = mode === "due" ? await processReviews(20) : null;
+  // Réponses de l'artisan restées en attente (appel manqué, échec temporaire)
+  const messages = mode === "due" ? await processPendingMessages() : null;
 
   const { data: status } = await admin.rpc("mailer_status");
   const summary = {
@@ -319,6 +433,7 @@ Deno.serve(async (req) => {
     mode,
     budget: status,
     reviews,
+    messages: messages ? { processed: messages.length, failed: messages.filter((m) => !m.ok).length } : null,
     processed: results.length,
     sent: results.filter((r) => r.ok).length,
     failed: results.filter((r) => !r.ok).length,
@@ -367,6 +482,26 @@ async function maintenance(started: number) {
     orphans += paths.length;
   }
 
+  // Pièces jointes reçues des clients : 6 mois, + fichiers sans dossier
+  let messageFiles = 0;
+  for (let round = 0; round < 10; round++) {
+    const { data, error } = await admin.rpc("message_files_to_purge", { p_limit: 100 });
+    if (error) {
+      errors.push(error.message);
+      break;
+    }
+    const rows = (data ?? []) as { id: string | null; storage_path: string }[];
+    if (!rows.length) break;
+    const { error: removeError } = await admin.storage.from("messages").remove(rows.map((r) => r.storage_path));
+    if (removeError) {
+      errors.push(removeError.message);
+      break;
+    }
+    const ids = rows.map((r) => r.id).filter(Boolean) as string[];
+    if (ids.length) await admin.rpc("forget_message_files", { p_ids: ids });
+    messageFiles += rows.length;
+  }
+
   const { data: reviewsPurged, error: reviewPurgeError } = await admin.rpc("purge_review_history");
   if (reviewPurgeError) errors.push(reviewPurgeError.message);
 
@@ -375,6 +510,7 @@ async function maintenance(started: number) {
     mode: "maintenance",
     purged,
     orphans,
+    message_files: messageFiles,
     reviews_purged: Number(reviewsPurged ?? 0),
     errors,
     duration_ms: Date.now() - started,

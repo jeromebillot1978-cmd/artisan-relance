@@ -6,8 +6,11 @@
 //   2. message lu chez Resend puis classé : vraie réponse, réponse automatique,
 //      « STOP », copie renvoyée par l'artisan lui-même, expéditeur usurpé ;
 //   3. seule une vraie réponse passe le devis en « Répondu » (« STOP » l'arrête) ;
-//   4. le message est transféré à l'artisan, client en « Répondre à »,
-//      objet « Re: <objet du devis> » pour garder la conversation du client.
+//   4. le message est enregistré dans le dossier (conversation visible dans le site),
+//      pièces jointes filtrées, photos réduites (une sous-requête par fichier pour
+//      rester sous la limite de calcul des Edge Functions) ;
+//   5. l'artisan est prévenu selon son réglage : alerte courte (défaut), transfert
+//      complet (client en « Répondre à », objet « Re: <objet du devis> ») ou rien.
 //
 // email.bounced / complained / suppressed / failed : adresse du client invalide,
 //   bloquée ou plainte pour spam → devis suspendu (ou arrêté) et artisan prévenu.
@@ -16,15 +19,20 @@
 // + clé d'idempotence Resend sur chaque e-mail envoyé).
 // =====================================================================
 import { admin, json, log } from "../_shared/admin.ts";
-import { getReceivedEmail, listReceivedAttachments, senderName, sendEmail, type ReceivedEmail } from "../_shared/resend.ts";
+import { getReceivedEmail, listReceivedAttachmentMeta, senderName, sendEmail, type ReceivedEmail } from "../_shared/resend.ts";
 import { verifySvix } from "../_shared/svix.ts";
-import { renderArtisanNotice, renderReplyForward } from "../_shared/templates.ts";
-import { addressOnly, classifyInbound, extractToken, htmlToText } from "../_shared/inbound.ts";
+import { renderArtisanNotice, renderReplyAlert, renderReplyForward } from "../_shared/templates.ts";
+import { addressOnly, classifyInbound, extractToken, htmlToText, stripQuoted } from "../_shared/inbound.ts";
+import { MAX_FILE_BYTES, planAttachments, safeFileName, withExtension, type PlannedAttachment } from "../_shared/files.ts";
+import { compressImage, IMAGE_KEEP_BELOW, IMAGE_MAX_PIXELS, imageSize } from "../_shared/images.ts";
 
 const WEBHOOK_SECRET = Deno.env.get("RESEND_WEBHOOK_SECRET") ?? "";
 const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") ?? "";
 const INBOUND_DOMAIN = (Deno.env.get("INBOUND_DOMAIN") ?? "").toLowerCase();
 const SITE_URL = (Deno.env.get("SITE_URL") ?? "https://artisan-relance.jercat.fr").replace(/\/$/, "");
+const INTERNAL_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const SELF_URL = `${(Deno.env.get("SUPABASE_URL") ?? "").replace(/\/$/, "")}/functions/v1/resend-inbound`;
+const BUCKET = "messages";
 const DELIVERY_EVENTS: Record<string, "bounced" | "complained" | "suppressed" | "failed"> = {
   "email.bounced": "bounced",
   "email.complained": "complained",
@@ -61,6 +69,116 @@ interface ReplyRow {
 }
 
 const fromHeader = (label: string) => `${senderName(label)} <${FROM_EMAIL}>`;
+
+// ---------------------------------------------------------------------
+// Pièces jointes reçues : une sous-requête par fichier (limite de 2 s de calcul)
+// ---------------------------------------------------------------------
+interface StoredFile {
+  storage_path: string;
+  file_name: string;
+  size_bytes: number;
+}
+
+function sameSecret(a: string, b: string) {
+  if (!a || a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+/** Sous-requête : télécharge, filtre, réduit et range UN fichier. */
+async function handleAttachmentTask(task: { message_id: string; user_id: string; item: PlannedAttachment }) {
+  const { message_id, user_id, item } = task;
+  const label = `« ${item.filename} »`;
+  try {
+    const res = await fetch(item.url, { signal: AbortSignal.timeout(30000) });
+    if (!res.ok) return json({ note: `${label} n'a pas pu être récupéré.` });
+    let bytes = new Uint8Array(await res.arrayBuffer());
+    if (bytes.byteLength === 0) return json({ note: `${label} est vide.` });
+    if (bytes.byteLength > MAX_FILE_BYTES) return json({ note: `${label} écarté (plus de 10 Mo).` });
+    const original = bytes.byteLength;
+    let mime = item.mime;
+    let name = safeFileName(item.filename);
+
+    if ((mime === "image/jpeg" || mime === "image/png") && original > IMAGE_KEEP_BELOW) {
+      const dims = imageSize(bytes);
+      if (dims && dims.width * dims.height <= IMAGE_MAX_PIXELS) {
+        const small = await compressImage(bytes, mime);
+        if (small) {
+          bytes = small;
+          if (mime === "image/png") {
+            mime = "image/jpeg";
+            name = withExtension(name, "jpg");
+          }
+        }
+      }
+      // image trop grande ou illisible par le réducteur : gardée telle quelle (≤ 10 Mo)
+    }
+
+    const path = `${user_id}/${message_id}/${item.index}-${name}`;
+    const up = await admin.storage.from(BUCKET).upload(path, bytes, { contentType: mime, upsert: true });
+    if (up.error) throw new Error(up.error.message);
+    const { error } = await admin.rpc("add_message_file", {
+      p_message_id: message_id,
+      p_path: path,
+      p_name: item.filename.slice(0, 200),
+      p_mime: mime,
+      p_size: bytes.byteLength,
+      p_original_size: original,
+    });
+    if (error) throw new Error(error.message);
+    log("inbound_file_stored", { message_id, index: item.index, mime, original, stored: bytes.byteLength });
+    return json({ ok: true });
+  } catch (e) {
+    log("inbound_file_failed", { message_id, index: item.index, error: e instanceof Error ? e.message : String(e) });
+    return json({ note: `${label} n'a pas pu être enregistré.` });
+  }
+}
+
+/** Range les pièces jointes du message (en parallèle) ; idempotent en cas de nouvel essai. */
+async function storeAttachments(emailId: string, messageId: string, userId: string): Promise<{ files: StoredFile[]; note: string }> {
+  const loadFiles = async () =>
+    ((await admin.from("campaign_message_files").select("storage_path, file_name, size_bytes").eq("message_id", messageId).order("storage_path"))
+      .data ?? []) as StoredFile[];
+
+  let meta;
+  try {
+    meta = await listReceivedAttachmentMeta(emailId);
+  } catch (e) {
+    log("inbound_attachments_list_failed", { email_id: emailId, error: e instanceof Error ? e.message : String(e) });
+    const note = "Les pièces jointes de ce message n'ont pas pu être récupérées.";
+    await admin.rpc("set_message_files_note", { p_message_id: messageId, p_note: note });
+    return { files: await loadFiles(), note };
+  }
+  if (!meta.length) return { files: [], note: "" };
+
+  const { accepted, notes } = planAttachments(meta);
+  const done = new Set((await loadFiles()).map((f) => Number(f.storage_path.split("/")[2]?.split("-")[0])));
+  const results = await Promise.all(
+    accepted.map(async (item) => {
+      if (done.has(item.index)) return "";
+      try {
+        const res = await fetch(SELF_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-internal-key": INTERNAL_KEY },
+          body: JSON.stringify({ task: "attachment", message_id: messageId, user_id: userId, item }),
+          signal: AbortSignal.timeout(90000),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) return `« ${item.filename} » n'a pas pu être enregistré.`;
+        return typeof body?.note === "string" ? body.note : "";
+      } catch {
+        return `« ${item.filename} » n'a pas pu être enregistré.`;
+      }
+    }),
+  );
+  const failures = results.filter(Boolean);
+  const all = [...failures, ...notes.filter((n) => !n.startsWith("Demandez"))];
+  if (all.length) all.push("Demandez au client de vous les renvoyer autrement si besoin.");
+  const note = all.join(" ");
+  await admin.rpc("set_message_files_note", { p_message_id: messageId, p_note: note });
+  return { files: await loadFiles(), note };
+}
 
 // ---------------------------------------------------------------------
 // Réponses reçues
@@ -112,19 +230,53 @@ async function handleReceived(event: WebhookEvent) {
     return json({ ignored: "unknown_campaign" });
   }
 
+  const receivedText = email.text?.trim() ? email.text : email.html ? htmlToText(email.html) : "";
+  const artisanTo = row.reply_to_email || row.user_email;
+  const dashboardUrl = `${SITE_URL}/devis/${row.campaign_id}`;
+
+  // Conversation dans le site : texte (sans l'historique recopié) + pièces jointes
+  let stored: { files: StoredFile[]; note: string } = { files: [], note: "" };
+  let userId = "";
+  let mode: "alert" | "full" | "none" = "alert";
+  if (row.kind !== "artisan_copy") {
+    const { data: msgRows, error: msgError } = await admin.rpc("register_inbound_message", {
+      p_campaign_id: row.campaign_id,
+      p_provider_email_id: id,
+      p_from: from,
+      p_to: [...(event.data.to ?? []), ...(event.data.cc ?? [])],
+      p_subject: event.data.subject ?? email.subject ?? "",
+      p_body: stripQuoted(receivedText),
+      p_kind: row.kind,
+      p_message_id: email.message_id ?? null,
+    });
+    if (msgError) {
+      log("inbound_message_error", { email_id: id, error: msgError.message });
+      return json({ error: msgError.message }, 500);
+    }
+    const msg = (msgRows as { message_id: string; already: boolean }[] | null)?.[0];
+    if (msg) {
+      const { data: c } = await admin.from("campaigns").select("user_id").eq("id", row.campaign_id).single();
+      userId = c?.user_id ?? "";
+      const { data: p } = await admin.from("profiles").select("reply_notification").eq("id", userId).single();
+      if (p?.reply_notification === "full" || p?.reply_notification === "none") mode = p.reply_notification;
+      stored = await storeAttachments(id, msg.message_id, userId);
+    }
+  }
+
   if (row.already_processed) {
-    const { data: existing } = await admin.from("inbound_replies").select("forwarded").eq("provider_email_id", id).single();
-    if (existing?.forwarded) return json({ ok: true, duplicate: true });
+    const { data: existing } = await admin.from("inbound_replies").select("forwarded, forward_error").eq("provider_email_id", id).single();
+    if (existing?.forwarded || existing?.forward_error === "notification désactivée") return json({ ok: true, duplicate: true });
+  }
+  if (row.kind !== "artisan_copy" && (mode === "none" || (mode === "alert" && row.kind === "auto_reply"))) {
+    await admin.rpc("mark_reply_forwarded", { p_provider_email_id: id, p_error: "notification désactivée" });
+    log("inbound_stored_only", { campaign_id: row.campaign_id, email_id: id, kind: row.kind, mode, files: stored.files.length });
+    return json({ ok: true, kind: row.kind, notified: false });
   }
   if (!row.can_forward) {
     await admin.rpc("mark_reply_forwarded", { p_provider_email_id: id, p_error: "limite de transferts atteinte" });
     log("inbound_forward_quota", { campaign_id: row.campaign_id, email_id: id });
     return json({ ok: true, forwarded: false, reason: "quota" });
   }
-
-  const receivedText = email.text?.trim() ? email.text : email.html ? htmlToText(email.html) : "";
-  const artisanTo = row.reply_to_email || row.user_email;
-  const dashboardUrl = `${SITE_URL}/devis/${row.campaign_id}`;
 
   try {
     if (row.kind === "artisan_copy") {
@@ -152,8 +304,37 @@ async function handleReceived(event: WebhookEvent) {
         },
         `copy-${id}`,
       );
+    } else if (mode === "alert") {
+      const rendered = renderReplyAlert({
+        prospectName: row.prospect_name,
+        originalSubject: row.subject,
+        from,
+        excerpt: stripQuoted(receivedText),
+        fileCount: stored.files.length,
+        companyName: row.company_name,
+        dashboardUrl,
+        kind: row.kind === "opt_out" || row.kind === "suspicious" ? row.kind : "reply",
+        unexpectedSender: !row.sender_is_recipient,
+      });
+      await sendEmail(
+        {
+          from: fromHeader("Artisan Relance"),
+          to: [artisanTo],
+          reply_to: row.kind === "suspicious" ? undefined : from,
+          subject: rendered.subject,
+          html: rendered.html,
+          text: rendered.text,
+          tags: [{ name: "kind", value: `reply_alert_${row.kind}` }],
+        },
+        `alert-${id}`,
+      );
     } else {
-      const attachments = await listReceivedAttachments(id);
+      // Transfert complet : pièces jointes déjà filtrées et réduites (liens signés 1 h)
+      const attachments: { filename: string; path: string }[] = [];
+      for (const f of stored.files) {
+        const { data: signed } = await admin.storage.from(BUCKET).createSignedUrl(f.storage_path, 3600);
+        if (signed?.signedUrl) attachments.push({ filename: f.file_name, path: signed.signedUrl });
+      }
       const rendered = renderReplyForward({
         prospectName: row.prospect_name,
         originalSubject: row.subject,
@@ -164,6 +345,7 @@ async function handleReceived(event: WebhookEvent) {
         kind: row.kind,
         unexpectedSender: !row.sender_is_recipient,
         recipients: row.recipients,
+        filesNote: stored.note,
       });
       await sendEmail(
         {
@@ -181,7 +363,7 @@ async function handleReceived(event: WebhookEvent) {
       );
     }
     await admin.rpc("mark_reply_forwarded", { p_provider_email_id: id, p_error: null });
-    log("inbound_forwarded", { campaign_id: row.campaign_id, email_id: id, kind: row.kind, ambiguous, unexpected_sender: !row.sender_is_recipient });
+    log("inbound_forwarded", { campaign_id: row.campaign_id, email_id: id, kind: row.kind, mode, files: stored.files.length, ambiguous, unexpected_sender: !row.sender_is_recipient });
     return json({ ok: true, kind: row.kind });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
@@ -270,6 +452,15 @@ async function handleDelivery(event: WebhookEvent, type: "bounced" | "complained
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Méthode non autorisée" }, 405);
+
+  // Sous-requête interne (une pièce jointe), authentifiée par la clé de service
+  const internal = req.headers.get("x-internal-key");
+  if (internal !== null) {
+    if (!sameSecret(internal, INTERNAL_KEY)) return json({ error: "Non autorisé" }, 401);
+    const task = await req.json().catch(() => null);
+    if (task?.task !== "attachment" || !task.message_id || !task.user_id || !task.item?.url) return json({ error: "Tâche invalide" }, 400);
+    return await handleAttachmentTask(task);
+  }
   if (!WEBHOOK_SECRET) return json({ error: "RESEND_WEBHOOK_SECRET manquant" }, 500);
 
   const payload = await req.text();

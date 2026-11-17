@@ -1,4 +1,5 @@
 // Client minimal de l'API Resend (fetch) pour les Edge Functions Deno.
+import type { IncomingAttachment } from "./files.ts";
 const API = "https://api.resend.com";
 
 function apiKey() {
@@ -83,17 +84,14 @@ export async function getReceivedEmail(id: string): Promise<ReceivedEmail> {
   return await res.json();
 }
 
-/** Pièces jointes d'un e-mail reçu (URL de téléchargement valables 1 h). */
-export async function listReceivedAttachments(id: string): Promise<OutgoingAttachment[]> {
+/** Pièces jointes d'un e-mail reçu, avec type, taille et URL de téléchargement (valable 1 h). */
+export async function listReceivedAttachmentMeta(id: string): Promise<IncomingAttachment[]> {
   const res = await fetch(`${API}/emails/receiving/${encodeURIComponent(id)}/attachments`, {
     headers: { Authorization: `Bearer ${receivingKey()}` },
   });
-  if (!res.ok) return [];
+  if (!res.ok) throw new Error(`Resend attachments ${res.status}`);
   const body = await res.json().catch(() => ({}));
-  const list: { filename?: string; download_url?: string }[] = body?.data ?? [];
-  return list
-    .filter((a) => a.download_url)
-    .map((a) => ({ filename: a.filename ?? "piece-jointe", path: a.download_url as string }));
+  return Array.isArray(body?.data) ? body.data : [];
 }
 
 export function senderName(name: string) {

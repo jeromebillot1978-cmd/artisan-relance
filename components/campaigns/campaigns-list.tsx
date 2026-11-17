@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { CalendarClock, FileText, Paperclip, Plus, Search } from "lucide-react";
+import { CalendarClock, FileText, MessageSquare, Paperclip, Plus, Search } from "lucide-react";
 import type { CampaignListItem } from "@/types/database";
 import { FILTERS, filterOf, formatDateTime, type FilterKey } from "@/lib/campaigns/constants";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -35,7 +35,25 @@ function predict(c: CampaignListItem, action: RowAction): CampaignListItem {
   }
 }
 
-export function CampaignsList({ campaigns: fromServer, initialFilter = "all" }: { campaigns: CampaignListItem[]; initialFilter?: FilterKey }) {
+function UnreadBadge({ count }: { count?: number }) {
+  if (!count) return null;
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-sky-500/15 px-2 py-0.5 text-[11px] font-medium text-sky-700 dark:text-sky-400">
+      <MessageSquare className="h-3 w-3" />
+      {count} nouveau{count > 1 ? "x" : ""} message{count > 1 ? "s" : ""}
+    </span>
+  );
+}
+
+export function CampaignsList({
+  campaigns: fromServer,
+  initialFilter = "all",
+  unread = {},
+}: {
+  campaigns: CampaignListItem[];
+  initialFilter?: FilterKey;
+  unread?: Record<string, number>;
+}) {
   const router = useRouter();
   const [filter, setFilter] = useState<FilterKey>(initialFilter);
   const [query, setQuery] = useState("");
@@ -168,6 +186,7 @@ export function CampaignsList({ campaigns: fromServer, initialFilter = "all" }: 
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate font-medium">{c.prospect_name}</p>
+                      {unread[c.id] ? <div className="my-1"><UnreadBadge count={unread[c.id]} /></div> : null}
                       <p className="truncate text-xs text-muted-foreground">
                         {c.reference ? `${c.reference} · ` : ""}
                         {c.initial_sent_at ? `Envoyé ${formatDateTime(c.initial_sent_at)}` : "Pas encore envoyé"}
@@ -222,7 +241,10 @@ export function CampaignsList({ campaigns: fromServer, initialFilter = "all" }: 
                   <TableRow key={c.id} className="cursor-pointer">
                     <TableCell className="max-w-[240px]">
                       <Link href={`/devis/${c.id}`} className="block">
-                        <span className="block truncate font-medium hover:underline">{c.prospect_name}</span>
+                        <span className="flex items-center gap-2">
+                          <span className="truncate font-medium hover:underline">{c.prospect_name}</span>
+                          <UnreadBadge count={unread[c.id]} />
+                        </span>
                         <span className="block truncate text-xs text-muted-foreground">
                           {c.reference ? `${c.reference} · ` : ""}
                           {c.recipients.join(", ")}

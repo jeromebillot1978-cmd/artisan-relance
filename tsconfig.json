@@ -38,6 +38,7 @@
     "node_modules",
     "supabase/functions/campaign-mailer",
     "supabase/functions/resend-inbound",
+    "supabase/functions/_shared/images.ts",
     "supabase/functions/_shared/resend.ts",
     "supabase/functions/_shared/svix.ts",
     "supabase/functions/_shared/admin.ts",

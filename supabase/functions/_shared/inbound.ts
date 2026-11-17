@@ -121,3 +121,29 @@ export function extractToken(
   const unique = [...new Set(tokens)];
   return { token: unique[0] ?? null, ambiguous: unique.length > 1 };
 }
+
+/**
+ * Texte écrit par le client, sans l'historique recopié sous sa réponse
+ * (« Le … a écrit : », « De : … Envoyé : … », « -----Message d'origine----- », lignes « > »).
+ * Si tout serait retiré (réponse placée sous la citation), le texte complet est gardé.
+ */
+export function stripQuoted(text: string): string {
+  const src = (text ?? "").replace(/\r\n?/g, "\n");
+  const markers = [
+    /^[ \t]*(?:Le|On)[ \t][^\n]{0,200}(?:\n[^\n]{0,200})?(?:a écrit|a ecrit|wrote)[ \t]*:[ \t]*$/im,
+    /^[ \t]*-{2,}[ \t]*(?:Original Message|Message d'origine|Message d’origine|Message transféré|Forwarded message)[^\n]*$/im,
+    /^[ \t]*\*?(?:De|From)[ \t]*:\*?[ \t][^\n]+\n[ \t]*\*?(?:Envoyé|Sent|Date)[ \t]*:/im,
+    /^[ \t]*_{8,}[ \t]*$/m,
+  ];
+  let cut = src.length;
+  for (const re of markers) {
+    const m = re.exec(src);
+    if (m && m.index < cut) cut = m.index;
+  }
+  let main = src.slice(0, cut);
+  // lignes citées « > » en fin de message
+  const lines = main.split("\n");
+  while (lines.length && (lines[lines.length - 1].trim() === "" || lines[lines.length - 1].trimStart().startsWith(">"))) lines.pop();
+  main = lines.join("\n").trim();
+  return main || src.trim();
+}

@@ -7,6 +7,8 @@ import type {
   CampaignAttachment,
   CampaignEvent,
   CampaignListItem,
+  CampaignMessage,
+  CampaignMessageFile,
   CampaignSend,
   InboundReply,
   Profile,
@@ -35,6 +37,7 @@ export const requireUser = cache(async () => {
         phone: null,
         reply_to_email: null,
         send_copy_to_self: false,
+        reply_notification: "alert",
         plan: "free",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -65,12 +68,26 @@ export async function getCampaignDetail(id: string) {
     .maybeSingle<Campaign>();
   if (!campaign) return null;
 
-  const [attachments, sends, events, replies] = await Promise.all([
+  const [attachments, sends, events, replies, messages] = await Promise.all([
     supabase.from("campaign_attachments").select("*").eq("campaign_id", id).order("created_at").returns<CampaignAttachment[]>(),
     supabase.from("campaign_sends").select("*").eq("campaign_id", id).order("sequence").returns<CampaignSend[]>(),
     supabase.from("campaign_events").select("id, type, detail, created_at").eq("campaign_id", id).order("created_at").returns<CampaignEvent[]>(),
     supabase.from("inbound_replies").select("id, from_address, subject, forwarded, created_at").eq("campaign_id", id).order("created_at").returns<InboundReply[]>(),
+    supabase
+      .from("campaign_messages")
+      .select("id, campaign_id, direction, kind, from_address, to_addresses, subject, body, status, attempts, error, files_note, read_at, sent_at, created_at, files:campaign_message_files(id, message_id, storage_path, file_name, mime_type, size_bytes, original_size_bytes)")
+      .eq("campaign_id", id)
+      .order("created_at")
+      .limit(200)
+      .returns<CampaignMessage[]>(),
   ]);
+
+  // Pièces jointes des messages : liens temporaires (1 h) vers le stockage privé
+  const messageList = messages.data ?? [];
+  const messageFiles: CampaignMessageFile[] = messageList.flatMap((m) => m.files ?? []);
+  const signedMessageFiles = messageFiles.length
+    ? (await supabase.storage.from("messages").createSignedUrls(messageFiles.map((f) => f.storage_path), 3600)).data ?? []
+    : [];
 
   const files = attachments.data ?? [];
   const signed = files.length
@@ -83,6 +100,13 @@ export async function getCampaignDetail(id: string) {
     sends: sends.data ?? [],
     events: events.data ?? [],
     replies: replies.data ?? [],
+    messages: messageList.map((m) => ({
+      ...m,
+      files: (m.files ?? [])
+        .slice()
+        .sort((a, b) => a.storage_path.localeCompare(b.storage_path, "fr", { numeric: true }))
+        .map((f) => ({ ...f, url: signedMessageFiles.find((x) => x.path === f.storage_path)?.signedUrl ?? null })),
+    })),
   };
 }
 
@@ -143,4 +167,20 @@ export async function getCampaignReviews(campaignId: string) {
     .order("created_at", { ascending: false })
     .returns<ReviewRequest[]>();
   return data ?? [];
+}
+
+/** Réponses de clients non lues, par devis (badges de la liste et du menu). */
+export async function getUnreadByCampaign(): Promise<Record<string, number>> {
+  const { supabase, user } = await requireUser();
+  const { data } = await supabase
+    .from("campaign_messages")
+    .select("campaign_id")
+    .eq("user_id", user.id)
+    .eq("direction", "in")
+    .is("read_at", null)
+    .neq("kind", "auto_reply")
+    .limit(1000);
+  const out: Record<string, number> = {};
+  for (const row of (data ?? []) as { campaign_id: string }[]) out[row.campaign_id] = (out[row.campaign_id] ?? 0) + 1;
+  return out;
 }

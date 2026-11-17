@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Download, Plus } from "lucide-react";
-import { getCampaigns } from "@/lib/data";
+import { getCampaigns, getUnreadByCampaign } from "@/lib/data";
 import { FILTERS, type FilterKey } from "@/lib/campaigns/constants";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/app/page-header";
@@ -10,7 +10,7 @@ import { CampaignsList } from "@/components/campaigns/campaigns-list";
 export const metadata: Metadata = { title: "Devis" };
 
 export default async function DevisPage({ searchParams }: { searchParams: Promise<{ filtre?: string }> }) {
-  const [{ filtre }, campaigns] = await Promise.all([searchParams, getCampaigns()]);
+  const [{ filtre }, campaigns, unread] = await Promise.all([searchParams, getCampaigns(), getUnreadByCampaign()]);
   const initial = FILTERS.some((f) => f.key === filtre) ? (filtre as FilterKey) : "all";
 
   return (
@@ -38,7 +38,7 @@ export default async function DevisPage({ searchParams }: { searchParams: Promis
           </>
         }
       />
-      <CampaignsList campaigns={campaigns} initialFilter={initial} />
+      <CampaignsList campaigns={campaigns} initialFilter={initial} unread={unread} />
     </>
   );
 }

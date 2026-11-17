@@ -22,6 +22,10 @@ const profileSchema = z.object({
     .string()
     .optional()
     .transform((v) => v === "on"),
+  reply_notification: z
+    .enum(["alert", "full", "none"])
+    .optional()
+    .transform((v) => v ?? "alert"),
   company_name: z.string().trim().min(2, "Nom d'entreprise requis.").max(120),
   contact_name: optional(120),
   phone: optional(30),

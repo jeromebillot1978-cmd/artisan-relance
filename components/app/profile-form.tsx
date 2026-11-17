@@ -73,6 +73,33 @@ export function ProfileForm({ profile }: { profile: Profile }) {
           </span>
         </span>
       </label>
+      <fieldset className="grid gap-2 rounded-lg border p-3">
+        <legend className="px-1 text-sm font-medium">Quand un client répond</legend>
+        <p className="text-xs text-muted-foreground">
+          Ses réponses et pièces jointes s'affichent toujours dans le dossier du devis, où vous pouvez lui répondre.
+        </p>
+        {(
+          [
+            ["alert", "Alerte courte par e-mail (recommandé)", "Un e-mail vous prévient avec un extrait et un bouton « Lire et répondre »."],
+            ["full", "Transfert complet par e-mail", "Le message entier et ses pièces jointes (photos réduites) arrivent dans votre boîte."],
+            ["none", "Aucun e-mail", "Vous consultez les réponses uniquement dans le site."],
+          ] as const
+        ).map(([value, title, help]) => (
+          <label key={value} className="flex cursor-pointer items-start gap-3 rounded-md p-1.5 hover:bg-muted/40">
+            <input
+              type="radio"
+              name="reply_notification"
+              value={value}
+              defaultChecked={(profile.reply_notification ?? "alert") === value}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[hsl(var(--brand))]"
+            />
+            <span className="grid gap-0.5">
+              <span className="text-sm">{title}</span>
+              <span className="text-xs text-muted-foreground">{help}</span>
+            </span>
+          </label>
+        ))}
+      </fieldset>
       <div>
         <SubmitButton pendingText="Enregistrement…">Enregistrer</SubmitButton>
       </div>

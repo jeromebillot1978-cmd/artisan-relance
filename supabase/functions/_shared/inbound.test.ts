@@ -1,5 +1,5 @@
 // Tests : node --experimental-strip-types supabase/functions/_shared/inbound.test.ts
-import { classifyInbound, extractToken, htmlToText, isOptOut, addressOnly } from "./inbound.ts";
+import { stripQuoted, classifyInbound, extractToken, htmlToText, isOptOut, addressOnly } from "./inbound.ts";
 import { renderReplyForward, replySubject } from "./templates.ts";
 let ok = 0, ko = 0;
 const t = (name: string, got: unknown, exp: unknown) => {
@@ -46,5 +46,13 @@ t("transfert absence : objet marqué", auto.subject, "[Réponse automatique] Re:
 const other = renderReplyForward({ prospectName: "Jean", originalSubject: "Devis", from: "autre@x.fr", receivedText: "ok", companyName: "P", dashboardUrl: "u", unexpectedSender: true, recipients: ["jean@x.fr"] });
 t("transfert : alerte expéditeur inattendu", other.html.includes("autre@x.fr, qui n'est pas l'adresse") || other.html.includes("autre@x.fr</") || other.html.includes("n&#39;est pas") || other.html.includes("n'est pas l'adresse"), true);
 t("préfixe collé ignoré", extractToken({ to: [`mydevis-${T}@reponses.jercat.fr`] }, "reponses.jercat.fr"), { token: null, ambiguous: false });
+t("citation Gmail FR", stripQuoted("Bonjour,\nOK pour moi.\n\nLe lun. 17 nov. 2026 à 18:42, Plomberie <devis-x@reponses.jercat.fr> a écrit :\n> Bonjour Jean\n> Voici le devis"), "Bonjour,\nOK pour moi.");
+t("citation Gmail sur deux lignes", stripQuoted("Merci\n\nLe lun. 17 nov. 2026 à 18:42, Plomberie <\ndevis-x@reponses.jercat.fr> a écrit :\n> texte"), "Merci");
+t("citation Outlook", stripQuoted("Oui c'est bon\n\nDe : Plomberie <relances@jercat.fr>\nEnvoyé : lundi 17 novembre 2026 18:42\nÀ : Jean\nObjet : Votre devis"), "Oui c'est bon");
+t("citation anglaise", stripQuoted("Thanks\nOn Mon, Nov 17, 2026 at 6:42 PM Plomberie wrote:\n> hi"), "Thanks");
+t("message d'origine", stripQuoted("Ok\n-----Message d'origine-----\nDe: x"), "Ok");
+t("lignes > finales", stripQuoted("D'accord\n> ancien\n> texte\n"), "D'accord");
+t("réponse sous la citation : texte gardé", stripQuoted("Le lun. 17 nov. 2026, X a écrit :\n> devis\nOK"), "Le lun. 17 nov. 2026, X a écrit :\n> devis\nOK");
+t("sans citation", stripQuoted("  Bonjour, merci.  "), "Bonjour, merci.");
 console.log(`\n${ok} réussis, ${ko} échoués`);
 process.exit(ko ? 1 : 0);
