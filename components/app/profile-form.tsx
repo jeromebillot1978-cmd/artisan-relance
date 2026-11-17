@@ -57,6 +57,22 @@ export function ProfileForm({ profile }: { profile: Profile }) {
         </p>
         <FieldError errors={state.fieldErrors?.reply_to_email} />
       </div>
+      <label htmlFor="send_copy_to_self" className="flex cursor-pointer items-start gap-3 rounded-lg border p-3">
+        <input
+          id="send_copy_to_self"
+          name="send_copy_to_self"
+          type="checkbox"
+          defaultChecked={profile.send_copy_to_self}
+          className="mt-0.5 h-4 w-4 shrink-0 accent-[hsl(var(--brand))]"
+        />
+        <span className="grid gap-0.5">
+          <span className="text-sm font-medium">Recevoir une copie de mes devis envoyés</span>
+          <span className="text-xs text-muted-foreground">
+            Désactivé : vous ne recevez rien, tout reste visible dans votre tableau de bord. Activé : une copie
+            cachée de chaque devis arrive dans votre boîte ({profile.reply_to_email || profile.email}).
+          </span>
+        </span>
+      </label>
       <div>
         <SubmitButton pendingText="Enregistrement…">Enregistrer</SubmitButton>
       </div>

@@ -289,7 +289,7 @@ export function CampaignForm({ userId, companyName }: { userId: string; companyN
         </Button>
         <p className="text-center text-xs text-muted-foreground">
           {sendInitial
-            ? "La date et l'heure d'envoi sont enregistrées automatiquement. Vous recevez une copie du message."
+            ? "La date et l'heure d'envoi sont enregistrées automatiquement et le message reste consultable dans le dossier."
             : "Aucun e-mail ne part maintenant : seules les relances seront envoyées, à partir de la date indiquée."}
         </p>
       </div>

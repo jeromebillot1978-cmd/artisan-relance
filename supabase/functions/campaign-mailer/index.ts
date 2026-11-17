@@ -119,6 +119,12 @@ async function deliver(job: Job): Promise<string> {
   const body = fillVariables(job.kind === "initial" ? job.message : job.followup_message, vars);
   const { files, names } = await attachmentsFor(job);
   const thread = await threadHeaders(job);
+  // Copie cachée à l'artisan : seulement s'il l'a demandée (Paramètres), et seulement pour le devis initial
+  let bcc: string[] | undefined;
+  if (job.kind === "initial") {
+    const { data: prefs } = await admin.from("profiles").select("send_copy_to_self").eq("id", job.user_id).maybeSingle();
+    if (prefs?.send_copy_to_self) bcc = [artisanEmail];
+  }
 
   const rendered = renderProspectEmail({
     subject,
@@ -136,8 +142,7 @@ async function deliver(job: Job): Promise<string> {
     {
       from: `${senderName(job.company_name)} <${FROM_EMAIL}>`,
       to: job.recipients,
-      // copie du devis initial à l'artisan, pour son classement
-      bcc: job.kind === "initial" ? [artisanEmail] : undefined,
+      bcc,
       reply_to: replyTo,
       subject: rendered.subject,
       html: rendered.html,

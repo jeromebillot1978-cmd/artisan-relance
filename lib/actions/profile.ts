@@ -17,6 +17,11 @@ const optional = (max: number) =>
     .transform((v) => v || null);
 
 const profileSchema = z.object({
+  // case à cocher : « on » quand cochée, absente sinon
+  send_copy_to_self: z
+    .string()
+    .optional()
+    .transform((v) => v === "on"),
   company_name: z.string().trim().min(2, "Nom d'entreprise requis.").max(120),
   contact_name: optional(120),
   phone: optional(30),

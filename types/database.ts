@@ -5,6 +5,8 @@ export interface Profile {
   contact_name: string | null;
   phone: string | null;
   reply_to_email: string | null;
+  /** Copie cachée de chaque devis envoyé (désactivée par défaut). */
+  send_copy_to_self: boolean;
   plan: string;
   created_at: string;
   updated_at: string;

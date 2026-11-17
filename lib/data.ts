@@ -34,6 +34,7 @@ export const requireUser = cache(async () => {
         contact_name: null,
         phone: null,
         reply_to_email: null,
+        send_copy_to_self: false,
         plan: "free",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
