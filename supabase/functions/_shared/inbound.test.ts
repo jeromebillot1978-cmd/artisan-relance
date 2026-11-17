@@ -54,5 +54,7 @@ t("message d'origine", stripQuoted("Ok\n-----Message d'origine-----\nDe: x"), "O
 t("lignes > finales", stripQuoted("D'accord\n> ancien\n> texte\n"), "D'accord");
 t("réponse sous la citation : texte gardé", stripQuoted("Le lun. 17 nov. 2026, X a écrit :\n> devis\nOK"), "Le lun. 17 nov. 2026, X a écrit :\n> devis\nOK");
 t("sans citation", stripQuoted("  Bonjour, merci.  "), "Bonjour, merci.");
+t("citation Gmail mobile (a / écrit coupés)", stripQuoted("C est mieux ?\n\nLe mar. 17 nov. 2026, 19:55, jerome billot <j@gmail.com> a\nécrit :\n\n> voila\n"), "C est mieux ?");
+t("citation sur trois lignes", stripQuoted("Ok\nLe mar. 17 nov. 2026 à 19:51,\nPlomberie Martin <\nrelances@jercat.fr> a écrit :\n> x"), "Ok");
 console.log(`\n${ok} réussis, ${ko} échoués`);
 process.exit(ko ? 1 : 0);

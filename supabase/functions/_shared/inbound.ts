@@ -130,7 +130,7 @@ export function extractToken(
 export function stripQuoted(text: string): string {
   const src = (text ?? "").replace(/\r\n?/g, "\n");
   const markers = [
-    /^[ \t]*(?:Le|On)[ \t][^\n]{0,200}(?:\n[^\n]{0,200})?(?:a écrit|a ecrit|wrote)[ \t]*:[ \t]*$/im,
+    /^[ \t]*(?:Le|On)[ \t][^\n]{0,200}?(?:\n[^\n]{0,200}?){0,2}(?:a[ \t]*\n?[ \t]*[ée]crit|wrote)[ \t]*:[ \t]*$/im,
     /^[ \t]*-{2,}[ \t]*(?:Original Message|Message d'origine|Message d’origine|Message transféré|Forwarded message)[^\n]*$/im,
     /^[ \t]*\*?(?:De|From)[ \t]*:\*?[ \t][^\n]+\n[ \t]*\*?(?:Envoyé|Sent|Date)[ \t]*:/im,
     /^[ \t]*_{8,}[ \t]*$/m,
