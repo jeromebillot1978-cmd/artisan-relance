@@ -184,6 +184,7 @@ interface MessageJob {
   initial_message_id: string | null;
   initial_provider_id: string | null;
   thread: string[];
+  files?: { path: string; name: string }[];
 }
 
 const validMessageId = (v: unknown): v is string => typeof v === "string" && /^<[^<>\s]+@[^<>\s]+>$/.test(v.trim());
@@ -212,10 +213,19 @@ async function deliverMessage(job: MessageJob): Promise<string> {
     headers.References = refs.join(" ");
   }
 
+  // Pièces jointes jointes par l'artisan (liens signés 1 h, téléchargés par Resend)
+  const attachments: OutgoingAttachment[] = [];
+  for (const f of job.files ?? []) {
+    const { data: signed, error: signError } = await admin.storage.from("messages").createSignedUrl(f.path, 60 * 60);
+    if (signError || !signed) throw new Error(`Pièce jointe introuvable : ${f.name}`);
+    attachments.push({ filename: f.name, path: signed.signedUrl });
+  }
+
   const rendered = renderProspectEmail({
     subject,
-    body: job.body,
+    body: job.body.trim() || "Veuillez trouver ci-joint le document.",
     sender: { companyName: job.company_name, contactName: job.contact_name, phone: job.phone, replyEmail: artisanEmail },
+    attachmentNames: attachments.map((a) => a.filename),
   });
   return await sendEmail(
     {
@@ -225,6 +235,7 @@ async function deliverMessage(job: MessageJob): Promise<string> {
       subject: rendered.subject,
       html: rendered.html,
       text: rendered.text,
+      attachments: attachments.length ? attachments : undefined,
       headers,
       tags: [
         { name: "campaign", value: job.campaign_id },

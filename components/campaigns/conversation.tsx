@@ -3,10 +3,12 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { AlertTriangle, Clock, Download, FileText, Inbox, Loader2, MessageSquare, Send, XCircle } from "lucide-react";
+import { AlertTriangle, Clock, Download, FileText, Inbox, Loader2, MessageSquare, Paperclip, Send, X, XCircle } from "lucide-react";
 import type { CampaignMessage } from "@/types/database";
 import { formatBytes, formatDateTime } from "@/lib/campaigns/constants";
 import { markCampaignMessagesRead, sendCampaignMessage } from "@/lib/actions/messages";
+import { createClient } from "@/lib/supabase/client";
+import { REPLY_FILES, replyFileType, shrinkForReply, storageName } from "@/lib/reply-files";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -103,13 +105,21 @@ function Files({ m }: { m: CampaignMessage }) {
   );
 }
 
+interface Picked {
+  key: string;
+  file: File;
+  type: string;
+}
+
 export function Conversation({
+  userId,
   campaignId,
   prospectName,
   recipients,
   messages,
   blockedReason,
 }: {
+  userId: string;
   campaignId: string;
   prospectName: string;
   recipients: string[];
@@ -119,6 +129,32 @@ export function Conversation({
   const router = useRouter();
   const [body, setBody] = useState("");
   const [pending, startTransition] = useTransition();
+  const [picked, setPicked] = useState<Picked[]>([]);
+  const [step, setStep] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  function addFiles(list: FileList | null) {
+    if (!list?.length) return;
+    const next = [...picked];
+    for (const file of Array.from(list)) {
+      const type = replyFileType(file);
+      if (!type) {
+        toast.error(`« ${file.name} » : type de fichier non accepté (PDF, photo, Word, Excel, texte).`);
+        continue;
+      }
+      if (file.size > REPLY_FILES.maxFileBytes && !(type === "image/jpeg" || type === "image/png")) {
+        toast.error(`« ${file.name} » dépasse 10 Mo.`);
+        continue;
+      }
+      if (next.length >= REPLY_FILES.maxFiles) {
+        toast.error("5 pièces jointes maximum par message.");
+        break;
+      }
+      next.push({ key: `${file.name}-${file.size}-${file.lastModified}-${Math.random()}`, file, type });
+    }
+    setPicked(next);
+    if (fileInput.current) fileInput.current.value = "";
+  }
   const endRef = useRef<HTMLDivElement>(null);
   const unread = messages.some((m) => m.direction === "in" && !m.read_at);
   const waiting = messages.some((m) => m.direction === "out" && (m.status === "queued" || m.status === "sending"));
@@ -139,14 +175,44 @@ export function Conversation({
 
   function submit() {
     const text = body.trim();
-    if (text.length < 2) return toast.error("Écrivez votre message.");
+    if (text.length < 2 && picked.length === 0) return toast.error("Écrivez votre message ou joignez un fichier.");
     startTransition(async () => {
-      const res = await sendCampaignMessage(campaignId, text);
+      // 1. Photos réduites puis fichiers téléversés dans votre dossier privé
+      const uploaded: { path: string; name: string }[] = [];
+      if (picked.length) {
+        const supabase = createClient();
+        let total = 0;
+        for (const [i, p] of picked.entries()) {
+          setStep(`Préparation des pièces jointes (${i + 1}/${picked.length})…`);
+          const { blob, type, name } = await shrinkForReply(p.file, p.type);
+          if (blob.size > REPLY_FILES.maxFileBytes) {
+            setStep(null);
+            return void toast.error(`« ${p.file.name} » dépasse 10 Mo.`);
+          }
+          total += blob.size;
+          if (total > REPLY_FILES.maxTotalBytes) {
+            setStep(null);
+            return void toast.error("Pièces jointes : 15 Mo maximum au total.");
+          }
+          const path = `${userId}/out/${crypto.randomUUID()}-${storageName(name)}`;
+          const { error } = await supabase.storage.from("messages").upload(path, blob, { contentType: type, upsert: false });
+          if (error) {
+            setStep(null);
+            return void toast.error(`« ${p.file.name} » n'a pas pu être envoyé. Réessayez.`);
+          }
+          uploaded.push({ path, name });
+        }
+      }
+      // 2. Message mis en file, envoyé aussitôt
+      setStep("Envoi…");
+      const res = await sendCampaignMessage(campaignId, text, uploaded);
+      setStep(null);
       if (res.error) {
         toast.error(res.error);
         return;
       }
       setBody("");
+      setPicked([]);
       toast.success("Réponse envoyée.");
       router.refresh();
       setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 300);
@@ -199,7 +265,9 @@ export function Conversation({
                         L'expéditeur de ce message n'a pas pu être authentifié. Vérifiez avant d'ouvrir les pièces jointes ou de répondre.
                       </p>
                     )}
-                    <p className="whitespace-pre-line break-words">{m.body || <span className="text-muted-foreground">(message vide)</span>}</p>
+                    {(m.body || !m.files.length) && (
+                      <p className="whitespace-pre-line break-words">{m.body || <span className="text-muted-foreground">(message vide)</span>}</p>
+                    )}
                     <Files m={m} />
                   </div>
                 </li>
@@ -236,15 +304,63 @@ export function Conversation({
               rows={4}
               disabled={pending}
             />
+            {picked.length > 0 && (
+              <ul className="flex flex-wrap gap-2">
+                {picked.map((p) => (
+                  <li key={p.key} className="flex max-w-full items-center gap-1.5 rounded-md border bg-muted/40 py-1 pl-2 pr-1 text-xs">
+                    <FileText className="h-3.5 w-3.5 shrink-0 text-brand" />
+                    <span className="max-w-[180px] truncate" title={p.file.name}>
+                      {p.file.name}
+                    </span>
+                    <span className="text-muted-foreground">{formatBytes(p.file.size)}</span>
+                    <button
+                      type="button"
+                      onClick={() => setPicked((list) => list.filter((x) => x.key !== p.key))}
+                      disabled={pending}
+                      className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      aria-label={`Retirer ${p.file.name}`}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <input
+              ref={fileInput}
+              type="file"
+              multiple
+              accept={REPLY_FILES.accept}
+              className="hidden"
+              onChange={(e) => addFiles(e.target.files)}
+            />
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs text-muted-foreground">
-                Envoyé à {recipients.join(", ")}, avec votre signature. Sa réponse arrivera ici.
-                {body.length > MAX - 500 && <span className="ml-1">{MAX - body.length} caractères restants.</span>}
+                {step ?? (
+                  <>
+                    Envoyé à {recipients.join(", ")}, avec votre signature. Sa réponse arrivera ici.
+                    {body.length > MAX - 500 && <span className="ml-1">{MAX - body.length} caractères restants.</span>}
+                  </>
+                )}
               </p>
-              <Button type="submit" variant="brand" size="sm" disabled={pending || body.trim().length < 2}>
-                {pending ? <Loader2 className="animate-spin" /> : <Send />} Envoyer
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInput.current?.click()}
+                  disabled={pending || picked.length >= REPLY_FILES.maxFiles}
+                >
+                  <Paperclip /> Joindre
+                </Button>
+                <Button type="submit" variant="brand" size="sm" disabled={pending || (body.trim().length < 2 && picked.length === 0)}>
+                  {pending ? <Loader2 className="animate-spin" /> : <Send />} Envoyer
+                </Button>
+              </div>
             </div>
+            <p className="text-[11px] text-muted-foreground">
+              PDF, photos, Word, Excel ou texte : 5 fichiers et 15 Mo au plus. Les photos sont réduites automatiquement.
+            </p>
           </form>
         )}
       </CardContent>

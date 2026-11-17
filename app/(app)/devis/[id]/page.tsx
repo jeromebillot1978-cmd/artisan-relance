@@ -213,6 +213,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
 
         <div className="space-y-4">
           <Conversation
+            userId={c.user_id}
             campaignId={c.id}
             prospectName={c.prospect_name}
             recipients={c.recipients}
