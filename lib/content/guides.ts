@@ -1,24 +1,47 @@
 import type { ContentPage } from "./types";
+import { geoAnswers } from "./geo";
+import { GUIDES_2 } from "./guides-2";
 
 const DATE = "2026-11-15";
 
-export const GUIDES: (ContentPage & { short: string })[] = [
+const GUIDES_1: (ContentPage & { short: string })[] = [
   // ------------------------------------------------------------------ QUAND RELANCER
   {
     slug: "quand-relancer-un-devis",
     short: "Quand relancer un devis ?",
-    title: "Quand relancer un devis ? Le bon délai pour les artisans",
+    title: "Quand relancer un devis après un rendez-vous ? Les bons délais",
     description:
-      "Au bout de combien de jours relancer un devis ? Délais conseillés selon le type de chantier, calendrier J+3, J+7, J+14 et erreurs à éviter pour les artisans.",
-    h1: "Quand relancer un devis ? Le calendrier qui fonctionne pour les artisans",
+      "Quand envoyer et relancer un devis après un rendez-vous client ? Délai d'envoi, calendrier J+3, J+7, J+14 selon le chantier et erreurs à éviter pour artisans.",
+    h1: "Quand relancer un devis après un rendez-vous ? Le calendrier qui fonctionne pour les artisans",
     answer:
-      "Relancez un devis 3 à 7 jours après l'envoi, puis une deuxième fois une semaine plus tard, et envoyez un dernier message de clôture vers trois à quatre semaines. Plus le chantier est petit et urgent, plus la relance doit être rapide ; plus il est important, plus vous pouvez espacer.",
+      "Après un rendez-vous, envoyez le devis dans les 48 heures, relancez-le 3 à 7 jours après l'envoi, puis une deuxième fois une semaine plus tard, et envoyez un dernier message de clôture vers trois à quatre semaines. Plus le chantier est petit et urgent, plus la relance doit être rapide ; plus il est important, plus vous pouvez espacer.",
     sections: [
       {
         h2: "Pourquoi le moment de la relance compte autant",
         paragraphs: [
           "Un devis envoyé entre dans une période de réflexion. Les premiers jours, le client le lit, le compare et se pose des questions. C'est le meilleur moment pour reprendre contact : votre devis est encore frais dans son esprit, et une question restée sans réponse peut faire basculer la décision en votre faveur.",
           "Trop tôt, la relance paraît pressante : le client n'a pas eu le temps d'ouvrir le document. Trop tard, il a déjà choisi, souvent l'entreprise qui l'a recontacté en premier. Entre les deux, une fenêtre de quelques jours où la relance est perçue comme du sérieux, pas comme de l'insistance.",
+        ],
+      },
+      {
+        h2: "Après le rendez-vous : envoyer le devis dans les 48 heures",
+        paragraphs: [
+          "Le compte à rebours commence au rendez-vous, pas à l'envoi du devis. Pendant la visite, le client vous a montré la pièce, posé ses questions et s'est fait une première idée de vous. Ce souvenir s'efface vite, surtout s'il reçoit d'autres artisans dans la même semaine. Un devis envoyé dans les 48 heures arrive pendant que la visite est encore fraîche ; un devis envoyé quinze jours plus tard arrive souvent après la décision.",
+          "Si un poste demande une vérification (prix d'un matériau, disponibilité d'un équipement), envoyez quand même le devis rapidement en le signalant, puis complétez-le. Mieux vaut un devis rapide précisé ensuite qu'un devis parfait arrivé trop tard.",
+          "Profitez du rendez-vous pour préparer la relance : demandez au client quand il compte décider, s'il attend d'autres devis, s'il dépend d'un financement et par quel moyen il préfère être recontacté. Notez ces réponses : elles fixent le bon délai de relance bien mieux qu'une règle générale.",
+        ],
+      },
+      {
+        h2: "Annoncer la relance pendant le rendez-vous",
+        paragraphs: [
+          "La relance la mieux acceptée est celle que le client attend. En fin de visite, une phrase suffit : « Je vous envoie le devis d'ici jeudi, et je vous recontacte la semaine suivante pour répondre à vos questions. » Le client sait à quoi s'attendre, et votre message ne sera pas perçu comme une surprise ou une pression.",
+          "Si le client vous dit qu'il décidera après les vacances, après le passage d'un autre artisan ou après un rendez-vous à la banque, calez votre première relance juste après cette date. Une relance envoyée trop tôt tombe dans le vide ; une relance envoyée au bon moment montre que vous l'avez écouté.",
+        ],
+        list: [
+          "Le client compare plusieurs devis : première relance à J+5, quand il a reçu les autres.",
+          "Le client attend un financement : relance après la date de son rendez-vous bancaire ou de sa demande d'aide.",
+          "Le client doit en parler à son conjoint ou à sa famille : relance le lundi, après le week-end où la décision se prend souvent.",
+          "Le client est pressé (panne, dégât) : relance à J+2, puis appel.",
         ],
       },
       {
@@ -73,23 +96,32 @@ export const GUIDES: (ContentPage & { short: string })[] = [
       { q: "Peut-on relancer un devis le lendemain ?", a: "C'est trop tôt dans la plupart des cas : le client n'a pas encore lu ni comparé. Sauf urgence, attendez au moins 3 jours." },
       { q: "Quand arrêter de relancer un devis ?", a: "Après trois relances sans réponse, ou à l'expiration du devis. Un dernier message de clôture permet de terminer proprement." },
       { q: "Quel est le meilleur jour pour relancer un client ?", a: "En semaine, le matin, pour un particulier ; du mardi au jeudi pour un professionnel. Évitez le dimanche et le soir tard." },
+      { q: "Combien de temps après un rendez-vous envoyer le devis ?", a: "Dans les 48 heures. Le client a encore la visite en tête, et votre devis arrive avant ou en même temps que ceux de vos concurrents." },
+      { q: "Faut-il relancer un client après un rendez-vous sans devis ?", a: "Oui, si le devis devait suivre : prévenez de la date d'envoi. Si le client devait vous recontacter, un message une semaine plus tard pour proposer le devis est bienvenu." },
     ],
+    quick: geoAnswers({
+      software: "Vous programmez les relances dès l'envoi du devis, juste après le rendez-vous, et elles partent au bon délai sans que vous y pensiez.",
+      automate: "Après un rendez-vous, envoyez le devis depuis l'outil dans les 48 heures et choisissez un intervalle de 3 ou 7 jours pour la première relance.",
+      rate: "Un devis envoyé dans les 48 heures après le rendez-vous et relancé à J+3 ou J+7 a bien plus de chances d'être signé qu'un devis envoyé tard.",
+    }),
     related: [
       { href: "/guides/combien-de-relances-devis", label: "Combien de relances envoyer ?" },
-      { href: "/guides/modele-mail-relance-devis", label: "Modèles de mail de relance" },
+      { href: "/guides/modele-mail-relance-devis", label: "Exemples de mail de relance" },
+      { href: "/guides/relancer-devis-sans-harceler", label: "Relancer sans harceler" },
       { href: "/relance-devis/plombier", label: "Relance de devis pour plombier" },
     ],
     date: DATE,
+    updated: "2026-11-18",
   },
 
   // ------------------------------------------------------------------ MODÈLES DE MAIL
   {
     slug: "modele-mail-relance-devis",
-    short: "Modèles de mail de relance",
-    title: "Modèle de mail de relance de devis : 6 exemples à copier",
+    short: "Exemples de mail de relance",
+    title: "Exemple de mail de relance de devis pour artisan : 9 modèles",
     description:
-      "6 modèles de mail de relance de devis pour artisans : première relance, relance avec date, variante moins chère, clôture. Objets d'e-mail et conseils.",
-    h1: "Modèle de mail de relance de devis : 6 exemples prêts à copier",
+      "9 exemples de mail de relance de devis pour artisan : première relance, date de démarrage, variante, plombier, électricien, couvreur, clôture. Objets à copier.",
+    h1: "Exemple de mail de relance de devis pour artisan : 9 modèles prêts à copier",
     answer:
       "Un bon mail de relance de devis tient en 4 à 6 lignes : un objet qui rappelle le devis, une phrase qui situe le projet et sa date d'envoi, une proposition d'aide ou une information nouvelle, et une question simple qui appelle une réponse.",
     sections: [
@@ -155,6 +187,45 @@ export const GUIDES: (ContentPage & { short: string })[] = [
         },
       },
       {
+        h2: "Modèle 7 : la relance d'un plombier ou d'un chauffagiste",
+        paragraphs: ["Un exemple concret vaut mieux qu'un message générique : nommez l'équipement et donnez un repère de durée, c'est ce qui rassure le client sur l'organisation du chantier."],
+        template: {
+          label: "Plombier — remplacement de chauffe-eau",
+          subject: "Votre chauffe-eau — devis du {date_envoi}",
+          body: "Bonjour {client},\n\nJe reviens vers vous au sujet du devis de remplacement de votre chauffe-eau envoyé le {date_envoi}.\n\nPour information, l'intervention dure une demi-journée et je peux la programmer sous dix jours. Si vous hésitez entre les deux modèles proposés, je vous explique la différence en deux minutes.\n\nBonne journée,",
+        },
+      },
+      {
+        h2: "Modèle 8 : la relance d'un électricien",
+        template: {
+          label: "Électricien — tableau électrique ou mise en sécurité",
+          subject: "Votre tableau électrique — une question sur le devis ?",
+          body: "Bonjour {client},\n\nAvez-vous pu consulter le devis{reference} de remplacement de votre tableau électrique, envoyé le {date_envoi} ?\n\nJ'ai détaillé les protections prévues pour chaque circuit. Si certains termes vous semblent techniques, je vous les explique volontiers par téléphone.\n\nCordialement,",
+        },
+      },
+      {
+        h2: "Modèle 9 : la relance d'un couvreur après une visite de toiture",
+        template: {
+          label: "Couvreur — réfection ou réparation de toiture",
+          subject: "Votre toiture — photos et devis du {date_envoi}",
+          body: "Bonjour {client},\n\nSuite à ma visite, je vous ai envoyé le {date_envoi} le devis{reference} pour votre toiture, avec les photos des tuiles abîmées.\n\nSi votre assurance ou un autre professionnel doit donner son avis, je peux leur transmettre ces éléments directement. Avant la période des intempéries, j'ai encore quelques créneaux.\n\nBien à vous,",
+        },
+      },
+      {
+        h2: "Les erreurs qui rendent un mail de relance inefficace",
+        list: [
+          "Un objet vague (« Relance », « Suivi ») qui ne dit pas de quel projet il s'agit.",
+          "Un message trop long : au-delà de six lignes, le client remet la lecture à plus tard.",
+          "Aucune question en fin de message : le client ne sait pas quoi répondre.",
+          "Un ton de reproche (« toujours sans nouvelles de votre part »).",
+          "L'absence de numéro de téléphone dans la signature.",
+          "Le même message envoyé trois fois : chaque relance doit apporter quelque chose de nouveau.",
+        ],
+        paragraphs: [
+          "Relisez votre modèle avec les yeux du client : comprend-il en deux secondes de quel devis il s'agit, ce que vous lui proposez et ce qu'il doit répondre ? Si oui, votre mail de relance est prêt.",
+        ],
+      },
+      {
         h2: "10 objets d'e-mail qui se font ouvrir",
         list: [
           "Votre devis du {date} — une question ?",
@@ -184,13 +255,21 @@ export const GUIDES: (ContentPage & { short: string })[] = [
       { q: "Comment relancer un devis poliment ?", a: "Restez bref, rappelez le contexte, proposez votre aide plutôt que de demander une décision, et terminez par une question simple." },
       { q: "Faut-il joindre le devis à la relance ?", a: "Oui pour les gros projets, afin que le client le retrouve sans chercher. Pour les petits devis, un rappel de la date suffit." },
       { q: "Peut-on utiliser le même modèle pour tous les clients ?", a: "Oui, à condition de le personnaliser avec le nom du client, l'objet et la date du devis, et de varier le message entre la première et la deuxième relance." },
+      { q: "Quelle longueur pour un mail de relance de devis ?", a: "Quatre à six lignes : le contexte, une information ou une aide, une question simple. Au-delà, le client remet la lecture à plus tard." },
     ],
+    quick: geoAnswers({
+      software: "Vous y enregistrez vos propres modèles de mail de relance, personnalisés automatiquement avec le nom du client, la date et la référence du devis.",
+      automate: "Rédigez trois modèles (vérification, information utile, clôture) une seule fois, puis laissez-les partir automatiquement pour chaque devis.",
+      rate: "Un mail de relance court, précis sur le projet et terminé par une question simple obtient plus de réponses qu'un message générique.",
+    }),
     related: [
       { href: "/guides/quand-relancer-un-devis", label: "Quand relancer un devis ?" },
+      { href: "/guides/exemple-sms-relance-devis", label: "Exemples de SMS de relance" },
       { href: "/guides/relancer-client-qui-ne-repond-plus", label: "Relancer un client qui ne répond plus" },
       { href: "/relance-devis/peintre", label: "Relance de devis pour peintre" },
     ],
     date: DATE,
+    updated: "2026-11-18",
   },
 
   // ------------------------------------------------------------------ CLIENT QUI NE RÉPOND PLUS
@@ -276,7 +355,7 @@ export const GUIDES: (ContentPage & { short: string })[] = [
     ],
     related: [
       { href: "/guides/relance-devis-email-ou-telephone", label: "Relance de devis : e-mail ou téléphone ?" },
-      { href: "/guides/modele-mail-relance-devis", label: "Modèles de mail de relance" },
+      { href: "/guides/modele-mail-relance-devis", label: "Exemples de mail de relance" },
       { href: "/relance-devis/couvreur", label: "Relance de devis pour couvreur" },
     ],
     date: DATE,
@@ -475,6 +554,8 @@ export const GUIDES: (ContentPage & { short: string })[] = [
     date: DATE,
   },
 ];
+
+export const GUIDES: (ContentPage & { short: string })[] = [...GUIDES_1, ...GUIDES_2];
 
 export function getGuide(slug: string) {
   return GUIDES.find((g) => g.slug === slug);

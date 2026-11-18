@@ -7,7 +7,7 @@ import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
   title: `Relance de devis : ${FAQ_ALL.length} questions et réponses | Artisan Relance`,
-  description: "Quel outil pour relancer un devis, quand relancer, combien de relances, taux d’acceptation, RGPD : les réponses claires pour les artisans du bâtiment.",
+  description: "Quel outil pour relancer un devis, quand relancer, questions par métier, client qui réfléchit, taux d’acceptation, RGPD : les réponses pour artisans.",
   path: "/faq",
 });
 
@@ -18,7 +18,7 @@ export default function FaqPage() {
       <BreadcrumbJsonLd items={[{ name: "Accueil", path: "/" }, { name: "FAQ", path: "/faq" }]} />
       <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">Relance de devis : vos questions, nos réponses</h1>
       <p className="mt-3 text-muted-foreground">
-        Délais, nombre de relances, modèles de mail, taux de transformation, RGPD et fonctionnement d'Artisan Relance.
+        Délais, nombre de relances, questions par métier (plombier, électricien, menuisier, peintre, chauffagiste, couvreur, maçon), situations courantes, taux de transformation, RGPD et fonctionnement d'Artisan Relance.
         Pour aller plus loin, consultez nos <Link href="/guides" className="underline underline-offset-4">guides</Link>, la{" "}
         <Link href="/presentation" className="underline underline-offset-4">fiche de présentation</Link>, la page{" "}
         <Link href="/confiance" className="underline underline-offset-4">confiance et sécurité</Link> ou{" "}

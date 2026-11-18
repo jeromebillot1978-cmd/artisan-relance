@@ -6,7 +6,7 @@ import { BreadcrumbJsonLd } from "@/components/seo/json-ld";
 
 export const metadata = pageMetadata({
   title: "Guides de relance de devis pour artisans — Artisan Relance",
-  description: "Quand relancer un devis, modèles de mail, nombre de relances, client qui ne répond plus, e-mail ou téléphone : les guides pratiques pour signer plus.",
+  description: "Relancer un devis sans harceler, quand relancer, exemples de mail et de SMS, taux de signature, suivi des devis : les guides pratiques pour artisans.",
   path: "/guides",
 });
 

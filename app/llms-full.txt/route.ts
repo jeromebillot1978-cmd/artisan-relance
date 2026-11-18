@@ -22,7 +22,7 @@ export function GET() {
       (p) => `| ${p.name} | ${p.what} | ${p.price} | ${p.quoteFollowUp} | ${p.source.href.startsWith("http") ? p.source.href : u + p.source.href} |`,
     ).join("\n")}\n\nVitesse (${BENCH_METHOD}, ${BENCH_DATE}) :\n\n${SPEED.map((s) => `- ${s.name} : ${s.kb} Ko, premier affichage ${s.fcp} s, contenu principal ${s.lcp} s`).join("\n")}`,
   );
-  parts.push(`## Questions fréquentes\n\n${FAQ_GROUPS.map((g) => `### ${g.title}\n\n${g.items.map((q) => `**${q.q}**\n${q.a}`).join("\n\n")}`).join("\n\n")}`);
+  parts.push(`## Questions fréquentes\n\n${FAQ_GROUPS.map((g) => `### ${g.title}\n\n${g.items.map((q) => `**${q.q}**\n${q.a}${q.detail ? ` ${q.detail}` : ""}`).join("\n\n")}`).join("\n\n")}`);
   for (const m of METIERS) {
     const k = METIER_KITS[m.slug];
     if (!k) continue;
@@ -30,7 +30,7 @@ export function GET() {
       `## ${k.question}\n\nPage : ${u}/relance-devis/${m.slug}\n\n${m.answer}\n\nDélais idéaux :\n${k.delays.map((d) => `- ${d.moment} (${d.channel}) : ${d.action}`).join("\n")}\n\nErreurs à éviter :\n${k.mistakes.map((t) => `- ${t}`).join("\n")}\n\nModèle d'e-mail (${k.emails[0].label}) :\nObjet : ${k.emails[0].subject}\n${k.emails[0].body}\n\nModèle de SMS : ${k.sms[0].body}`,
     );
   }
-  parts.push(`## Guides\n\n${GUIDES.map((g) => `### ${g.title}\n${u}/guides/${g.slug}\n\n${g.answer}`).join("\n\n")}`);
+  parts.push(`## Guides\n\n${GUIDES.map((g) => `### ${g.title}\n${u}/guides/${g.slug}\n\n${g.answer}\n\nSommaire : ${g.sections.map((x) => x.h2).join(" ; ")}`).join("\n\n")}`);
   return new Response(parts.join("\n\n---\n\n") + "\n", {
     headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" },
   });

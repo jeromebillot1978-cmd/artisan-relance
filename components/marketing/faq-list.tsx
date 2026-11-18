@@ -15,7 +15,10 @@ export function FaqList({ items, headingLevel = 3 }: { items: QA[]; headingLevel
             <H className="text-base font-medium">{item.q}</H>
             <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
           </summary>
-          <p className="pb-4 text-sm leading-relaxed text-muted-foreground">{item.a}</p>
+          <p className="pb-4 text-sm leading-relaxed text-muted-foreground">
+            {item.detail ? <strong className="font-medium text-foreground">{item.a}</strong> : item.a}
+          </p>
+          {item.detail && <p className="-mt-2 pb-4 text-sm leading-relaxed text-muted-foreground">{item.detail}</p>}
         </details>
       ))}
     </div>

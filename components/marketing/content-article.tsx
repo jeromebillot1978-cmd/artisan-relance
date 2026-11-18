@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import type { ContentPage } from "@/lib/content/types";
+import { lastUpdate, type ContentPage } from "@/lib/content/types";
 import { FaqList } from "@/components/marketing/faq-list";
 import { CtaBlock } from "@/components/marketing/cta-block";
 import { ArticleJsonLd, BreadcrumbJsonLd, FaqJsonLd } from "@/components/seo/json-ld";
@@ -22,9 +22,9 @@ export function ContentArticle({
 }) {
   return (
     <article className="container max-w-3xl py-10 md:py-16">
-      <ArticleJsonLd title={page.h1} description={page.description} path={path} date={page.date} />
+      <ArticleJsonLd title={page.h1} description={page.description} path={path} date={page.date} modified={lastUpdate(page)} />
       <BreadcrumbJsonLd items={crumbs} />
-      <FaqJsonLd items={page.faq} />
+      <FaqJsonLd items={[...(page.quick ?? []), ...page.faq]} />
 
       <nav aria-label="Fil d'Ariane" className="mb-6 flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
         {crumbs.map((c, i) => (
@@ -42,7 +42,7 @@ export function ContentArticle({
       <header>
         <h1 className="text-balance text-3xl font-semibold tracking-tight md:text-4xl">{page.h1}</h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          Par Jercat · mis à jour le {new Date(page.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+          Par Jercat · mis à jour le {new Date(lastUpdate(page)).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
         </p>
       </header>
 
@@ -92,6 +92,20 @@ export function ContentArticle({
           </section>
         ))}
       </div>
+
+      {page.quick && page.quick.length > 0 && (
+        <section aria-labelledby="reponses-rapides" className="mt-14 rounded-xl border border-brand/30 bg-brand/5 p-5 md:p-6">
+          <h2 id="reponses-rapides" className="text-2xl font-semibold tracking-tight">Réponses rapides</h2>
+          <dl className="mt-5 space-y-5">
+            {page.quick.map((qa) => (
+              <div key={qa.q}>
+                <dt className="font-medium">{qa.q}</dt>
+                <dd className="mt-1 text-muted-foreground">{qa.a}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
 
       <section className="mt-14">
         <h2 className="mb-5 text-2xl font-semibold tracking-tight">Questions fréquentes</h2>

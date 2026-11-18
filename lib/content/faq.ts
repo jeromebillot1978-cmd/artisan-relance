@@ -36,6 +36,94 @@ export const FAQ_IDENTITY: QA[] = [
   },
 ];
 
+
+/** FAQ ajoutées le 18 novembre 2026 : questions posées par métier et situations courantes. */
+export const FAQ_METIERS: QA[] = [
+  {
+    q: "Comment relancer un devis de salle de bain quand le client n'a pas encore choisi son carrelage ?",
+    a: "Ne demandez pas la signature : demandez où en est son choix et aidez-le à le faire.",
+    detail: "Le client ne peut pas signer tant qu'il n'a pas choisi carrelage, receveur et meuble. Relancez une semaine après l'envoi avec une liste courte des choix restant à faire, une adresse de showroom ou une sélection de références compatibles avec votre devis, et proposez de mettre le devis à jour dès qu'il aura choisi. Vous restez présent sans presser, et le devis à jour arrive au moment où il est prêt à décider.",
+  },
+  {
+    q: "Comment se démarquer quand le client a reçu plusieurs devis d'électricité très différents ?",
+    a: "Aidez-le à comparer ce qui est inclus, sans critiquer les autres devis.",
+    detail: "Les écarts viennent souvent du contenu : nombre de circuits, gamme du matériel, rebouchage des saignées, reprise de la terre, attestation de conformité. Dans votre relance, donnez au client trois ou quatre points à vérifier sur chaque devis. Il comprend votre prix, il vous perçoit comme un conseiller et il revient souvent vers vous pour les questions que les autres devis n'éclairent pas.",
+  },
+  {
+    q: "Comment relancer un devis de fenêtres quand le client compare avec une grande enseigne ?",
+    a: "Mettez en avant ce que le prix d'une grande enseigne ne montre pas : prise de mesures, pose, finitions et suivi.",
+    detail: "Le client compare souvent un prix de fenêtre seule avec votre devis posé. Rappelez dans la relance ce qui est inclus chez vous : prise de cotes sur place, dépose de l'ancienne menuiserie, pose et étanchéité, habillage, évacuation, interlocuteur unique en cas de souci. Proposez de détailler le prix de la pose s'il veut comparer à périmètre égal. Restez factuel et respectueux : le client doit choisir en connaissance de cause, pas se sentir jugé.",
+  },
+  {
+    q: "Comment relancer un devis de peinture quand le client hésite à le faire lui-même ?",
+    a: "Proposez une prestation partagée : vous faites la préparation et les parties difficiles, il fait le reste s'il le souhaite.",
+    detail: "Un client qui hésite à peindre lui-même sous-estime souvent la préparation (rebouchage, ponçage, protection) et les plafonds. Dans votre relance, rappelez la durée réelle du chantier et proposez une variante : préparation et plafonds par vous, murs par lui, ou une seule pièce pour commencer. Vous gardez une partie du chantier et le client voit la différence de rendu.",
+  },
+  {
+    q: "Quand relancer un devis de chauffage si le client veut attendre la fin de l'hiver ?",
+    a: "Relancez à la date qu'il vous a donnée, pas avant, en proposant de réserver un créneau dès maintenant.",
+    detail: "Changer de chauffage en plein hiver inquiète beaucoup de clients. Convenez avec lui d'une date de recontact (par exemple début mars), notez-la et tenez-la. En attendant, une seule relance utile suffit : indiquer qu'un créneau de printemps peut être réservé, rappeler le délai d'approvisionnement de l'équipement et la durée de validité du devis.",
+  },
+  {
+    q: "Comment relancer un devis d'entretien ou de démoussage de toiture ?",
+    a: "Rapidement et brièvement : à J+3 puis à J+7, en rappelant la saison idéale pour l'intervention.",
+    detail: "Ces petits devis se décident vite et se comparent facilement. Une première relance courte, puis une seconde qui indique une période d'intervention possible (selon la météo et votre planning) suffisent. Joignez une photo prise lors de votre visite : elle rappelle au client pourquoi l'entretien est utile et évite tout discours alarmiste.",
+  },
+  {
+    q: "Comment relancer un devis de maçonnerie ou d'extension soumis à un permis de construire ?",
+    a: "Relancez au rythme des démarches d'urbanisme : demandez où en est l'autorisation plutôt que la signature.",
+    detail: "Une extension ou une modification de façade demande souvent une déclaration préalable (instruction en général d'un mois) ou un permis de construire (en général deux mois pour une maison individuelle), puis un délai de recours des tiers. Le client ne signera pas avant d'avoir son autorisation. Espacez les relances de trois semaines, proposez les plans ou précisions techniques utiles au dossier, et prévoyez une mise à jour du devis si l'instruction dure.",
+  },
+  {
+    q: "Comment relancer un devis de plaquiste ou de cloisons ?",
+    a: "En calant la relance sur l'avancement du chantier : le plaquiste intervient après les réseaux et avant les finitions.",
+    detail: "Le client attend souvent que l'électricien et le plombier aient fixé leurs dates. Relancez à J+7 en demandant où en est le planning global, puis proposez de vous coordonner directement avec les autres corps d'état. Un plaquiste qui aide à organiser l'enchaînement des travaux est celui que le client retient.",
+  },
+];
+
+export const FAQ_SITUATIONS: QA[] = [
+  {
+    q: "Que répondre à un client qui dit « je réfléchis » ?",
+    a: "Remerciez-le, demandez s'il reste une question sur le devis et convenez d'une date pour en reparler.",
+    detail: "« Je réfléchis » cache souvent une question non posée : le prix d'un poste, un choix de matériau, le calendrier. Demandez simplement : « Y a-t-il un point du devis sur lequel je peux vous éclairer ? » puis proposez une date de recontact (« je vous rappelle dans dix jours ? »). Une relance convenue ensemble n'est jamais perçue comme de l'insistance.",
+  },
+  {
+    q: "Peut-on relancer un client qui a refusé un devis ?",
+    a: "Pas pour le même projet, sauf s'il vous y invite ; vous pouvez en revanche lui demander pourquoi, une seule fois.",
+    detail: "Un refus clair met fin aux relances. Remerciez le client et demandez-lui, en une phrase, ce qui a fait la différence (prix, délai, confiance). S'il indique que le projet est simplement reporté, demandez-lui s'il accepte que vous le recontactiez plus tard, et à quelle date. Sans cet accord, n'insistez pas.",
+  },
+  {
+    q: "Faut-il relancer un devis pendant les vacances d'été ou les fêtes ?",
+    a: "Mieux vaut décaler la relance après le retour du client que l'envoyer dans une boîte qu'il ne lit pas.",
+    detail: "Si le client vous a dit qu'il partait, programmez la relance quelques jours après son retour. Les réponses automatiques d'absence ne sont pas de vraies réponses : avec Artisan Relance, elles ne stoppent pas les relances, et vous pouvez suspendre puis reprendre la séquence en un clic. Une relance juste avant les vacances peut aussi fonctionner si elle propose un créneau pour la rentrée.",
+  },
+  {
+    q: "Faut-il relancer un client qui a demandé un devis juste pour comparer ?",
+    a: "Oui, une ou deux fois : un client qui compare choisit souvent l'artisan qui l'a le mieux suivi.",
+    detail: "Un devis demandé « pour comparer » n'est pas un devis perdu d'avance. Relancez à J+5, quand le client a reçu les autres devis, en l'aidant à comparer ce qui est inclus. Puis envoyez un message de clôture vers J+21. Si vous recevez beaucoup de demandes de ce type, posez dès le premier appel deux questions simples : la date souhaitée des travaux et le budget envisagé.",
+  },
+  {
+    q: "Faut-il vouvoyer ou tutoyer le client dans une relance de devis ?",
+    a: "Vouvoyez par défaut, et ne tutoyez que si le client l'a fait le premier.",
+    detail: "Le vouvoiement reste la norme pour un devis, surtout avec un nouveau client ou un client âgé. Si le client vous a tutoyé pendant le rendez-vous ou dans ses messages, vous pouvez adapter le ton, mais gardez des relances simples et professionnelles : le devis engage une somme importante pour lui.",
+  },
+  {
+    q: "Comment savoir si mon client a lu mon devis ?",
+    a: "Le signe le plus fiable reste sa réponse : posez une question simple qui appelle une réponse courte.",
+    detail: "Les accusés de lecture sont souvent refusés ou bloqués par les messageries, et les outils de suivi d'ouverture donnent des résultats incertains. Artisan Relance ne suit pas l'ouverture des e-mails : il s'appuie sur ce qui compte, la réponse du client, qui arrête les relances et s'affiche dans le dossier du devis. Une question précise en fin de relance (« Le créneau du 12 vous conviendrait-il ? ») obtient plus facilement une réponse qu'un « avez-vous reçu mon devis ? ».",
+  },
+  {
+    q: "Combien de devis un artisan signe-t-il en moyenne ?",
+    a: "Il n'existe pas de chiffre officiel fiable : le taux varie beaucoup selon le métier et le type de demande. Calculez le vôtre.",
+    detail: "Un dépannage chiffré sur place se signe presque toujours, alors qu'un devis de rénovation demandé en même temps qu'à d'autres entreprises se signe beaucoup moins souvent. Le bon indicateur est votre propre taux de signature (devis signés ÷ devis envoyés × 100) suivi mois après mois. Artisan Relance le calcule automatiquement dans le tableau de bord.",
+  },
+  {
+    q: "Peut-on relancer un devis envoyé il y a plusieurs mois ?",
+    a: "Oui, une fois, avec un message qui propose de mettre le devis à jour plutôt que de le signer tel quel.",
+    detail: "Après plusieurs mois, le devis a souvent expiré et les prix ont pu évoluer. Écrivez au client que vous reprenez contact au sujet de son projet, demandez s'il est toujours d'actualité et proposez un devis actualisé. Avec Artisan Relance, vous pouvez enregistrer un devis déjà envoyé : seules les relances partiront, à votre nom.",
+  },
+];
+
 export const FAQ_GROUPS: { title: string; items: QA[] }[] = [
   {
     title: "Choisir un outil de relance de devis",
@@ -132,6 +220,31 @@ export const FAQ_GROUPS: { title: string; items: QA[] }[] = [
         a: "Oui, à tout moment et en un clic. Depuis le menu de chaque devis : arrêter les relances, les reprendre, marquer le devis gagné, perdu, répondu ou terminé. La prochaine date de relance se recalcule automatiquement.",
       },
       {
+        q: "Artisan Relance convient-il aux micro-entrepreneurs ?",
+        a: "Oui : Artisan Relance convient à toute entreprise qui envoie des devis, y compris en micro-entreprise.",
+        detail: "Il suffit d'un compte et de vos devis au format PDF, quel que soit l'outil qui les produit (logiciel, Excel, Word). Aucune configuration technique n'est nécessaire, le nombre de devis est illimité et l'outil est gratuit pendant la phase de lancement, sans carte bancaire.",
+      },
+      {
+        q: "Peut-on utiliser Artisan Relance depuis son téléphone ?",
+        a: "Oui, depuis le navigateur du téléphone, sans application à installer.",
+        detail: "Vous pouvez envoyer un devis entre deux interventions, consulter les réponses de vos clients et leur répondre avec des photos. Les photos prises avec le téléphone sont réduites automatiquement avant l'envoi pour rester légères, même en 4G sur un chantier.",
+      },
+      {
+        q: "Peut-on envoyer le devis et les relances à plusieurs personnes ?",
+        a: "Oui, jusqu'à 5 adresses par devis : un couple, un gérant et son comptable, un syndic et le conseil syndical.",
+        detail: "Chaque destinataire reçoit le devis et les relances. Dès que l'un d'eux répond, les relances s'arrêtent pour tout le monde et la réponse s'affiche dans le dossier du devis. C'est utile quand la décision se prend à plusieurs.",
+      },
+      {
+        q: "Le client peut-il répondre avec des photos ou des documents ?",
+        a: "Oui : il répond simplement à l'e-mail, et ses pièces jointes s'affichent dans le dossier du devis.",
+        detail: "Photos (réduites automatiquement), PDF et documents courants sont acceptés, dans la limite de 10 Mo par fichier, 5 fichiers et 15 Mo par message. Les vidéos ne sont pas conservées : une note vous le signale dans le dossier, pour que vous puissiez demander au client de les envoyer autrement. Vous pouvez lui répondre depuis le site, avec vos propres pièces jointes, dans la même conversation e-mail.",
+      },
+      {
+        q: "Les relances automatiques risquent-elles d'arriver en courrier indésirable ?",
+        a: "Le risque existe pour tout e-mail, mais il est limité : les envois sont authentifiés, espacés et envoyés en journée.",
+        detail: "Les e-mails partent d'un domaine authentifié (SPF, DKIM, DMARC), au nom de l'artisan, du lundi au samedi entre 8 h et 19 h, avec un nombre limité d'envois par jour. Pour aller plus loin, prévenez le client au rendez-vous que le devis arrivera par e-mail et demandez-lui de vérifier ses courriers indésirables s'il ne le voit pas.",
+      },
+      {
         q: "Combien coûte Artisan Relance ?",
         a: "Artisan Relance est gratuit aujourd'hui, sans carte bancaire. Une offre payante est prévue à 19 € HT par mois : les comptes existants seront prévenus au moins 30 jours avant et pourront exporter leurs données ou supprimer leur compte.",
       },
@@ -158,17 +271,26 @@ export const FAQ_GROUPS: { title: string; items: QA[] }[] = [
       },
     ],
   },
+  { title: "Relancer selon son métier", items: FAQ_METIERS },
+  { title: "Situations courantes après un devis", items: FAQ_SITUATIONS },
   { title: "Éditeur, données et contact", items: FAQ_IDENTITY },
 ];
 
 export const FAQ_ALL: QA[] = FAQ_GROUPS.flatMap((g) => g.items);
 
 /** Questions mises en avant sur l'accueil. */
+const byQuestion = (q: string) => {
+  const item = FAQ_ALL.find((x) => x.q === q);
+  if (!item) throw new Error(`FAQ introuvable : ${q}`);
+  return item;
+};
+
+/** Questions mises en avant sur l'accueil (repérées par leur intitulé, pas par leur position). */
 export const FAQ_HOME: QA[] = [
-  FAQ_GROUPS[0].items[0],
-  FAQ_GROUPS[0].items[4],
-  FAQ_GROUPS[0].items[2],
-  FAQ_GROUPS[3].items[0],
-  FAQ_GROUPS[1].items[0],
-  FAQ_GROUPS[3].items[5],
-];
+  "Quel logiciel permet de relancer automatiquement des devis pour artisans ?",
+  "Artisan Relance remplace-t-il Obat, Batappli ou Tolteck ?",
+  "Comment augmenter son taux d'acceptation de devis ?",
+  "Comment fonctionnent les relances automatiques ?",
+  "Au bout de combien de temps relancer un devis ?",
+  "Combien coûte Artisan Relance ?",
+].map(byQuestion);

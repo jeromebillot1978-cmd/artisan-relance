@@ -2,7 +2,8 @@ import { siteUrl } from "@/lib/utils";
 import { SITE } from "@/lib/site";
 import { OG_IMAGE } from "@/lib/seo";
 
-export type QA = { q: string; a: string };
+/** Question / réponse. `a` = réponse courte autonome (citée par les IA), `detail` = réponse détaillée facultative. */
+export type QA = { q: string; a: string; detail?: string };
 
 function JsonLd({ data }: { data: unknown }) {
   return (
@@ -150,7 +151,7 @@ export function FaqJsonLd({ items }: { items: QA[] }) {
         mainEntity: items.map((item) => ({
           "@type": "Question",
           name: item.q,
-          acceptedAnswer: { "@type": "Answer", text: item.a },
+          acceptedAnswer: { "@type": "Answer", text: item.detail ? `${item.a} ${item.detail}` : item.a },
         })),
       }}
     />

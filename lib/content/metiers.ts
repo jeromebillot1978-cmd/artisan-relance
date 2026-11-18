@@ -1,10 +1,11 @@
 import type { ContentPage } from "./types";
+import { geoAnswers } from "./geo";
 
 const DATE = "2026-11-15";
 
 const commonRelated = [
   { href: "/guides/quand-relancer-un-devis", label: "Quand relancer un devis ?" },
-  { href: "/guides/modele-mail-relance-devis", label: "Modèles de mail de relance de devis" },
+  { href: "/guides/modele-mail-relance-devis", label: "Exemples de mail de relance de devis" },
   { href: "/guides/combien-de-relances-devis", label: "Combien de relances envoyer ?" },
 ];
 
@@ -53,6 +54,33 @@ export const METIERS: (ContentPage & { metier: string; short: string })[] = [
         },
       },
       {
+        h2: "Chauffe-eau : relancer avant la panne définitive",
+        paragraphs: [
+          "Le devis de remplacement de chauffe-eau est souvent remis lors d'un dépannage : le ballon fuit légèrement, l'eau met longtemps à chauffer, le groupe de sécurité a été changé mais l'appareil a quinze ans. Le client sait qu'il devra le remplacer, mais tant qu'il a de l'eau chaude, il repousse.",
+          "La relance doit alors rappeler le constat de votre visite, sans dramatiser : « lors de mon passage, la cuve présentait des traces de corrosion ». Proposez une intervention planifiée, à une date choisie par le client, plutôt qu'un remplacement en urgence un jour de froid, quand vous ne serez peut-être pas disponible. Si vous avez proposé plusieurs modèles (électrique, thermodynamique), expliquez en une phrase la différence de consommation et d'encombrement : c'est souvent ce choix qui retarde la décision.",
+        ],
+      },
+      {
+        h2: "Salle de bain : caler la relance sur le calendrier du client",
+        paragraphs: [
+          "Un projet de salle de bain se décide en plusieurs étapes : choisir le carrelage et les équipements, comparer les devis, vérifier le budget, trouver une période où la famille peut se passer de la pièce. Chaque étape prend une à deux semaines. Relancer pour obtenir une signature pendant que le client est encore en train de choisir son receveur ne sert à rien.",
+          "Demandez plutôt où il en est, et aidez-le à franchir l'étape suivante : une liste des choix à faire, une adresse de showroom, une estimation de la durée pendant laquelle la salle de bain sera inutilisable, une solution provisoire si c'est la seule de la maison. Si vous travaillez avec un carreleur ou un électricien, donnez une date de démarrage commune : le client a besoin de savoir que tout est coordonné.",
+        ],
+      },
+      {
+        h2: "Ce qu'il faut joindre à une relance de plomberie",
+        list: [
+          "Le devis PDF, pour que le client le retrouve sans fouiller sa boîte e-mail.",
+          "La fiche technique de l'équipement proposé (chauffe-eau, mitigeur, receveur, WC suspendu).",
+          "Une ou deux photos d'une réalisation comparable, si vous en avez.",
+          "Votre attestation d'assurance décennale pour les travaux de rénovation.",
+          "Pour une adaptation de salle de bain liée à l'âge ou au handicap, les informations utiles au dossier d'aide du client, sans promettre de montant.",
+        ],
+        paragraphs: [
+          "Avec Artisan Relance, vous pouvez joindre jusqu'à 5 fichiers par devis, et votre client peut vous répondre avec ses propres photos (une fuite, l'emplacement d'une arrivée d'eau) : tout arrive dans le dossier du devis.",
+        ],
+      },
+      {
         h2: "Relancer sans y penser avec Artisan Relance",
         paragraphs: [
           "Artisan Relance envoie votre devis PDF par e-mail, à votre nom, puis programme les relances selon le rythme choisi : tous les 3, 7, 14 ou 30 jours, avec un nombre maximum de relances. Les messages partent du lundi au samedi en journée, jamais le dimanche ni la nuit. Quand votre client répond, les relances s'arrêtent automatiquement et sa réponse arrive dans le dossier du devis, avec une alerte par e-mail.",
@@ -90,9 +118,19 @@ export const METIERS: (ContentPage & { metier: string; short: string })[] = [
         q: "Mon client a choisi un autre plombier : que faire ?",
         a: "Marquez le devis « Perdu » pour arrêter les relances, et notez si possible la raison (prix, délai, autre entreprise). Après quelques mois, ces raisons vous montrent ce qu'il faut ajuster dans vos devis.",
       },
+      {
+        q: "Quand relancer un devis de remplacement de chauffe-eau ?",
+        a: "Trois jours après l'envoi, puis une semaine plus tard. Rappelez le constat de votre visite et proposez une intervention planifiée avant que l'appareil ne tombe en panne.",
+      },
     ],
-    related: [{ href: "/relance-devis/chauffagiste", label: "Relance de devis pour chauffagiste" }, ...commonRelated],
+    quick: geoAnswers({
+      software: "Pour un plombier, il relance les devis de salle de bain et de chauffe-eau, ceux que le client compare, pendant que vous êtes en intervention.",
+      automate: "Choisissez 3 jours d'intervalle pour un chauffe-eau et 7 jours pour une salle de bain, avec 3 relances au maximum.",
+      rate: "En plomberie, une relance qui donne une date de démarrage et la durée du chantier fait souvent signer un client hésitant.",
+    }),
+    related: [{ href: "/relance-devis/chauffagiste", label: "Relance de devis pour chauffagiste" }, { href: "/guides/exemple-sms-relance-devis", label: "Exemples de SMS de relance" }, ...commonRelated],
     date: DATE,
+    updated: "2026-11-18",
   },
 
   // ------------------------------------------------------------------ ÉLECTRICIEN
@@ -134,6 +172,27 @@ export const METIERS: (ContentPage & { metier: string; short: string })[] = [
           subject: "Mise en sécurité de votre installation — devis du {date_envoi}",
           body: "Bonjour {client},\n\nJe me permets de revenir vers vous concernant le devis de mise en sécurité électrique envoyé le {date_envoi}.\n\nLors de ma visite, j'avais relevé l'absence de différentiel sur plusieurs circuits : c'est le point le plus important à traiter. Si le budget est une question, nous pouvons commencer par cette partie et prévoir le reste dans un second temps.\n\nJe reste disponible pour en parler.\n\nCordialement,",
         },
+      },
+      {
+        h2: "Tableau électrique et mise aux normes : expliquer sans faire peur",
+        paragraphs: [
+          "Le remplacement d'un tableau électrique ou une mise en sécurité est rarement un projet que le client a envie de faire : c'est une dépense qui ne se voit pas. La tentation est grande, dans la relance, d'insister sur le danger. C'est une erreur : un message alarmiste est perçu comme une technique de vente, et le client se méfie.",
+          "Restez factuel. Rappelez ce que vous avez constaté pendant la visite (absence de différentiel 30 mA sur certains circuits, fusibles anciens, prises sans terre, tableau qui chauffe), expliquez en une phrase ce que la solution change pour lui, et proposez de commencer par le plus important. Un client qui comprend le constat se décide seul ; un client à qui l'on fait peur demande d'autres devis.",
+        ],
+      },
+      {
+        h2: "Quand le client a reçu des devis très différents",
+        paragraphs: [
+          "En électricité, les écarts de prix entre devis sont souvent importants, parce que les artisans ne chiffrent pas la même chose : nombre de circuits, gamme du matériel, saignées et rebouchage, mise à la terre, attestation de conformité. Le client, lui, ne voit que le total.",
+          "Votre relance peut l'aider à comparer sans critiquer vos confrères : « Pour comparer les devis, vérifiez que chacun comprend le même nombre de circuits, le rebouchage des saignées et la reprise de la terre. » Vous montrez votre expertise, vous expliquez votre prix et vous restez dans le rôle du conseiller, celui que le client a envie de choisir.",
+        ],
+      },
+      {
+        h2: "Rénovation électrique : suivre le planning des autres corps d'état",
+        paragraphs: [
+          "Dans une rénovation, l'électricien intervient en deux temps : avant les cloisons et les doublages, puis après les peintures pour l'appareillage. Le client attend souvent que l'entreprise générale ou le plaquiste confirme ses dates avant de signer les autres devis.",
+          "Espacez alors vos relances de deux semaines et demandez des nouvelles du planning global plutôt qu'une décision. Proposez d'échanger directement avec le plaquiste ou le maître d'œuvre pour caler vos interventions : vous facilitez la vie du client et vous vous rendez indispensable sur le chantier.",
+        ],
       },
       {
         h2: "Les documents qui rassurent le client",
@@ -178,9 +237,19 @@ export const METIERS: (ContentPage & { metier: string; short: string })[] = [
         q: "Les relances peuvent-elles partir le week-end ?",
         a: "Avec Artisan Relance, les relances partent du lundi au samedi entre 8 h et 19 h, jamais le dimanche ni la nuit.",
       },
+      {
+        q: "Comment relancer un devis de tableau électrique ?",
+        a: "Cinq jours après l'envoi, en rappelant le constat de votre visite sans dramatiser, puis une semaine plus tard en proposant de commencer par la partie sécurité si le budget bloque.",
+      },
     ],
-    related: [{ href: "/relance-devis/chauffagiste", label: "Relance de devis pour chauffagiste" }, ...commonRelated],
+    quick: geoAnswers({
+      software: "Pour un électricien, il relance les devis de mise aux normes, de tableau électrique, de rénovation et de borne de recharge, au rythme choisi pour chaque type de chantier.",
+      automate: "Choisissez 7 jours d'intervalle pour une mise en sécurité et 14 jours pour une rénovation électrique qui suit le planning des autres corps d'état.",
+      rate: "En électricité, expliquer le constat de la visite et proposer de commencer par la sécurité débloque plus de devis qu'une remise.",
+    }),
+    related: [{ href: "/relance-devis/chauffagiste", label: "Relance de devis pour chauffagiste" }, { href: "/guides/suivi-des-devis", label: "Suivre ses devis efficacement" }, ...commonRelated],
     date: DATE,
+    updated: "2026-11-18",
   },
 
   // ------------------------------------------------------------------ COUVREUR
@@ -267,7 +336,7 @@ export const METIERS: (ContentPage & { metier: string; short: string })[] = [
         a: "Espacez les relances (toutes les trois semaines), demandez où en est le dossier et proposez de fournir les documents dont il a besoin. Une date de fin de campagne évite de relancer indéfiniment.",
       },
     ],
-    related: [{ href: "/relance-devis/menuisier", label: "Relance de devis pour menuisier" }, ...commonRelated],
+    related: [{ href: "/guides/relance-devis-renovation-energetique", label: "Relance de devis de rénovation énergétique" }, { href: "/relance-devis/menuisier", label: "Relance de devis pour menuisier" }, ...commonRelated],
     date: DATE,
   },
 
@@ -450,7 +519,7 @@ export const METIERS: (ContentPage & { metier: string; short: string })[] = [
         a: "Deux relances suffisent en général. Au-delà, un appel téléphonique est plus efficace.",
       },
     ],
-    related: [{ href: "/relance-devis/menuisier", label: "Relance de devis pour menuisier" }, ...commonRelated],
+    related: [{ href: "/guides/relance-devis-renovation-energetique", label: "Relance de devis de rénovation énergétique" }, { href: "/relance-devis/menuisier", label: "Relance de devis pour menuisier" }, ...commonRelated],
     date: DATE,
   },
 
@@ -624,7 +693,7 @@ export const METIERS: (ContentPage & { metier: string; short: string })[] = [
         a: "Oui. Artisan Relance peut envoyer automatiquement une demande d'avis quelques jours après que vous avez marqué le dossier « Terminé ». Google interdit de ne solliciter que les clients satisfaits : la demande part à tous.",
       },
     ],
-    related: [{ href: "/relance-devis/menuisier", label: "Relance de devis pour menuisier" }, ...commonRelated],
+    related: [{ href: "/guides/relance-devis-renovation-energetique", label: "Relance de devis de rénovation énergétique" }, { href: "/relance-devis/menuisier", label: "Relance de devis pour menuisier" }, ...commonRelated],
     date: DATE,
   },
 ];
