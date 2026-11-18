@@ -26,9 +26,11 @@ import { FaqJsonLd, SoftwareJsonLd } from "@/components/seo/json-ld";
 import { FAQ_ALL, FAQ_HOME } from "@/lib/content/faq";
 import { METIERS } from "@/lib/content/metiers";
 import { GUIDES } from "@/lib/content/guides";
-import { TESTIMONIALS } from "@/lib/content/testimonials";
+import { Testimonials } from "@/components/marketing/testimonials";
+import { TrustBadges } from "@/components/marketing/trust-badges";
 import { BENCH_DATE, SPEED, speedSelf, weightRatio } from "@/lib/content/benchmarks";
 import { pageMetadata } from "@/lib/seo";
+import { SITE } from "@/lib/site";
 import dashboardImg from "@/public/captures/tableau-de-bord.png";
 import formImg from "@/public/captures/nouveau-devis.png";
 import listImg from "@/public/captures/suivi-relances.png";
@@ -305,17 +307,9 @@ export default function HomePage() {
       {/* CONFIANCE (preuves vérifiables ; témoignages affichés seulement s'ils existent) */}
       <section className="container py-16 md:py-24">
         <h2 className="text-center text-3xl font-semibold tracking-tight">Pourquoi vous pouvez nous confier vos clients</h2>
-        {TESTIMONIALS.length > 0 && (
-          <ul className="mx-auto mt-10 grid max-w-5xl gap-4 md:grid-cols-3">
-            {TESTIMONIALS.map((t) => (
-              <li key={t.name + t.date} className="rounded-xl border bg-card p-6">
-                <blockquote className="text-sm">« {t.quote} »</blockquote>
-                <p className="mt-4 text-sm font-medium">{t.name}</p>
-                <p className="text-xs text-muted-foreground">{t.trade}{t.city ? `, ${t.city}` : ""}</p>
-              </li>
-            ))}
-          </ul>
-        )}
+        <div className="mt-10">
+          <Testimonials limit={3} />
+        </div>
         <ul className="mx-auto mt-10 grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { icon: Lock, title: "Vos clients restent les vôtres", text: "Aucune donnée revendue ni utilisée pour de la publicité." },
@@ -330,6 +324,13 @@ export default function HomePage() {
             </li>
           ))}
         </ul>
+        <TrustBadges compact className="mx-auto mt-8 max-w-4xl" />
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          Édité par {SITE.editor}, développeur web indépendant en France ·{" "}
+          <Link href="/confiance" className="underline underline-offset-4">sécurité et engagements</Link> ·{" "}
+          <Link href="/a-propos" className="underline underline-offset-4">à propos</Link> ·{" "}
+          <a href={`mailto:${SITE.contactEmail}`} className="underline underline-offset-4">{SITE.contactEmail}</a>
+        </p>
       </section>
 
       {/* MÉTIERS */}

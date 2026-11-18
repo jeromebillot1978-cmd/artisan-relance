@@ -8,6 +8,8 @@ import { SITE } from "@/lib/site";
 import { FaqList } from "@/components/marketing/faq-list";
 import { PriceCompare } from "@/components/marketing/price-compare";
 import { BreadcrumbJsonLd, FaqJsonLd } from "@/components/seo/json-ld";
+import { TrustBadges } from "@/components/marketing/trust-badges";
+import { Testimonials } from "@/components/marketing/testimonials";
 
 export const metadata = pageMetadata({
   title: "Prix du logiciel de relance de devis : gratuit | Artisan Relance",
@@ -106,6 +108,17 @@ export default function PricingPage() {
         <p className="mt-4 text-sm">
           <Link href="/comparatif" className="underline underline-offset-4">Voir le comparatif détaillé (vitesse, fonctions, prix)</Link>
         </p>
+      </div>
+
+      <div className="mx-auto mt-16 max-w-5xl">
+        <h2 className="mb-5 text-center text-2xl font-semibold tracking-tight">Gratuit, mais sérieux</h2>
+        <TrustBadges />
+        <p className="mt-4 text-center text-sm">
+          <Link href="/confiance" className="underline underline-offset-4">Sécurité des données, RGPD et engagements</Link>
+        </p>
+        <div className="mt-10">
+          <Testimonials limit={3} />
+        </div>
       </div>
 
       <div className="mx-auto mt-16 max-w-3xl">

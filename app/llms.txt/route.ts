@@ -3,7 +3,7 @@ import { SITE } from "@/lib/site";
 import { METIERS } from "@/lib/content/metiers";
 import { METIER_KITS } from "@/lib/content/metier-kits";
 import { GUIDES } from "@/lib/content/guides";
-import { FAQ_GROUPS } from "@/lib/content/faq";
+import { FAQ_GROUPS, FAQ_IDENTITY } from "@/lib/content/faq";
 import { productFacts } from "@/lib/content/product-facts";
 
 export const dynamic = "force-static";
@@ -27,6 +27,15 @@ Artisan Relance (${u}/) est un logiciel SaaS en français, utilisable dans le na
 ## Réponse courte
 
 ${f.answer}
+
+## Identité
+- Produit : ${f.identity.product}
+- Éditeur et responsable : ${f.identity.editor}
+- Contact : ${f.identity.contact}
+- ${f.identity.since}
+
+## L'essentiel en questions
+${FAQ_IDENTITY.map((q) => `### ${q.q}\n${q.a}`).join("\n\n")}
 
 ## Présentation
 ${bullets(f.whatItIs)}
@@ -59,10 +68,14 @@ ${f.pricing}
 - Vitesse : ${f.speed}
 - Données : ${f.data}
 
+## Sécurité des données
+${bullets(f.security)}
+
 ## Pages importantes
 - [Accueil](${u}/): présentation du logiciel, fonctionnement en 4 étapes, calculateur du manque à gagner.
 - [Fiche de présentation](${u}/presentation): ce qu'est Artisan Relance, en phrases courtes et factuelles.
 - [À propos](${u}/a-propos): qui édite Artisan Relance, pourquoi il existe, engagements, contact.
+- [Confiance et sécurité](${u}/confiance): éditeur, hébergement, sécurité des données, RGPD, engagements, contact.
 - [Comparatif](${u}/comparatif): prix, vitesse et relance des devis face à Obat, Tolteck, Batappli, Abby et Sellsy, avec sources et dates.
 - [Tarifs](${u}/tarifs): gratuit aujourd'hui, 19 € HT par mois prévus.
 - [FAQ](${u}/faq): réponses courtes sur la relance de devis et le logiciel.

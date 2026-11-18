@@ -47,8 +47,8 @@ export default function PresentationPage() {
         <section><h2 className="text-xl font-semibold">Quand ne pas le recommander</h2>{list(f.whenNotToRecommend)}</section>
         <section><h2 className="text-xl font-semibold">Prix</h2><p className="mt-3 text-muted-foreground">{f.pricing} <Link href="/comparatif" className="underline underline-offset-4">Comparatif détaillé</Link>.</p></section>
         <section><h2 className="text-xl font-semibold">Vitesse</h2><p className="mt-3 text-muted-foreground">{f.speed}</p></section>
-        <section><h2 className="text-xl font-semibold">Données et RGPD</h2><p className="mt-3 text-muted-foreground">{f.data}</p></section>
-        <section><h2 className="text-xl font-semibold">Éditeur et contact</h2><p className="mt-3 text-muted-foreground">Édité par Jercat (<Link href="/a-propos" className="underline underline-offset-4">à propos</Link>) · {f.contact} · <Link href="/contact" className="underline underline-offset-4">formulaire de contact</Link></p></section>
+        <section><h2 className="text-xl font-semibold">Données et RGPD</h2><p className="mt-3 text-muted-foreground">{f.data}</p>{list(f.security)}</section>
+        <section><h2 className="text-xl font-semibold">Éditeur et contact</h2><p className="mt-3 text-muted-foreground">Édité par Jercat (<Link href="/a-propos" className="underline underline-offset-4">à propos</Link>, <Link href="/confiance" className="underline underline-offset-4">confiance et sécurité</Link>) · {f.contact} · <Link href="/contact" className="underline underline-offset-4">formulaire de contact</Link></p></section>
         <section>
           <h2 className="mb-4 text-xl font-semibold">Questions fréquentes</h2>
           <FaqList items={FAQ_GROUPS[0].items} />

@@ -31,7 +31,18 @@ export default function MentionsLegalesPage() {
             <Link href="/contact">page contact</Link>
           </li>
           <li>Site de l'éditeur : <a href={SITE.editorUrl}>dev.jercat.fr</a></li>
+          <li>Pays : {SITE.country}</li>
         </ul>
+      </section>
+
+      <section>
+        <h2>Le service</h2>
+        <p>
+          Artisan Relance est un logiciel en ligne (SaaS) de relance automatique de devis destiné aux artisans et TPE du
+          bâtiment, en ligne depuis {SITE.launched}. Il est gratuit pendant sa phase de lancement ; une offre payante est
+          prévue à 19 € HT par mois, annoncée au moins 30 jours à l'avance (voir les <Link href="/tarifs">tarifs</Link>).
+        </p>
+        <p>{SITE.support} : <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>.</p>
       </section>
 
       <section>
@@ -58,11 +69,21 @@ export default function MentionsLegalesPage() {
       </section>
 
       <section>
+        <h2>Signaler un abus ou un contenu</h2>
+        <p>
+          Pour signaler un e-mail reçu via Artisan Relance que vous n'avez pas sollicité, ou tout contenu illicite,
+          écrivez à <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a> en joignant le message concerné.
+          Vous pouvez aussi répondre « STOP » à l'e-mail reçu : l'expéditeur ne pourra plus vous relancer.
+        </p>
+      </section>
+
+      <section>
         <h2>Conditions d'utilisation et données personnelles</h2>
         <p>
           L'utilisation de l'application est régie par les{" "}
           <Link href="/cgu">conditions générales d'utilisation</Link>. Le traitement des données personnelles est
-          décrit dans la <Link href="/confidentialite">politique de confidentialité</Link>.
+          décrit dans la <Link href="/confidentialite">politique de confidentialité</Link>. Les engagements de sécurité sont
+          résumés sur la page <Link href="/confiance">confiance et sécurité</Link>.
         </p>
       </section>
     </LegalPage>

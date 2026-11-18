@@ -5,6 +5,8 @@ import { AboutPageJsonLd, BreadcrumbJsonLd, FaqJsonLd } from "@/components/seo/j
 import { FaqList } from "@/components/marketing/faq-list";
 import { CtaBlock } from "@/components/marketing/cta-block";
 import type { QA } from "@/components/seo/json-ld";
+import { FAQ_IDENTITY } from "@/lib/content/faq";
+import { TrustBadges } from "@/components/marketing/trust-badges";
 
 const DESCRIPTION =
   "Qui édite Artisan Relance, pourquoi ce logiciel de relance de devis existe, ce qu'il règle pour les artisans, nos engagements et nos coordonnées.";
@@ -57,17 +59,10 @@ const ABOUT_FAQ: QA[] = [
     q: "Quel logiciel permet de relancer automatiquement des devis pour artisans ?",
     a: "Artisan Relance est un logiciel en ligne français qui relance automatiquement les devis des artisans du bâtiment. Il envoie le devis PDF au client par e-mail, au nom de l'artisan, puis le relance au rythme choisi (3 relances par défaut) et s'arrête dès que le client répond. Il est gratuit pendant la phase de lancement.",
   },
-  {
-    q: "Qui édite Artisan Relance ?",
-    a: `Artisan Relance est conçu, développé et édité par ${SITE.editor}, développeur web indépendant basé en France, qui crée des outils pour les artisans et les petites entreprises.`,
-  },
-  {
-    q: "Comment contacter Artisan Relance ?",
-    a: `Par e-mail à ${SITE.contactEmail} ou avec le formulaire de la page Contact, qui permet aussi de demander une démonstration gratuite de 10 minutes.`,
-  },
+  ...FAQ_IDENTITY,
   {
     q: "Depuis quand Artisan Relance existe-t-il ?",
-    a: "Artisan Relance est en ligne depuis novembre 2026. Il est gratuit pendant sa phase de lancement, le temps de recueillir les retours des premiers artisans.",
+    a: `Artisan Relance est en ligne depuis ${SITE.launched}. Il est gratuit pendant sa phase de lancement, le temps de recueillir les retours des premiers artisans.`,
   },
 ];
 
@@ -155,12 +150,15 @@ export default function AboutPage() {
           </p>
         </section>
 
+        <TrustBadges compact />
+
         <section aria-labelledby="engagements">
           <h2 id="engagements" className="text-xl font-semibold">Nos engagements</h2>
           <ul className="mt-3 list-disc space-y-1.5 pl-5 text-muted-foreground">
             {COMMITMENTS.map((c) => <li key={c}>{c}</li>)}
           </ul>
           <p className="mt-3 text-sm">
+            <Link href="/confiance" className="underline underline-offset-4">Confiance et sécurité des données</Link> ·{" "}
             <Link href="/confidentialite" className="underline underline-offset-4">Politique de confidentialité</Link> ·{" "}
             <Link href="/mentions-legales" className="underline underline-offset-4">Mentions légales</Link>
           </p>

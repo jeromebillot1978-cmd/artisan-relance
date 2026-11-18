@@ -41,6 +41,7 @@ export default function ConfidentialitePage() {
           </li>
           <li>Page contact : nom, e-mail, téléphone (facultatif), métier, message.</li>
           <li>Données techniques : journaux de connexion et d'envoi conservés par nos prestataires pour la sécurité.</li>
+          <li>Mesure d'audience du site public : pages vues, provenance et type d'appareil, de façon anonyme et sans cookie (aucune adresse IP conservée ; un identifiant de visite non réversible, renouvelé chaque mois).</li>
         </ul>
         <p>Aucune donnée de paiement n'est collectée. Aucune donnée n'est revendue ni utilisée à des fins publicitaires.</p>
       </section>
@@ -69,6 +70,8 @@ export default function ConfidentialitePage() {
           <li>Pièces jointes reçues des clients : supprimées automatiquement après 6 mois.</li>
           <li>Texte des échanges avec le client : supprimé automatiquement après 24 mois.</li>
           <li>Messages de la page contact : 12 mois après le dernier échange.</li>
+          <li>Journal technique des réponses reçues et des incidents de distribution (adresse invalide, signalement) : 13 mois.</li>
+          <li>Statistiques de visite anonymes : 13 mois.</li>
           <li>Historique des demandes d'avis : 24 mois, ou plus tôt si le devis concerné est supprimé.</li>
           <li>Vous pouvez supprimer un devis, ses fichiers et son historique à tout moment, et exporter vos données au format CSV.</li>
         </ul>
@@ -78,26 +81,39 @@ export default function ConfidentialitePage() {
         <h2>Destinataires et hébergement</h2>
         <ul>
           <li>Supabase : base de données, authentification et stockage des fichiers, hébergés à Zurich (Suisse), pays reconnu par la Commission européenne comme offrant une protection adéquate.</li>
-          <li>Resend : envoi des e-mails, région Irlande (Union européenne).</li>
+          <li>Resend : envoi des e-mails et réception des réponses de vos clients (adresse de réponse dédiée à chaque devis), région Irlande (Union européenne).</li>
           <li>Vercel Inc. : hébergement de l'application, exécution en Europe (Francfort). Les transferts éventuels vers les États-Unis sont encadrés par les clauses contractuelles types de la Commission européenne.</li>
         </ul>
         <p>Les données ne sont accessibles qu'à vous et, pour la maintenance et la sécurité, à l'éditeur.</p>
       </section>
 
       <section>
-        <h2>Cookies</h2>
+        <h2>Cookies et mesure d'audience</h2>
         <p>
-          Le site n'utilise ni cookie publicitaire ni outil de suivi tiers. Seuls des cookies strictement
+          Le site n'utilise ni cookie publicitaire ni traceur à des fins de publicité. Seuls des cookies strictement
           nécessaires sont déposés : la session de connexion à votre compte et la mémorisation du thème clair ou
           sombre. Ils ne nécessitent pas de consentement.
+        </p>
+        <p>
+          La fréquentation des pages publiques est mesurée sans cookie et de façon anonyme (Vercel Web Analytics et un
+          compteur interne) : aucune adresse IP n'est conservée et aucune donnée ne permet de vous identifier. Les
+          pages de l'application connectée ne sont pas mesurées.
         </p>
       </section>
 
       <section>
         <h2>Sécurité</h2>
+        <ul>
+          <li>Connexion chiffrée (HTTPS) sur l'ensemble du site et de l'application.</li>
+          <li>Isolement strict des comptes en base de données : chaque utilisateur n'accède qu'à ses propres devis, clients et messages.</li>
+          <li>Mots de passe jamais stockés en clair.</li>
+          <li>Fichiers stockés dans un espace privé, accessibles uniquement par des liens temporaires.</li>
+          <li>Pièces jointes reçues filtrées (types autorisés, taille limitée) et photos réduites avant stockage.</li>
+          <li>Domaine d'envoi authentifié (SPF, DKIM, DMARC) ; messages dont l'expéditeur ne peut pas être vérifié signalés à l'utilisateur.</li>
+          <li>Limitation du nombre d'envois par compte et par jour.</li>
+        </ul>
         <p>
-          Connexion chiffrée (HTTPS), isolement strict des comptes en base de données, fichiers stockés dans un
-          espace privé accessible par liens temporaires, limitation du nombre d'envois par compte et par jour.
+          Résumé et engagements : <Link href="/confiance">confiance et sécurité des données</Link>.
         </p>
       </section>
 

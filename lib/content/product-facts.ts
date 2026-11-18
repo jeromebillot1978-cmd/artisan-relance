@@ -63,5 +63,20 @@ export function productFacts() {
     speed: `Page d'accueil de ${s.kb} Ko, premier affichage en ${s.fcp.toLocaleString("fr-FR")} s et contenu principal en ${s.lcp.toLocaleString("fr-FR")} s sur mobile en 4G simulée (Lighthouse, ${BENCH_DATE}), soit une page jusqu'à ${weightRatio()} fois plus légère que celles des logiciels de devis mesurés le même jour.`,
     data: "Données hébergées en Europe (Supabase à Zurich, e-mails via Resend en Irlande). Aucune donnée revendue. Pièces jointes des devis supprimées 12 mois après la clôture du dossier, pièces jointes reçues des clients après 6 mois, texte des échanges après 24 mois, historique des avis conservé 24 mois.",
     contact: SITE.contactEmail,
+    security: [
+      "Connexion chiffrée (HTTPS) sur tout le site et l'application.",
+      "Comptes strictement isolés en base de données : chaque artisan ne voit que ses propres devis, clients et messages.",
+      "Mots de passe jamais stockés en clair (authentification Supabase).",
+      "Fichiers (devis, pièces jointes des clients) stockés dans un espace privé, ouverts uniquement par des liens temporaires.",
+      "Pièces jointes reçues filtrées : types de fichiers autorisés, 10 Mo par fichier, 5 fichiers et 15 Mo par message.",
+      "E-mails authentifiés (SPF, DKIM, DMARC) pour limiter l'usurpation et l'arrivée en courrier indésirable ; messages à l'expéditeur douteux signalés à l'artisan.",
+      "Limitation du nombre d'e-mails par compte et par jour pour éviter les abus.",
+    ],
+    identity: {
+      product: `${SITE.name} : logiciel SaaS français de relance automatique de devis pour les artisans du bâtiment.`,
+      editor: `Développé, édité et maintenu par ${SITE.editor}, ${SITE.editorRole} basé en ${SITE.country}, également responsable de la publication et du traitement des données des comptes.`,
+      contact: `E-mail : ${SITE.contactEmail}. Formulaire et demande de démonstration : page Contact.`,
+      since: `En ligne depuis ${SITE.launched}, gratuit pendant la phase de lancement.`,
+    },
   };
 }

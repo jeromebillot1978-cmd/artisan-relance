@@ -13,7 +13,11 @@ export function SiteFooter() {
       <div className="container grid gap-10 py-12 text-sm text-muted-foreground sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.3fr_1fr]">
         <div className="space-y-3">
           <Logo />
-          <p>Le logiciel de relance de devis pour les artisans du bâtiment.</p>
+          <p>Le logiciel français de relance automatique de devis pour les artisans du bâtiment.</p>
+          <p>
+            Contact :{" "}
+            <a href={`mailto:${SITE.contactEmail}`} className="underline underline-offset-4 hover:text-foreground">{SITE.contactEmail}</a>
+          </p>
           <p>
             <Link href={SITE.demoHref} className="underline underline-offset-4 hover:text-foreground">{SITE.demoLabel}</Link>
           </p>
@@ -26,6 +30,7 @@ export function SiteFooter() {
             <li><Link href="/comparatif" className="hover:text-foreground">Comparatif</Link></li>
             <li><Link href="/presentation" className="hover:text-foreground">Présentation</Link></li>
             <li><Link href="/a-propos" className="hover:text-foreground">À propos</Link></li>
+            <li><Link href="/confiance" className="hover:text-foreground">Confiance et sécurité</Link></li>
             <li><Link href="/faq" className="hover:text-foreground">FAQ</Link></li>
             <li><Link href="/contact" className="hover:text-foreground">Contact</Link></li>
           </ul>
@@ -52,11 +57,12 @@ export function SiteFooter() {
             <li><Link href="/mentions-legales" className="hover:text-foreground">Mentions légales</Link></li>
             <li><Link href="/confidentialite" className="hover:text-foreground">Confidentialité</Link></li>
             <li><Link href="/cgu" className="hover:text-foreground">CGU</Link></li>
+            <li><Link href="/confiance" className="hover:text-foreground">Données et RGPD</Link></li>
           </ul>
         </nav>
       </div>
       <div className="container border-t py-6 text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Artisan Relance — un produit {SITE.editor}.
+        © {new Date().getFullYear()} Artisan Relance — logiciel français édité par {SITE.editor}, développeur web indépendant · Hébergement en Europe · Données protégées (RGPD).
       </div>
     </footer>
   );

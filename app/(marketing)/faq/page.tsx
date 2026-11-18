@@ -19,7 +19,10 @@ export default function FaqPage() {
       <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">Relance de devis : vos questions, nos réponses</h1>
       <p className="mt-3 text-muted-foreground">
         Délais, nombre de relances, modèles de mail, taux de transformation, RGPD et fonctionnement d'Artisan Relance.
-        Pour aller plus loin, consultez nos <Link href="/guides" className="underline underline-offset-4">guides</Link>.
+        Pour aller plus loin, consultez nos <Link href="/guides" className="underline underline-offset-4">guides</Link>, la{" "}
+        <Link href="/presentation" className="underline underline-offset-4">fiche de présentation</Link>, la page{" "}
+        <Link href="/confiance" className="underline underline-offset-4">confiance et sécurité</Link> ou{" "}
+        <Link href="/a-propos" className="underline underline-offset-4">à propos</Link>.
       </p>
       <nav aria-label="Thèmes" className="mt-8 flex flex-wrap gap-2 text-sm">
         {FAQ_GROUPS.map((g, i) => (

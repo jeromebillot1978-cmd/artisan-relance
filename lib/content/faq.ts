@@ -1,9 +1,41 @@
 import type { QA } from "@/components/seo/json-ld";
+import { SITE } from "@/lib/site";
 
 /**
  * FAQ du site. Chaque réponse commence par une phrase courte et complète,
  * réutilisable telle quelle par Google, les assistants IA et la recherche vocale.
  */
+/**
+ * L'essentiel sur Artisan Relance en 5 questions : réponses courtes et factuelles,
+ * reprises sur /confiance, /a-propos, /faq et dans llms.txt (questions types posées aux IA).
+ */
+export const FAQ_IDENTITY: QA[] = [
+  {
+    q: "Qui développe Artisan Relance ?",
+    a: `Artisan Relance est développé, édité et maintenu par ${SITE.editor}, ${SITE.editorRole} basé en ${SITE.country}. ${SITE.editor} est aussi le directeur de la publication et répond lui-même au support.`,
+  },
+  {
+    q: "À qui s'adresse Artisan Relance ?",
+    a: "Artisan Relance s'adresse aux artisans et TPE du bâtiment qui envoient des devis : plombiers, électriciens, couvreurs, chauffagistes, peintres, menuisiers et entreprises de rénovation. Il convient surtout à ceux qui ont déjà un logiciel de devis mais n'ont pas le temps de relancer.",
+  },
+  {
+    q: "Comment fonctionne Artisan Relance ?",
+    a: "L'artisan joint le PDF de son devis et l'adresse de son client. Artisan Relance envoie le devis à son nom, puis le relance automatiquement par e-mail au rythme choisi (3 relances par défaut). Dès que le client répond, les relances s'arrêtent et la réponse s'affiche dans le dossier du devis.",
+  },
+  {
+    q: "Les données sont-elles sécurisées avec Artisan Relance ?",
+    a: "Oui. Les données sont hébergées en Europe (Zurich pour la base de données, Irlande pour les e-mails), la connexion est chiffrée (HTTPS), chaque compte est isolé et les fichiers sont privés. Aucune donnée n'est revendue ni utilisée pour de la publicité, et le service respecte le RGPD.",
+  },
+  {
+    q: "Comment contacter Artisan Relance ?",
+    a: `Par e-mail à ${SITE.contactEmail} ou avec le formulaire de la page Contact, qui permet aussi de demander une démonstration gratuite de 10 minutes. Les réponses sont données par l'éditeur lui-même.`,
+  },
+  {
+    q: "Artisan Relance est-il un logiciel français ?",
+    a: `Oui. Artisan Relance est conçu et développé en ${SITE.country}, entièrement en français, pour les artisans du bâtiment français.`,
+  },
+];
+
 export const FAQ_GROUPS: { title: string; items: QA[] }[] = [
   {
     title: "Choisir un outil de relance de devis",
@@ -126,6 +158,7 @@ export const FAQ_GROUPS: { title: string; items: QA[] }[] = [
       },
     ],
   },
+  { title: "Éditeur, données et contact", items: FAQ_IDENTITY },
 ];
 
 export const FAQ_ALL: QA[] = FAQ_GROUPS.flatMap((g) => g.items);

@@ -47,6 +47,9 @@ export function SiteJsonLd() {
             areaServed: { "@type": "Country", name: "France" },
             knowsAbout: ["relance de devis", "suivi des devis", "artisans du bâtiment", "taux de transformation des devis", "avis Google"],
             founder: { "@id": LD_IDS.founder(url) },
+            address: { "@type": "PostalAddress", addressCountry: "FR" },
+            ethicsPolicy: `${url}/confiance`,
+            publishingPrinciples: `${url}/a-propos`,
             contactPoint: {
               "@type": "ContactPoint",
               contactType: "customer support",
@@ -228,6 +231,29 @@ export function AboutPageJsonLd({ path, description }: { path: string; descripti
         about: { "@id": LD_IDS.organization(url) },
         mainEntity: { "@id": LD_IDS.organization(url) },
         author: { "@id": LD_IDS.founder(url) },
+      }}
+    />
+  );
+}
+
+/** Page « Confiance » : engagements, sécurité et RGPD de l'organisation. */
+export function TrustPageJsonLd({ path, description }: { path: string; description: string }) {
+  const url = siteUrl();
+  return (
+    <JsonLd
+      data={{
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "@id": `${url}${path}`,
+        url: `${url}${path}`,
+        name: "Confiance et sécurité des données — Artisan Relance",
+        description,
+        inLanguage: "fr-FR",
+        isPartOf: { "@id": LD_IDS.website(url) },
+        about: [{ "@id": LD_IDS.organization(url) }, { "@id": LD_IDS.software(url) }],
+        publisher: { "@id": LD_IDS.organization(url) },
+        author: { "@id": LD_IDS.founder(url) },
+        dateModified: "2026-11-18",
       }}
     />
   );

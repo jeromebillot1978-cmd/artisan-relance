@@ -35,11 +35,13 @@ export default function CguPage() {
       <section>
         <h2>3. Fonctionnement</h2>
         <ul>
-          <li>Les e-mails sont envoyés au nom de l'entreprise de l'utilisateur, avec une adresse d'expédition du service ; les réponses des clients sont adressées à l'adresse de réponse de l'utilisateur.</li>
+          <li>Les e-mails sont envoyés au nom de l'entreprise de l'utilisateur, avec une adresse d'expédition du service. Les réponses des clients sont reçues par le service sur une adresse dédiée à chaque devis, affichées dans le dossier du devis et signalées à l'utilisateur par e-mail selon le réglage choisi (alerte courte, transfert complet ou aucun e-mail).</li>
+          <li>L'utilisateur peut répondre à son client depuis le dossier du devis, avec des pièces jointes (5 fichiers et 15 Mo au plus par message, 20 réponses par jour).</li>
           <li>Les relances partent du lundi au samedi entre 8 h et 19 h (heure de Paris), selon la stratégie choisie.</li>
-          <li>L'utilisateur arrête les relances d'un devis lorsque son client a répondu, en le marquant « Répondu », « Gagné », « Perdu » ou « Terminé ».</li>
+          <li>Les relances d'un devis s'arrêtent automatiquement lorsque le client répond (hors réponses automatiques d'absence) ou demande l'arrêt (« STOP »). L'utilisateur peut aussi les arrêter à tout moment en marquant le devis « Répondu », « Gagné », « Perdu » ou « Terminé ».</li>
           <li>Pour éviter les abus et maîtriser les coûts, le nombre d'e-mails est limité par compte et par jour (30 à ce jour), et les pièces jointes à 10 Mo par fichier et 20 Mo par devis.</li>
-          <li>Les pièces jointes sont supprimées automatiquement 12 mois après la clôture du dossier.</li>
+          <li>Les pièces jointes des devis sont supprimées automatiquement 12 mois après la clôture du dossier, celles reçues des clients après 6 mois, et le texte des échanges après 24 mois.</li>
+          <li>Les pièces jointes reçues des clients sont filtrées : seuls les types de fichiers courants (PDF, photos, documents bureautiques, texte) sont conservés, et les photos sont réduites.</li>
         </ul>
       </section>
 

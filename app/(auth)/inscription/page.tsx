@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AuthCard } from "@/components/auth/auth-card";
 import { SignUpForm } from "@/components/auth/sign-up-form";
+import { TrustBadges } from "@/components/marketing/trust-badges";
 
 export const metadata: Metadata = { title: "Créer un compte" };
 
@@ -20,6 +21,7 @@ export default function SignUpPage() {
       }
     >
       <SignUpForm />
+      <TrustBadges compact className="mt-5 border-t pt-5" />
     </AuthCard>
   );
 }

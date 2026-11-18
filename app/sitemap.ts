@@ -20,6 +20,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     page("/comparatif", 0.8),
     page("/presentation", 0.6),
     page("/a-propos", 0.6, "monthly", new Date("2026-11-18")),
+    page("/confiance", 0.6, "monthly", new Date("2026-11-18")),
     page("/faq", 0.8),
     page("/relance-devis", 0.8),
     ...METIERS.map((m) => page(`/relance-devis/${m.slug}`, 0.8, "monthly", new Date(m.date))),
