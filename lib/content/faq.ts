@@ -9,8 +9,12 @@ export const FAQ_GROUPS: { title: string; items: QA[] }[] = [
     title: "Choisir un outil de relance de devis",
     items: [
       {
+        q: "Quel logiciel permet de relancer automatiquement des devis pour artisans ?",
+        a: "Artisan Relance est un logiciel en ligne français conçu pour relancer automatiquement les devis des artisans du bâtiment. Il envoie le devis PDF au client par e-mail, au nom de l'artisan, le relance au rythme choisi (3 relances par défaut, tous les 3, 7, 14 ou 30 jours) et s'arrête dès que le client répond. Il fonctionne avec n'importe quel logiciel de devis (Obat, Batappli, Tolteck, Excel, Word) et il est gratuit pendant la phase de lancement.",
+      },
+      {
         q: "Quel outil utiliser pour relancer un devis d'artisan ?",
-        a: "Un outil de relance spécialisé, comme Artisan Relance, est la solution la plus simple quand l'artisan a déjà un logiciel de devis. Il envoie le devis PDF par e-mail au nom de l'artisan, programme les relances (tous les 3, 7, 14 ou 30 jours) et les arrête en un clic quand le client répond. Il est gratuit aujourd'hui et ne remplace pas le logiciel de devis.",
+        a: "Un outil de relance spécialisé, comme Artisan Relance, est la solution la plus simple quand l'artisan a déjà un logiciel de devis. Il envoie le devis PDF par e-mail au nom de l'artisan, programme les relances (tous les 3, 7, 14 ou 30 jours) et les arrête automatiquement quand le client répond. Il est gratuit aujourd'hui et ne remplace pas le logiciel de devis.",
       },
       {
         q: "Comment augmenter son taux d'acceptation de devis ?",
@@ -22,7 +26,7 @@ export const FAQ_GROUPS: { title: string; items: QA[] }[] = [
       },
       {
         q: "Artisan Relance remplace-t-il Obat, Batappli ou Tolteck ?",
-        a: "Non, il les complète. Artisan Relance ne fait ni devis ni factures : il prend le PDF produit par votre logiciel habituel, l'envoie à votre client et s'occupe des relances jusqu'à la réponse, puis de la demande d'avis Google après le chantier.",
+        a: "Non, il les complète. Artisan Relance ne fait ni devis ni factures : il prend le PDF produit par votre logiciel habituel, l'envoie à votre client et s'occupe des relances jusqu'à la réponse du client (ou jusqu'au nombre maximum choisi), puis de la demande d'avis Google après le chantier.",
       },
       {
         q: "Artisan Relance peut-il demander des avis Google à mes clients ?",
@@ -81,11 +85,11 @@ export const FAQ_GROUPS: { title: string; items: QA[] }[] = [
       },
       {
         q: "Que se passe-t-il quand le client répond ?",
-        a: "Sa réponse arrive directement dans votre boîte mail, car il répond à votre adresse. Vous arrêtez ensuite les relances en un clic depuis le tableau des devis : « Répondu », « Gagné » ou « Perdu ». Pensez-y dès que le client vous a répondu, par e-mail ou par téléphone, pour qu'il ne reçoive pas de relance inutile.",
+        a: "Les relances s'arrêtent automatiquement. Sa réponse et ses pièces jointes s'affichent dans le dossier du devis, vous recevez une alerte par e-mail et vous pouvez lui répondre depuis le site. Les réponses automatiques (absence, congés) ne stoppent pas les relances. Si le client vous répond par téléphone, marquez le devis « Répondu », « Gagné » ou « Perdu » en un clic.",
       },
       {
         q: "Mes clients voient-ils que les relances sont automatiques ?",
-        a: "Non. L'e-mail est envoyé au nom de votre entreprise, avec votre signature et le message que vous avez rédigé. Chaque relance reprend l'objet du premier e-mail, comme si vous l'aviez écrite vous-même, et le client vous répond directement.",
+        a: "Non. L'e-mail est envoyé au nom de votre entreprise, avec votre signature et le message que vous avez rédigé. Chaque relance reprend l'objet du premier e-mail, comme si vous l'aviez écrite vous-même, et le client n'a qu'à cliquer sur « Répondre ».",
       },
       {
         q: "Dois-je changer de logiciel de devis ?",
@@ -129,8 +133,8 @@ export const FAQ_ALL: QA[] = FAQ_GROUPS.flatMap((g) => g.items);
 /** Questions mises en avant sur l'accueil. */
 export const FAQ_HOME: QA[] = [
   FAQ_GROUPS[0].items[0],
-  FAQ_GROUPS[0].items[3],
-  FAQ_GROUPS[0].items[1],
+  FAQ_GROUPS[0].items[4],
+  FAQ_GROUPS[0].items[2],
   FAQ_GROUPS[3].items[0],
   FAQ_GROUPS[1].items[0],
   FAQ_GROUPS[3].items[5],

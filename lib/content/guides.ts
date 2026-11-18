@@ -64,7 +64,7 @@ export const GUIDES: (ContentPage & { short: string })[] = [
         h2: "Programmer ses relances dès l'envoi du devis",
         paragraphs: [
           "Le vrai problème n'est pas de connaître le bon délai, c'est de s'en souvenir au milieu des chantiers. La solution la plus fiable consiste à programmer les relances au moment même où vous envoyez le devis : vous décidez une fois, et le suivi se fait sans vous.",
-          "C'est ce que fait Artisan Relance : vous joignez votre devis, choisissez l'intervalle (3, 7, 14 ou 30 jours, ou un nombre de jours personnalisé), le nombre maximum de relances et une date de fin. Les e-mails partent à votre nom, et votre client vous répond directement. Quand il répond ou signe, un clic arrête les relances.",
+          "C'est ce que fait Artisan Relance : vous joignez votre devis, choisissez l'intervalle (3, 7, 14 ou 30 jours, ou un nombre de jours personnalisé), le nombre maximum de relances et une date de fin. Les e-mails partent à votre nom. Quand votre client répond, les relances s'arrêtent d'elles-mêmes et sa réponse s'affiche dans le dossier du devis ; quand il signe, un clic le marque « Gagné ».",
         ],
       },
     ],

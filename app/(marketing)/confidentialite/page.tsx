@@ -12,7 +12,7 @@ export const metadata = pageMetadata({
 export default function ConfidentialitePage() {
   const mail = <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>;
   return (
-    <LegalPage title="Politique de confidentialité">
+    <LegalPage title="Politique de confidentialité" path="/confidentialite">
       <section>
         <h2>Qui est responsable de vos données ?</h2>
         <p>

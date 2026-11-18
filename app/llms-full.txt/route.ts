@@ -14,6 +14,7 @@ export function GET() {
   const f = productFacts();
   const parts: string[] = [];
   parts.push(`# Artisan Relance — contenu complet\n\n> ${f.oneLiner}\n\nSource : ${u}. Ce fichier reprend le contenu des pages publiques.`);
+  parts.push(`## Réponse courte\n\n${f.answer}\n\n## Comment ça marche\n\n${f.howItWorks.join("\n")}\n\n## Bénéfices\n\n${f.benefits.map((t) => `- ${t}`).join("\n")}`);
   parts.push(`## Fiche produit\n\n${f.features.map((t) => `- ${t}`).join("\n")}\n\nPrix : ${f.pricing}\n\nVitesse : ${f.speed}\n\nDonnées : ${f.data}`);
   parts.push(
     `## Comparatif (prix relevés le ${PRICE_DATE})\n\n| Outil | Ce que c'est | Prix public HT | Relance automatique des devis | Source |\n|---|---|---|---|---|\n${PRICES.map(

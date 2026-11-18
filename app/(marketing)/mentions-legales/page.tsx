@@ -11,7 +11,7 @@ export const metadata = pageMetadata({
 
 export default function MentionsLegalesPage() {
   return (
-    <LegalPage title="Mentions légales">
+    <LegalPage title="Mentions légales" path="/mentions-legales">
       <section>
         <h2>Éditeur du site</h2>
         <p>

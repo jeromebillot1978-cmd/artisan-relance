@@ -55,7 +55,7 @@ export const METIERS: (ContentPage & { metier: string; short: string })[] = [
       {
         h2: "Relancer sans y penser avec Artisan Relance",
         paragraphs: [
-          "Artisan Relance envoie votre devis PDF par e-mail, à votre nom, puis programme les relances selon le rythme choisi : tous les 3, 7, 14 ou 30 jours, avec un nombre maximum de relances. Les messages partent du lundi au samedi en journée, jamais le dimanche ni la nuit. Votre client vous répond directement, sur votre adresse e-mail.",
+          "Artisan Relance envoie votre devis PDF par e-mail, à votre nom, puis programme les relances selon le rythme choisi : tous les 3, 7, 14 ou 30 jours, avec un nombre maximum de relances. Les messages partent du lundi au samedi en journée, jamais le dimanche ni la nuit. Quand votre client répond, les relances s'arrêtent automatiquement et sa réponse arrive dans le dossier du devis, avec une alerte par e-mail.",
           "Vous gardez votre logiciel de devis habituel. Vous exportez le PDF, vous l'ajoutez dans Artisan Relance avec l'adresse du client, et c'est tout. Quand le client répond ou signe, un clic sur « Répondu » ou « Gagné » arrête les relances.",
         ],
         list: [
@@ -144,7 +144,7 @@ export const METIERS: (ContentPage & { metier: string; short: string })[] = [
       {
         h2: "Automatiser les relances de vos devis d'électricité",
         paragraphs: [
-          "Artisan Relance s'occupe du suivi à votre place. Vous joignez le PDF de votre devis, vous choisissez le rythme des relances et un nombre maximum, et les e-mails partent à votre nom aux dates prévues, du lundi au samedi entre 8 h et 19 h. Les réponses de vos clients arrivent dans votre boîte mail habituelle.",
+          "Artisan Relance s'occupe du suivi à votre place. Vous joignez le PDF de votre devis, vous choisissez le rythme des relances et un nombre maximum, et les e-mails partent à votre nom aux dates prévues, du lundi au samedi entre 8 h et 19 h. Les réponses de vos clients arrêtent les relances et s'affichent dans le dossier du devis, avec une alerte par e-mail.",
           "Vous voyez en un coup d'œil les devis qui attendent, les prochaines relances et votre taux de signature. Un devis signé ? Un clic sur « Gagné » et les relances s'arrêtent.",
         ],
         list: [
@@ -233,7 +233,7 @@ export const METIERS: (ContentPage & { metier: string; short: string })[] = [
         h2: "Des relances automatiques adaptées aux longs délais de décision",
         paragraphs: [
           "Avec Artisan Relance, vous choisissez pour chaque devis l'intervalle entre les relances (3, 7, 14 ou 30 jours, ou un nombre de jours personnalisé), le nombre maximum de relances et une date de fin. Un devis de réfection complète peut ainsi recevoir trois relances espacées de deux semaines, pendant qu'un devis de réparation est relancé deux fois en une semaine.",
-          "Les e-mails partent à votre nom, avec le devis en pièce jointe si vous le souhaitez, et le client vous répond directement. Vous suivez tout depuis votre téléphone, même sur le toit.",
+          "Les e-mails partent à votre nom, avec le devis en pièce jointe si vous le souhaitez, et la réponse du client (photos comprises) arrive dans le dossier du devis. Vous suivez tout depuis votre téléphone, même sur le toit.",
         ],
         list: [
           "Intervalle et nombre de relances réglables devis par devis",
@@ -314,7 +314,7 @@ export const METIERS: (ContentPage & { metier: string; short: string })[] = [
       {
         h2: "Des relances qui suivent le rythme des dossiers d'aides",
         paragraphs: [
-          "Artisan Relance vous permet de régler chaque devis selon son contexte. Un remplacement de chaudière en panne : relances tous les 3 jours, deux au maximum. Une pompe à chaleur avec dossier d'aides : relances tous les 14 jours, quatre au maximum, avec une date de fin. Les e-mails partent à votre nom, le client vous répond directement, et vous arrêtez les relances en un clic dès qu'il signe.",
+          "Artisan Relance vous permet de régler chaque devis selon son contexte. Un remplacement de chaudière en panne : relances tous les 3 jours, deux au maximum. Une pompe à chaleur avec dossier d'aides : relances tous les 14 jours, quatre au maximum, avec une date de fin. Les e-mails partent à votre nom, les relances s'arrêtent dès que le client répond, et un clic marque le devis « Gagné » quand il signe.",
           "Le tableau de bord vous montre les devis en attente et le montant correspondant : un bon indicateur pour anticiper votre planning d'installation.",
         ],
         list: [
@@ -497,7 +497,7 @@ export const METIERS: (ContentPage & { metier: string; short: string })[] = [
       {
         h2: "Des relances automatiques pour vos devis de menuiserie",
         paragraphs: [
-          "Artisan Relance envoie votre devis et vos relances par e-mail, à votre nom, selon le rythme que vous choisissez pour chaque devis. Vous pouvez joindre plusieurs fichiers : le devis, des plans, une fiche technique ou une photo de réalisation. Votre client répond directement à votre adresse.",
+          "Artisan Relance envoie votre devis et vos relances par e-mail, à votre nom, selon le rythme que vous choisissez pour chaque devis. Vous pouvez joindre plusieurs fichiers : le devis, des plans, une fiche technique ou une photo de réalisation. Sa réponse arrête les relances et s'affiche dans le dossier du devis.",
           "Le tableau de bord vous donne la liste des devis en attente, des prochaines relances et de vos devis gagnés : utile pour planifier l'atelier et les commandes fournisseurs.",
         ],
         list: [
@@ -588,7 +588,7 @@ export const METIERS: (ContentPage & { metier: string; short: string })[] = [
       {
         h2: "Relancer sans y penser avec Artisan Relance",
         paragraphs: [
-          "Artisan Relance envoie votre devis PDF par e-mail à votre nom, puis programme les relances au rythme choisi : tous les 7 ou 14 jours pour une rénovation, avec un nombre maximum de relances et une date de fin. Les messages partent du lundi au samedi en journée. Votre client répond directement sur votre adresse e-mail.",
+          "Artisan Relance envoie votre devis PDF par e-mail à votre nom, puis programme les relances au rythme choisi : tous les 7 ou 14 jours pour une rénovation, avec un nombre maximum de relances et une date de fin. Les messages partent du lundi au samedi en journée. Quand votre client répond, les relances s'arrêtent et sa réponse arrive dans le dossier du devis.",
           "Vous gardez votre logiciel de devis habituel, qu'il s'agisse d'Obat, de Batappli, de Tolteck ou d'un tableur : vous joignez simplement le PDF. Quand le client signe, un clic sur « Gagné » arrête les relances ; quelques jours après la fin du chantier, Artisan Relance peut même lui demander un avis Google.",
         ],
         list: [

@@ -36,7 +36,7 @@ export interface MetierKit {
 export const METIER_KITS: Record<string, MetierKit> = {
   plombier: {
     question: "Comment relancer un devis de plomberie ?",
-    title: "Comment relancer un devis de plomberie ? Modèles mail et SMS",
+    title: "Relancer un devis de plomberie : modèles mail et SMS",
     description:
       "Relancer un devis de plomberie : délais idéaux, 3 modèles d'e-mail, 3 SMS prêts à copier, erreurs à éviter et générateur de relance gratuit.",
     works: ["la rénovation de votre salle de bain", "le remplacement de votre chauffe-eau", "la création d'une douche à l'italienne", "la reprise du réseau d'eau", "l'adaptation PMR de votre salle d'eau"],
@@ -80,7 +80,7 @@ export const METIER_KITS: Record<string, MetierKit> = {
 
   electricien: {
     question: "Comment relancer un devis d'électricité ?",
-    title: "Comment relancer un devis d'électricité ? Modèles mail et SMS",
+    title: "Relancer un devis d'électricité : modèles mail et SMS",
     description:
       "Relancer un devis d'électricien : mise aux normes, rénovation, borne de recharge. Délais, modèles d'e-mail et SMS, erreurs à éviter, générateur gratuit.",
     works: ["la mise aux normes de votre tableau électrique", "la rénovation électrique complète", "l'installation d'une borne de recharge", "le remplacement de vos radiateurs électriques", "l'installation d'une VMC"],
@@ -123,7 +123,7 @@ export const METIER_KITS: Record<string, MetierKit> = {
 
   couvreur: {
     question: "Comment relancer un devis de toiture ?",
-    title: "Comment relancer un devis de toiture ? Modèles mail et SMS",
+    title: "Relancer un devis de toiture : modèles mail et SMS",
     description:
       "Relancer un devis de couvreur : réfection de toiture, réparation, gouttières. Délais idéaux, modèles d'e-mail et SMS, erreurs à éviter, générateur gratuit.",
     works: ["la réfection de votre toiture", "la réparation de la fuite en toiture", "le remplacement des gouttières", "le démoussage et le traitement de la toiture", "l'isolation des combles"],
@@ -167,7 +167,7 @@ export const METIER_KITS: Record<string, MetierKit> = {
 
   chauffagiste: {
     question: "Comment relancer un devis de chauffage ?",
-    title: "Comment relancer un devis de chauffage ? Modèles mail et SMS",
+    title: "Relancer un devis de chauffage : modèles mail et SMS",
     description:
       "Relancer un devis de chauffagiste : chaudière, pompe à chaleur, entretien. Délais idéaux, modèles d'e-mail et SMS, erreurs à éviter, générateur gratuit.",
     works: ["l'installation d'une pompe à chaleur", "le remplacement de votre chaudière", "l'installation d'un poêle à granulés", "le contrat d'entretien de votre chaudière", "le désembouage du circuit de chauffage"],
@@ -210,7 +210,7 @@ export const METIER_KITS: Record<string, MetierKit> = {
 
   peintre: {
     question: "Comment relancer un devis de peinture ?",
-    title: "Comment relancer un devis de peinture ? Modèles mail et SMS",
+    title: "Relancer un devis de peinture : modèles mail et SMS",
     description:
       "Relancer un devis de peintre en bâtiment : intérieur, façade, ravalement. Délais idéaux, modèles d'e-mail et SMS, erreurs à éviter, générateur gratuit.",
     works: ["la peinture de vos pièces de vie", "le ravalement de votre façade", "la pose de papier peint", "la peinture des boiseries et des volets", "la rénovation de l'appartement avant location"],
@@ -253,7 +253,7 @@ export const METIER_KITS: Record<string, MetierKit> = {
 
   menuisier: {
     question: "Comment relancer un devis de menuiserie ?",
-    title: "Comment relancer un devis de menuiserie ? Modèles mail et SMS",
+    title: "Relancer un devis de menuiserie : modèles mail et SMS",
     description:
       "Relancer un devis de menuisier : fenêtres, portes, cuisine, agencement. Délais idéaux, modèles d'e-mail et SMS, erreurs à éviter, générateur gratuit.",
     works: ["le remplacement de vos fenêtres", "la pose de votre porte d'entrée", "l'agencement de placards sur mesure", "la pose de votre cuisine", "la création d'un escalier"],
@@ -296,7 +296,7 @@ export const METIER_KITS: Record<string, MetierKit> = {
 
   renovation: {
     question: "Comment relancer un devis de rénovation ?",
-    title: "Comment relancer un devis de rénovation ? Modèles mail et SMS",
+    title: "Relancer un devis de rénovation : modèles mail et SMS",
     description:
       "Relancer un devis de rénovation (maison, appartement, cuisine) : délais idéaux, modèles d'e-mail et SMS, erreurs à éviter et générateur gratuit.",
     works: ["la rénovation complète de votre appartement", "la rénovation de votre cuisine", "la rénovation énergétique de votre maison", "l'aménagement des combles", "la rénovation de la maison avant emménagement"],

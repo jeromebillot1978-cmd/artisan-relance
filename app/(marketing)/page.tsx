@@ -38,7 +38,7 @@ export const metadata = pageMetadata({
   title: "Logiciel de relance de devis pour artisans | Artisan Relance",
   ogTitle: "Artisan Relance — vos devis deviennent des chantiers signés",
   description:
-    "Gardez votre logiciel de devis : Artisan Relance envoie vos devis et relance vos clients automatiquement jusqu'à la signature. Gratuit, rapide même en 4G.",
+    "Gardez votre logiciel de devis : Artisan Relance envoie vos devis, relance vos clients automatiquement et s'arrête dès qu'ils répondent. Gratuit, rapide en 4G.",
   path: "/",
 });
 
@@ -57,8 +57,8 @@ const steps = [
   },
   {
     icon: MousePointerClick,
-    title: "Le client répond, un clic arrête tout",
-    text: "Sa réponse arrive dans votre boîte mail. « Répondu », « Gagné » ou « Perdu » : les relances s'arrêtent.",
+    title: "Le client répond, les relances s'arrêtent",
+    text: "Sa réponse arrête automatiquement les relances. Vous la lisez dans le dossier du devis, avec ses photos, et vous lui répondez depuis le site.",
   },
   {
     icon: Star,
@@ -96,16 +96,19 @@ export default function HomePage() {
       <section className="relative overflow-hidden">
         <div className="bg-grid absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]" />
         <div className="container flex flex-col items-center gap-6 pb-10 pt-10 text-center md:pb-14 md:pt-20">
-          <p className="inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs font-medium">
-            <span className="h-1.5 w-1.5 rounded-full bg-brand" />
-            Logiciel de relance de devis pour artisans du bâtiment
-          </p>
-          <h1 className="text-balance max-w-4xl text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
-            Vous faites les devis. <span className="text-brand">Nous les transformons en chantiers signés.</span>
+          {/* H1 = catégorie (mot-clé principal) + promesse, présentés comme avant */}
+          <h1 className="flex flex-col items-center gap-6">
+            <span className="inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs font-medium tracking-normal">
+              <span className="h-1.5 w-1.5 rounded-full bg-brand" aria-hidden="true" />
+              Logiciel de relance automatique de devis pour artisans du bâtiment
+            </span>
+            <span className="text-balance block max-w-4xl text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
+              Vous faites les devis. <span className="text-brand">Nous les transformons en chantiers signés.</span>
+            </span>
           </h1>
           <p className="text-balance max-w-2xl text-base text-muted-foreground sm:text-lg">
             Gardez Obat, Batappli, Tolteck ou Excel pour faire vos devis. Artisan Relance s'occupe uniquement de les
-            envoyer et de relancer vos clients jusqu'à leur réponse.
+            envoyer et de relancer vos clients, jusqu'à 3 fois ou plus selon votre réglage, et s'arrête dès qu'ils répondent.
           </p>
           <CtaButtons />
           <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
@@ -152,7 +155,7 @@ export default function HomePage() {
       {/* POSITIONNEMENT */}
       <section className="container py-16 md:py-24">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-semibold tracking-tight">Pas un logiciel de devis de plus. Le chaînon qui manquait.</h2>
+          <h2 className="text-3xl font-semibold tracking-tight">Un logiciel de relance de devis, pas un logiciel de devis de plus</h2>
           <p className="mt-3 text-muted-foreground">
             Votre logiciel chiffre et édite. Mais une fois le devis envoyé, personne ne relance : c'est là que les chantiers se perdent.
           </p>
@@ -273,7 +276,7 @@ export default function HomePage() {
 
       {/* FONCTIONNALITÉS */}
       <section className="container py-16 md:py-24">
-        <h2 className="text-center text-3xl font-semibold tracking-tight">Tout pour faire signer vos devis, rien de plus</h2>
+        <h2 className="text-center text-3xl font-semibold tracking-tight">Fonctionnalités : tout pour faire signer vos devis</h2>
         <div className="mt-12 grid gap-px overflow-hidden rounded-xl border bg-border sm:grid-cols-2 lg:grid-cols-3">
           {features.map((f) => (
             <div key={f.title} className="bg-card p-6">

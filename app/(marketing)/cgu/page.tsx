@@ -12,7 +12,7 @@ export const metadata = pageMetadata({
 export default function CguPage() {
   const mail = <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>;
   return (
-    <LegalPage title="Conditions générales d'utilisation">
+    <LegalPage title="Conditions générales d'utilisation" path="/cgu">
       <section>
         <h2>1. Objet</h2>
         <p>

@@ -7,7 +7,7 @@ import { pageMetadata } from "@/lib/seo";
 import { SITE } from "@/lib/site";
 import { FaqList } from "@/components/marketing/faq-list";
 import { PriceCompare } from "@/components/marketing/price-compare";
-import { FaqJsonLd } from "@/components/seo/json-ld";
+import { BreadcrumbJsonLd, FaqJsonLd } from "@/components/seo/json-ld";
 
 export const metadata = pageMetadata({
   title: "Prix du logiciel de relance de devis : gratuit | Artisan Relance",
@@ -30,7 +30,7 @@ const included = [
   "Arrêt des relances en un clic (répondu, gagné, perdu, terminé)",
   "Demande d'avis Google automatique et suivi des clics",
   "Tableau de bord, taux de signature, export CSV",
-  "E-mails à votre nom, réponses dans votre boîte mail",
+  "E-mails à votre nom, réponses du client dans votre espace avec alerte e-mail",
   "Application rapide sur téléphone, même en 4G",
 ];
 
@@ -57,6 +57,7 @@ export default function PricingPage() {
   return (
     <section className="container py-16 md:py-24">
       <FaqJsonLd items={PRICING_FAQ} />
+      <BreadcrumbJsonLd items={[{ name: "Accueil", path: "/" }, { name: "Tarifs", path: "/tarifs" }]} />
       <div className="mx-auto max-w-2xl text-center">
         <h1 className="text-balance text-4xl font-semibold tracking-tight">Tarifs : gratuit aujourd'hui, 19 € HT par mois demain</h1>
         <p className="mt-3 text-muted-foreground">
