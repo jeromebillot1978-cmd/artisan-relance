@@ -5,6 +5,7 @@ import { getKit } from "@/lib/content/metier-kits";
 import { MetierKitSection } from "@/components/marketing/metier-kit";
 import { HowToJsonLd } from "@/components/seo/json-ld";
 import { pageMetadata } from "@/lib/seo";
+import { GUIDES } from "@/lib/content/guides";
 
 export const dynamicParams = false;
 
@@ -47,6 +48,19 @@ export default async function MetierPage({ params }: { params: Promise<{ metier:
         { name: m.short, path: `/relance-devis/${m.slug}` },
       ]}
       ctaTitle={`${m.short} : relancez vos devis sans y penser`}
+      more={[
+        {
+          title: "Relance de devis pour les autres métiers",
+          links: [
+            ...METIERS.filter((x) => x.slug !== m.slug).map((x) => ({ href: `/relance-devis/${x.slug}`, label: `Relance de devis ${x.short.toLowerCase()}` })),
+            { href: "/relance-devis", label: "Tous les métiers" },
+          ],
+        },
+        {
+          title: "Guides pour relancer vos devis",
+          links: GUIDES.map((g) => ({ href: `/guides/${g.slug}`, label: g.short })),
+        },
+      ]}
     />
   );
 }

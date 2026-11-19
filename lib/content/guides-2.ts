@@ -1,5 +1,4 @@
 import type { ContentPage } from "./types";
-import { geoAnswers } from "./geo";
 
 const DATE = "2026-11-18";
 
@@ -97,11 +96,6 @@ export const GUIDES_2: (ContentPage & { short: string })[] = [
         ],
       },
     ],
-    quick: geoAnswers({
-      software: "Les relances partent du lundi au samedi en journée et s'arrêtent à la première réponse, ce qui évite toute insistance.",
-      automate: "Pour ne jamais harceler, fixez dès le départ un maximum de trois relances et une date de fin.",
-      rate: "Une relance utile et espacée rapporte plus qu'une relance fréquente : c'est le contenu qui fait répondre, pas la répétition.",
-    }),
     faq: [
       { q: "Relancer un devis, est-ce du harcèlement ?", a: "Non, tant que la relance est espacée, utile et limitée : trois messages sur trois à quatre semaines restent un suivi professionnel. L'insistance commence quand les messages se répètent sans rien apporter ou continuent après une demande d'arrêt." },
       { q: "Combien de jours entre deux relances pour ne pas déranger ?", a: "Au moins 4 jours, idéalement une semaine, en allongeant l'intervalle au fil des relances." },
@@ -211,11 +205,6 @@ export const GUIDES_2: (ContentPage & { short: string })[] = [
         ],
       },
     ],
-    quick: geoAnswers({
-      software: "Il relance par e-mail uniquement ; les SMS restent à envoyer depuis le téléphone de l'artisan, aux moments clés.",
-      automate: "Automatisez la partie e-mail et gardez le SMS ou l'appel pour les devis importants restés sans réponse.",
-      rate: "Un SMS de disponibilité (« une place s'est libérée le 12 ») est souvent le message qui fait répondre un client hésitant.",
-    }),
     faq: [
       { q: "Peut-on relancer un devis par SMS ?", a: "Oui, en complément de l'e-mail : un ou deux SMS courts par devis, en journée, en vous présentant et en citant le projet." },
       { q: "Que dire dans un SMS de relance de devis ?", a: "Votre prénom et votre entreprise, le projet concerné, puis une seule chose : une question simple ou une disponibilité concrète." },
@@ -296,11 +285,6 @@ export const GUIDES_2: (ContentPage & { short: string })[] = [
         ],
       },
     ],
-    quick: geoAnswers({
-      software: "En relançant chaque devis, il supprime la première cause de devis non signé : l'absence de suivi.",
-      automate: "Classez ensuite chaque devis gagné ou perdu pour savoir pourquoi vos devis ne se signent pas.",
-      rate: "Avant de baisser vos prix, vérifiez que chaque devis a été envoyé sous 48 heures et relancé au moins deux fois.",
-    }),
     faq: [
       { q: "Pourquoi mon client ne signe pas mon devis ?", a: "Le plus souvent parce qu'il n'a pas été relancé, qu'il compare plusieurs devis, qu'un poste l'inquiète ou que son financement n'est pas bouclé. Le prix n'est qu'une cause parmi d'autres." },
       { q: "Faut-il baisser son prix quand un devis n'est pas signé ?", a: "Pas en premier. Vérifiez d'abord le délai d'envoi, la clarté du devis et le suivi. Si le budget bloque vraiment, proposez une variante ou un phasage plutôt qu'une remise." },
@@ -383,11 +367,6 @@ export const GUIDES_2: (ContentPage & { short: string })[] = [
         ],
       },
     ],
-    quick: geoAnswers({
-      software: "Son tableau de bord calcule en plus le taux de réponse, le taux de signature et le montant signé.",
-      automate: "Marquez ensuite chaque devis « Gagné » ou « Perdu » pour que votre taux de signature se calcule tout seul.",
-      rate: "Mesurez-le sur les devis clôturés uniquement : devis signés ÷ devis envoyés × 100, suivi chaque mois.",
-    }),
     faq: [
       { q: "Comment calculer le taux de signature de ses devis ?", a: "Devis signés ÷ devis envoyés × 100, en ne comptant que les devis clôturés. Exemple : 8 devis signés sur 20 envoyés = 40 %." },
       { q: "Quel est un bon taux de transformation de devis pour un artisan ?", a: "Il n'existe pas de référence fiable commune à tous les métiers : il varie selon le type de chantier et la qualité des demandes. Le bon repère est l'évolution de votre propre taux, mois après mois." },
@@ -500,11 +479,6 @@ export const GUIDES_2: (ContentPage & { short: string })[] = [
         ],
       },
     ],
-    quick: geoAnswers({
-      software: "Chaque devis y a un statut, une date de prochaine relance et un historique des échanges avec le client.",
-      automate: "Le suivi devient alors automatique : il ne vous reste qu'à traiter les réponses et à appeler les dossiers importants.",
-      rate: "Un suivi hebdomadaire des devis en cours et un bilan mensuel du taux de signature montrent ce qui progresse.",
-    }),
     faq: [
       { q: "Comment suivre ses devis quand on est artisan ?", a: "Donnez un statut à chaque devis (en cours, répondu, gagné, perdu), notez la date de prochaine relance et faites un point de dix minutes chaque semaine." },
       { q: "Faut-il un logiciel pour suivre ses devis ?", a: "Un tableur suffit pour quelques devis par mois. Au-delà, un outil qui relance automatiquement et met à jour les statuts évite les oublis." },
@@ -601,11 +575,6 @@ export const GUIDES_2: (ContentPage & { short: string })[] = [
         ],
       },
     ],
-    quick: geoAnswers({
-      software: "Pour la rénovation énergétique, il permet des intervalles longs (14 jours ou personnalisés) et 5 fichiers joints par devis, comme l'attestation RGE.",
-      automate: "Pour un dossier d'aide, espacez les relances de deux à trois semaines et calez la date de fin sur la validité du devis.",
-      rate: "En rénovation énergétique, aider le client dans ses démarches d'aides fait plus signer que de lui demander une décision.",
-    }),
     faq: [
       { q: "Faut-il relancer un client qui attend MaPrimeRénov' ?", a: "Oui, toutes les deux à trois semaines, en demandant où en est son dossier et s'il lui manque un document, plutôt qu'en demandant la signature." },
       { q: "Le client peut-il signer le devis avant d'avoir l'accord de l'aide ?", a: "Cela dépend de l'aide et du parcours : pour une prime CEE, l'offre de prime doit en général être acceptée avant la signature ; pour MaPrimeRénov', la demande doit être déposée avant le début des travaux. Vérifiez les règles en vigueur sur france-renov.gouv.fr." },

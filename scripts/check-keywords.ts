@@ -25,9 +25,8 @@ const has = (text: string, kw: string) => {
 function fullText(p: ContentPage) {
   return [
     p.title, p.description, p.h1, p.answer,
-    ...p.sections.flatMap((s) => [s.h2, ...(s.paragraphs ?? []), ...(s.list ?? []), ...(s.steps ?? []).flatMap((x) => [x.title, x.text]), s.template?.subject ?? "", s.template?.body ?? ""]),
+    ...p.sections.flatMap((s) => [s.h2, ...(s.paragraphs ?? []), ...(s.list ?? []), ...(s.steps ?? []).flatMap((x) => [x.title, x.text]), s.template?.subject ?? "", s.template?.body ?? "", ...(s.outro ?? [])]),
     ...p.faq.flatMap((f) => [f.q, f.a]),
-    ...(p.quick ?? []).flatMap((f) => [f.q, f.a]),
   ].join(" ");
 }
 
