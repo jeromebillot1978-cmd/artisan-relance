@@ -52,8 +52,34 @@ const PRIVATE_SOURCES = [
   "/r/:path*",
 ];
 
+// Adresses tapées ou partagées à la main (posts Facebook…) : « /Plombiers », « /electriciens »…
+// redirigées vers la vraie page du métier au lieu d'une page d'erreur.
+const METIER_ALIASES: Record<string, string[]> = {
+  plombier: ["plombier", "plombiers", "plomberie"],
+  electricien: ["electricien", "electriciens", "électricien", "électriciens", "electricite", "électricité"],
+  couvreur: ["couvreur", "couvreurs", "couverture", "toiture"],
+  chauffagiste: ["chauffagiste", "chauffagistes", "chauffage"],
+  peintre: ["peintre", "peintres", "peinture"],
+  menuisier: ["menuisier", "menuisiers", "menuiserie"],
+  renovation: ["renovation", "rénovation", "renovations", "rénovations"],
+};
+const cap = (w: string) => w.charAt(0).toUpperCase() + w.slice(1);
+const metierRedirects = Object.entries(METIER_ALIASES).flatMap(([slug, words]) =>
+  [...new Set(words.flatMap((w) => [w, cap(w), w.toUpperCase()]))].map((w) => ({
+    source: `/${encodeURIComponent(w)}`,
+    destination: `/relance-devis/${slug}`,
+    permanent: true,
+  })),
+);
+const otherRedirects = ["interesse", "intéressé", "intéressée", "interessee", "essai", "essayer", "gratuit", "inscrire"]
+  .flatMap((w) => [w, cap(w)])
+  .map((w) => ({ source: `/${encodeURIComponent(w)}`, destination: "/inscription", permanent: false }));
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  async redirects() {
+    return [...metierRedirects, ...otherRedirects];
+  },
   async headers() {
     return [
       { source: "/(.*)", headers: securityHeaders },
