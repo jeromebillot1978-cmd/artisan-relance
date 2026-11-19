@@ -1,5 +1,5 @@
-import type { ContentPage } from "./types";
-import { geoAnswers } from "./geo";
+import { enrich, type ContentPage } from "./types";
+import { METIER_ENRICHMENTS } from "./enrichments";
 
 const DATE = "2026-11-15";
 
@@ -9,7 +9,7 @@ const commonRelated = [
   { href: "/guides/combien-de-relances-devis", label: "Combien de relances envoyer ?" },
 ];
 
-export const METIERS: (ContentPage & { metier: string; short: string })[] = [
+const METIERS_BASE: (ContentPage & { metier: string; short: string })[] = [
   // ------------------------------------------------------------------ PLOMBIER
   {
     slug: "plombier",
@@ -123,11 +123,6 @@ export const METIERS: (ContentPage & { metier: string; short: string })[] = [
         a: "Trois jours après l'envoi, puis une semaine plus tard. Rappelez le constat de votre visite et proposez une intervention planifiée avant que l'appareil ne tombe en panne.",
       },
     ],
-    quick: geoAnswers({
-      software: "Pour un plombier, il relance les devis de salle de bain et de chauffe-eau, ceux que le client compare, pendant que vous êtes en intervention.",
-      automate: "Choisissez 3 jours d'intervalle pour un chauffe-eau et 7 jours pour une salle de bain, avec 3 relances au maximum.",
-      rate: "En plomberie, une relance qui donne une date de démarrage et la durée du chantier fait souvent signer un client hésitant.",
-    }),
     related: [{ href: "/relance-devis/chauffagiste", label: "Relance de devis pour chauffagiste" }, { href: "/guides/exemple-sms-relance-devis", label: "Exemples de SMS de relance" }, ...commonRelated],
     date: DATE,
     updated: "2026-11-18",
@@ -242,11 +237,6 @@ export const METIERS: (ContentPage & { metier: string; short: string })[] = [
         a: "Cinq jours après l'envoi, en rappelant le constat de votre visite sans dramatiser, puis une semaine plus tard en proposant de commencer par la partie sécurité si le budget bloque.",
       },
     ],
-    quick: geoAnswers({
-      software: "Pour un électricien, il relance les devis de mise aux normes, de tableau électrique, de rénovation et de borne de recharge, au rythme choisi pour chaque type de chantier.",
-      automate: "Choisissez 7 jours d'intervalle pour une mise en sécurité et 14 jours pour une rénovation électrique qui suit le planning des autres corps d'état.",
-      rate: "En électricité, expliquer le constat de la visite et proposer de commencer par la sécurité débloque plus de devis qu'une remise.",
-    }),
     related: [{ href: "/relance-devis/chauffagiste", label: "Relance de devis pour chauffagiste" }, { href: "/guides/suivi-des-devis", label: "Suivre ses devis efficacement" }, ...commonRelated],
     date: DATE,
     updated: "2026-11-18",
@@ -697,6 +687,8 @@ export const METIERS: (ContentPage & { metier: string; short: string })[] = [
     date: DATE,
   },
 ];
+
+export const METIERS = METIERS_BASE.map((m) => enrich(m, METIER_ENRICHMENTS[m.slug]));
 
 export function getMetier(slug: string) {
   return METIERS.find((m) => m.slug === slug);

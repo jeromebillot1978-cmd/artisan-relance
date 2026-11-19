@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { ContentArticle } from "@/components/marketing/content-article";
 import { GUIDES, getGuide } from "@/lib/content/guides";
 import { pageMetadata } from "@/lib/seo";
+import { METIERS } from "@/lib/content/metiers";
 
 export const dynamicParams = false;
 
@@ -28,6 +29,16 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
         { name: g.short, path: `/guides/${g.slug}` },
       ]}
       ctaTitle="Programmez vos relances dès l'envoi du devis"
+      more={[
+        {
+          title: "Autres guides",
+          links: GUIDES.filter((x) => x.slug !== g.slug).map((x) => ({ href: `/guides/${x.slug}`, label: x.short })),
+        },
+        {
+          title: "Relance de devis par métier",
+          links: METIERS.map((m) => ({ href: `/relance-devis/${m.slug}`, label: m.short })),
+        },
+      ]}
     />
   );
 }

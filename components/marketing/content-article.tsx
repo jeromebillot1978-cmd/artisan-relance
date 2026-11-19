@@ -4,6 +4,7 @@ import { lastUpdate, type ContentPage } from "@/lib/content/types";
 import { FaqList } from "@/components/marketing/faq-list";
 import { CtaBlock } from "@/components/marketing/cta-block";
 import { ArticleJsonLd, BreadcrumbJsonLd, FaqJsonLd } from "@/components/seo/json-ld";
+import { RichText } from "@/components/marketing/rich-text";
 
 /** Gabarit des pages métiers et des guides : HTML sémantique, rendu serveur, sans JavaScript. */
 export function ContentArticle({
@@ -12,6 +13,7 @@ export function ContentArticle({
   crumbs,
   ctaTitle,
   afterAnswer,
+  more,
 }: {
   page: ContentPage;
   path: string;
@@ -19,12 +21,14 @@ export function ContentArticle({
   ctaTitle: string;
   /** Bloc inséré juste après « En bref » (kit de relance des pages métiers) */
   afterAnswer?: React.ReactNode;
+  /** Blocs de navigation interne ajoutés en bas de page (autres métiers, guides par thème) */
+  more?: { title: string; links: { href: string; label: string }[] }[];
 }) {
   return (
     <article className="container max-w-3xl py-10 md:py-16">
       <ArticleJsonLd title={page.h1} description={page.description} path={path} date={page.date} modified={lastUpdate(page)} />
       <BreadcrumbJsonLd items={crumbs} />
-      <FaqJsonLd items={[...(page.quick ?? []), ...page.faq]} />
+      <FaqJsonLd items={page.faq} />
 
       <nav aria-label="Fil d'Ariane" className="mb-6 flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
         {crumbs.map((c, i) => (
@@ -58,14 +62,14 @@ export function ContentArticle({
           <section key={s.h2}>
             <h2 className="text-2xl font-semibold tracking-tight">{s.h2}</h2>
             {s.paragraphs?.map((p) => (
-              <p key={p.slice(0, 40)} className="mt-4 text-muted-foreground">{p}</p>
+              <p key={p.slice(0, 40)} className="mt-4 text-muted-foreground"><RichText text={p} /></p>
             ))}
             {s.steps && (
               <ol className="mt-5 space-y-3">
                 {s.steps.map((st) => (
                   <li key={st.title} className="rounded-lg border bg-card p-4">
                     <p className="font-medium">{st.title}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{st.text}</p>
+                    <p className="mt-1 text-sm text-muted-foreground"><RichText text={st.text} /></p>
                   </li>
                 ))}
               </ol>
@@ -75,7 +79,7 @@ export function ContentArticle({
                 {s.list.map((li) => (
                   <li key={li} className="flex gap-2">
                     <span aria-hidden className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />
-                    <span>{li}</span>
+                    <span><RichText text={li} /></span>
                   </li>
                 ))}
               </ul>
@@ -89,23 +93,12 @@ export function ContentArticle({
                 </div>
               </figure>
             )}
+            {s.outro?.map((p) => (
+              <p key={p.slice(0, 40)} className="mt-4 text-muted-foreground"><RichText text={p} /></p>
+            ))}
           </section>
         ))}
       </div>
-
-      {page.quick && page.quick.length > 0 && (
-        <section aria-labelledby="reponses-rapides" className="mt-14 rounded-xl border border-brand/30 bg-brand/5 p-5 md:p-6">
-          <h2 id="reponses-rapides" className="text-2xl font-semibold tracking-tight">Réponses rapides</h2>
-          <dl className="mt-5 space-y-5">
-            {page.quick.map((qa) => (
-              <div key={qa.q}>
-                <dt className="font-medium">{qa.q}</dt>
-                <dd className="mt-1 text-muted-foreground">{qa.a}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      )}
 
       <section className="mt-14">
         <h2 className="mb-5 text-2xl font-semibold tracking-tight">Questions fréquentes</h2>
@@ -128,6 +121,21 @@ export function ContentArticle({
           ))}
         </ul>
       </nav>
+
+      {more?.map((block) => (
+        <nav key={block.title} aria-label={block.title} className="mt-10">
+          <h2 className="text-lg font-semibold">{block.title}</h2>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {block.links.map((l) => (
+              <li key={l.href}>
+                <Link href={l.href} className="inline-block rounded-full border px-3 py-1.5 text-sm hover:bg-muted/50">
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ))}
     </article>
   );
 }

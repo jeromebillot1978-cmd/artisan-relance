@@ -1,6 +1,8 @@
 import { siteUrl } from "@/lib/utils";
 import { SITE } from "@/lib/site";
 import { OG_IMAGE } from "@/lib/seo";
+import { FAQ_ALL } from "@/lib/content/faq";
+import { stripLinks } from "@/lib/content/types";
 
 /** Question / réponse. `a` = réponse courte autonome (citée par les IA), `detail` = réponse détaillée facultative. */
 export type QA = { q: string; a: string; detail?: string };
@@ -142,17 +144,77 @@ export function SoftwareJsonLd() {
   );
 }
 
-export function FaqJsonLd({ items }: { items: QA[] }) {
+/**
+ * FAQPage. Règle Google : une même question ne doit être balisée qu'une fois sur tout le site.
+ * La page /faq (`hub`) porte le balisage de toutes ses questions ; sur les autres pages, les
+ * questions déjà présentes sur /faq restent visibles mais ne sont plus balisées.
+ */
+export function FaqJsonLd({ items, hub = false }: { items: QA[]; hub?: boolean }) {
+  const onHub = new Set(FAQ_ALL.map((x) => x.q.trim().toLowerCase()));
+  const seen = new Set<string>();
+  const marked = items.filter((item) => {
+    const key = item.q.trim().toLowerCase();
+    if (seen.has(key) || (!hub && onHub.has(key))) return false;
+    seen.add(key);
+    return true;
+  });
+  if (marked.length === 0) return null;
   return (
     <JsonLd
       data={{
         "@context": "https://schema.org",
         "@type": "FAQPage",
-        mainEntity: items.map((item) => ({
+        mainEntity: marked.map((item) => ({
           "@type": "Question",
           name: item.q,
-          acceptedAnswer: { "@type": "Answer", text: item.detail ? `${item.a} ${item.detail}` : item.a },
+          acceptedAnswer: { "@type": "Answer", text: stripLinks(item.detail ? `${item.a} ${item.detail}` : item.a) },
         })),
+      }}
+    />
+  );
+}
+
+/** Page de liste (hub /guides, /relance-devis) : CollectionPage + ItemList des pages liées. */
+export function CollectionJsonLd(opts: { path: string; name: string; description: string; items: { name: string; path: string }[] }) {
+  const url = siteUrl();
+  return (
+    <JsonLd
+      data={{
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "@id": `${url}${opts.path}`,
+        url: `${url}${opts.path}`,
+        name: opts.name,
+        description: opts.description,
+        inLanguage: "fr-FR",
+        isPartOf: { "@id": LD_IDS.website(url) },
+        publisher: { "@id": LD_IDS.organization(url) },
+        mainEntity: {
+          "@type": "ItemList",
+          numberOfItems: opts.items.length,
+          itemListElement: opts.items.map((it, i) => ({ "@type": "ListItem", position: i + 1, name: it.name, url: `${url}${it.path}` })),
+        },
+      }}
+    />
+  );
+}
+
+/** Page de contact : ContactPage reliée à l'organisation. */
+export function ContactPageJsonLd({ path, description }: { path: string; description: string }) {
+  const url = siteUrl();
+  return (
+    <JsonLd
+      data={{
+        "@context": "https://schema.org",
+        "@type": "ContactPage",
+        "@id": `${url}${path}`,
+        url: `${url}${path}`,
+        name: "Contacter Artisan Relance",
+        description,
+        inLanguage: "fr-FR",
+        isPartOf: { "@id": LD_IDS.website(url) },
+        about: { "@id": LD_IDS.organization(url) },
+        mainEntity: { "@id": LD_IDS.organization(url) },
       }}
     />
   );
