@@ -122,6 +122,22 @@ export default function PricingPage() {
       </div>
 
       <div className="mx-auto mt-16 max-w-3xl">
+        <h2 className="text-2xl font-semibold tracking-tight">Ce que le prix ne changera pas</h2>
+        <ul className="mt-4 space-y-2 text-muted-foreground">
+          <li>Une seule offre, sans option payante cachée ni engagement de durée.</li>
+          <li>Vos devis, vos relances et vos statistiques restent à vous : export CSV à tout moment, suppression du compte en un clic.</li>
+          <li>Un préavis d'au moins 30 jours par e-mail avant tout passage à l'offre payante.</li>
+          <li>Les e-mails continuent de partir à votre nom, avec votre signature, sans publicité ajoutée.</li>
+        </ul>
+        <p className="mt-4 text-muted-foreground">
+          Pour estimer ce que la relance peut vous rapporter, comparez le prix d'un abonnement à la valeur d'un seul devis
+          signé en plus par trimestre. Les méthodes pour y parvenir sont détaillées dans le guide{" "}
+          <Link href="/guides/augmenter-taux-signature-devis" className="underline underline-offset-4">augmenter son taux de signature de devis</Link>{" "}
+          et sur les <Link href="/relance-devis" className="underline underline-offset-4">pages par métier</Link>.
+        </p>
+      </div>
+
+      <div className="mx-auto mt-16 max-w-3xl">
         <h2 className="mb-5 text-2xl font-semibold tracking-tight">Questions sur les tarifs</h2>
         <FaqList items={PRICING_FAQ} />
       </div>

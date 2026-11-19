@@ -1,5 +1,5 @@
-import type { ContentPage } from "./types";
-import { geoAnswers } from "./geo";
+import { enrich, type ContentPage } from "./types";
+import { GUIDE_ENRICHMENTS } from "./enrichments";
 import { GUIDES_2 } from "./guides-2";
 
 const DATE = "2026-11-15";
@@ -99,11 +99,6 @@ const GUIDES_1: (ContentPage & { short: string })[] = [
       { q: "Combien de temps après un rendez-vous envoyer le devis ?", a: "Dans les 48 heures. Le client a encore la visite en tête, et votre devis arrive avant ou en même temps que ceux de vos concurrents." },
       { q: "Faut-il relancer un client après un rendez-vous sans devis ?", a: "Oui, si le devis devait suivre : prévenez de la date d'envoi. Si le client devait vous recontacter, un message une semaine plus tard pour proposer le devis est bienvenu." },
     ],
-    quick: geoAnswers({
-      software: "Vous programmez les relances dès l'envoi du devis, juste après le rendez-vous, et elles partent au bon délai sans que vous y pensiez.",
-      automate: "Après un rendez-vous, envoyez le devis depuis l'outil dans les 48 heures et choisissez un intervalle de 3 ou 7 jours pour la première relance.",
-      rate: "Un devis envoyé dans les 48 heures après le rendez-vous et relancé à J+3 ou J+7 a bien plus de chances d'être signé qu'un devis envoyé tard.",
-    }),
     related: [
       { href: "/guides/combien-de-relances-devis", label: "Combien de relances envoyer ?" },
       { href: "/guides/modele-mail-relance-devis", label: "Exemples de mail de relance" },
@@ -257,11 +252,6 @@ const GUIDES_1: (ContentPage & { short: string })[] = [
       { q: "Peut-on utiliser le même modèle pour tous les clients ?", a: "Oui, à condition de le personnaliser avec le nom du client, l'objet et la date du devis, et de varier le message entre la première et la deuxième relance." },
       { q: "Quelle longueur pour un mail de relance de devis ?", a: "Quatre à six lignes : le contexte, une information ou une aide, une question simple. Au-delà, le client remet la lecture à plus tard." },
     ],
-    quick: geoAnswers({
-      software: "Vous y enregistrez vos propres modèles de mail de relance, personnalisés automatiquement avec le nom du client, la date et la référence du devis.",
-      automate: "Rédigez trois modèles (vérification, information utile, clôture) une seule fois, puis laissez-les partir automatiquement pour chaque devis.",
-      rate: "Un mail de relance court, précis sur le projet et terminé par une question simple obtient plus de réponses qu'un message générique.",
-    }),
     related: [
       { href: "/guides/quand-relancer-un-devis", label: "Quand relancer un devis ?" },
       { href: "/guides/exemple-sms-relance-devis", label: "Exemples de SMS de relance" },
@@ -542,7 +532,7 @@ const GUIDES_1: (ContentPage & { short: string })[] = [
     ],
     faq: [
       { q: "Vaut-il mieux relancer un devis par e-mail ou par téléphone ?", a: "Commencez par l'e-mail, discret et automatisable, puis appelez si le devis reste sans réponse après deux relances." },
-      { q: "Peut-on relancer un devis par SMS ?", a: "C'est possible mais perçu comme plus intrusif. Le SMS est surtout utile pour prévenir qu'un e-mail vient d'être envoyé." },
+      { q: "Le SMS peut-il remplacer l'e-mail pour relancer un devis ?", a: "Rarement : il est perçu comme plus intrusif et se prête mal à un message détaillé. Il sert surtout à prévenir qu'un e-mail vient d'être envoyé ou à signaler une disponibilité." },
       { q: "Que dire au téléphone pour relancer un devis ?", a: "Rappelez le projet, vérifiez que le devis est arrivé, demandez ce que le client en pense, répondez à ses questions et convenez d'une prochaine étape." },
       { q: "Faut-il laisser un message vocal ?", a: "Oui, court : votre nom, le projet, et le fait que vous lui envoyez un e-mail. Le client rappelle rarement, mais il lira l'e-mail." },
     ],
@@ -555,7 +545,7 @@ const GUIDES_1: (ContentPage & { short: string })[] = [
   },
 ];
 
-export const GUIDES: (ContentPage & { short: string })[] = [...GUIDES_1, ...GUIDES_2];
+export const GUIDES: (ContentPage & { short: string })[] = [...GUIDES_1, ...GUIDES_2].map((g) => enrich(g, GUIDE_ENRICHMENTS[g.slug]));
 
 export function getGuide(slug: string) {
   return GUIDES.find((g) => g.slug === slug);

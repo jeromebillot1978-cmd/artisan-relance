@@ -14,7 +14,7 @@ export const metadata = pageMetadata({
 export default function FaqPage() {
   return (
     <section className="container max-w-3xl py-14 md:py-20">
-      <FaqJsonLd items={FAQ_ALL} />
+      <FaqJsonLd items={FAQ_ALL} hub />
       <BreadcrumbJsonLd items={[{ name: "Accueil", path: "/" }, { name: "FAQ", path: "/faq" }]} />
       <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">Relance de devis : vos questions, nos réponses</h1>
       <p className="mt-3 text-muted-foreground">
