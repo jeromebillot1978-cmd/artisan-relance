@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getUser } from "@/lib/supabase/server";
+import { cleanLinks } from "@/lib/prospect-links";
 
 /**
  * Actions de prospection. Chaque action appelle UNE fonction de base de données,
@@ -107,7 +108,8 @@ const contentSchema = z.object({
   email: optText(200).refine((v) => !v || z.string().email().safeParse(v).success, "Adresse e-mail invalide"),
   phone: optText(100),
   subject: optText(200),
-  message: z.string().trim().min(1, "Le message est vide").max(5000),
+  // Liens propres dès l'enregistrement : jamais de redirection Google, adresses officielles exactes
+  message: z.string().trim().min(1, "Le message est vide").max(5000).transform(cleanLinks),
   caution: optText(500),
   source_label: optText(200),
   source_url: optText(500).refine((v) => !v || /^https?:\/\//i.test(v), "Le lien de la source doit commencer par http:// ou https://"),

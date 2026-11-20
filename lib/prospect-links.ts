@@ -44,6 +44,34 @@ export function phoneNumbers(raw: string | null | undefined): { label: string; h
     });
 }
 
+/** Adresses officielles, écrites exactement ainsi dans les messages (barre finale comprise). */
+export const CANONICAL_LINKS = ["https://artisan-relance.jercat.fr/", "https://pubartisanrelance.vercel.app/"] as const;
+
+/**
+ * Liens propres dans un message de prospection :
+ *  1. toute redirection Google (« https://www.google.com/url?q=<lien>&… », souvent recopiée
+ *     depuis un brouillon Gmail) est remplacée par le lien d'origine, sans paramètre ajouté ;
+ *  2. les deux adresses officielles sont écrites exactement comme CANONICAL_LINKS
+ *     (https, barre finale) quand elles désignent la page d'accueil.
+ * Les autres liens et le reste du texte ne sont pas modifiés.
+ */
+export function cleanLinks(text: string): string {
+  let out = (text ?? "").replace(
+    /https?:\/\/(?:www\.)?google\.[a-z.]+\/url\?[^\s<>"']*/gi,
+    (redirect) => {
+      const query = redirect.slice(redirect.indexOf("?") + 1).replace(/&amp;/g, "&");
+      const target = new URLSearchParams(query).get("q") ?? new URLSearchParams(query).get("url");
+      return target && /^https?:\/\//i.test(target) ? target : redirect;
+    },
+  );
+  for (const link of CANONICAL_LINKS) {
+    const host = link.replace(/^https:\/\//, "").replace(/\/$/, "").replace(/\./g, "\\.");
+    // l'adresse d'accueil, avec ou sans « https:// », « www. » ou barre finale — pas une sous-page
+    out = out.replace(new RegExp(`(?<![\\w.@/-])(?:https?:\\/\\/)?(?:www\\.)?${host}\\/?(?![\\w/?#%-]|\\.[a-z])`, "gi"), link);
+  }
+  return out;
+}
+
 export type EmailDraft = { to: string; bcc: string; subject: string | null; body: string };
 
 const enc = encodeURIComponent;
@@ -72,7 +100,8 @@ export function gmailIosUrl(d: EmailDraft) {
 export type DraftLink = { method: DraftMethod; label: string; href: string; primary: boolean; newTab: boolean; long: boolean };
 
 /** Liens proposés, dans l'ordre recommandé pour l'appareil. */
-export function emailDraftLinks(d: EmailDraft, platform: Platform): DraftLink[] {
+export function emailDraftLinks(draft: EmailDraft, platform: Platform): DraftLink[] {
+  const d = { ...draft, body: cleanLinks(draft.body) };
   const make = (method: DraftMethod, label: string, href: string, primary: boolean, newTab: boolean): DraftLink => ({
     method, label, href, primary, newTab, long: href.length > SAFE_LINK_LENGTH,
   });
