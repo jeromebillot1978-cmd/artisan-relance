@@ -22,13 +22,15 @@ import { admin, json, log } from "../_shared/admin.ts";
 import { getReceivedEmail, listReceivedAttachmentMeta, senderName, sendEmail, type ReceivedEmail } from "../_shared/resend.ts";
 import { verifySvix } from "../_shared/svix.ts";
 import { renderArtisanNotice, renderReplyAlert, renderReplyForward } from "../_shared/templates.ts";
-import { addressOnly, classifyInbound, extractToken, htmlToText, stripQuoted } from "../_shared/inbound.ts";
+import { addressOnly, classifyInbound, extractProspectToken, extractToken, htmlToText, stripQuoted } from "../_shared/inbound.ts";
 import { MAX_FILE_BYTES, planAttachments, safeFileName, withExtension, type PlannedAttachment } from "../_shared/files.ts";
 import { compressImage, IMAGE_KEEP_BELOW, IMAGE_MAX_PIXELS, imageSize } from "../_shared/images.ts";
 
 const WEBHOOK_SECRET = Deno.env.get("RESEND_WEBHOOK_SECRET") ?? "";
 const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") ?? "";
 const INBOUND_DOMAIN = (Deno.env.get("INBOUND_DOMAIN") ?? "").toLowerCase();
+// Adresse d'où DOIVENT partir les e-mails de prospection (sert à détecter un envoi depuis le mauvais compte)
+const PROSPECTION_SENDER = (Deno.env.get("PROSPECTION_SENDER") ?? "jercat.bilman@gmail.com").toLowerCase();
 const SITE_URL = (Deno.env.get("SITE_URL") ?? "https://artisan-relance.jercat.fr").replace(/\/$/, "");
 const INTERNAL_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const SELF_URL = `${(Deno.env.get("SUPABASE_URL") ?? "").replace(/\/$/, "")}/functions/v1/resend-inbound`;
@@ -47,6 +49,7 @@ interface WebhookEvent {
     from?: string;
     to?: string[];
     cc?: string[];
+    bcc?: string[];
     received_for?: string[];
     subject?: string | null;
     bounce?: Record<string, unknown>;
@@ -193,6 +196,25 @@ async function handleReceived(event: WebhookEvent) {
   if (!fromAddress || ownDomains.some((d) => fromAddress.endsWith(d))) {
     log("inbound_loop_ignored", { email_id: id });
     return json({ ignored: "own_address" });
+  }
+
+  // PREUVE D'ENVOI de prospection : copie cachée « prospect-<jeton>@… » reçue.
+  // Traitée à part : ce n'est pas une réponse de client, rien n'est transféré.
+  const prospectToken = extractProspectToken(event.data, INBOUND_DOMAIN);
+  if (prospectToken) {
+    const { data, error } = await admin.rpc("prospect_verify_by_bcc", {
+      p_token: prospectToken,
+      p_provider_email_id: id,
+      p_from: from,
+      p_expected_from: PROSPECTION_SENDER,
+    });
+    if (error) {
+      log("prospect_proof_error", { email_id: id, error: error.message });
+      return json({ error: error.message }, 500); // Resend réessaiera
+    }
+    const row = (data as { attempt_id: string; wrong_sender: boolean }[] | null)?.[0];
+    log(row ? "prospect_proof_received" : "prospect_proof_unknown_token", { email_id: id, wrong_sender: row?.wrong_sender ?? null });
+    return json({ prospect_proof: Boolean(row), wrong_sender: row?.wrong_sender ?? null });
   }
 
   const { token, ambiguous } = extractToken(event.data, INBOUND_DOMAIN);

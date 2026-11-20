@@ -1,5 +1,5 @@
 // Tests : node --experimental-strip-types supabase/functions/_shared/inbound.test.ts
-import { stripQuoted, classifyInbound, extractToken, htmlToText, isOptOut, addressOnly } from "./inbound.ts";
+import { stripQuoted, classifyInbound, extractToken, extractProspectToken, htmlToText, isOptOut, addressOnly } from "./inbound.ts";
 import { renderReplyForward, replySubject } from "./templates.ts";
 let ok = 0, ko = 0;
 const t = (name: string, got: unknown, exp: unknown) => {
@@ -56,5 +56,12 @@ t("réponse sous la citation : texte gardé", stripQuoted("Le lun. 17 nov. 2026,
 t("sans citation", stripQuoted("  Bonjour, merci.  "), "Bonjour, merci.");
 t("citation Gmail mobile (a / écrit coupés)", stripQuoted("C est mieux ?\n\nLe mar. 17 nov. 2026, 19:55, jerome billot <j@gmail.com> a\nécrit :\n\n> voila\n"), "C est mieux ?");
 t("citation sur trois lignes", stripQuoted("Ok\nLe mar. 17 nov. 2026 à 19:51,\nPlomberie Martin <\nrelances@jercat.fr> a écrit :\n> x"), "Ok");
+// Preuve d'envoi de prospection (copie cachée)
+t("prospect : Cci reçue (destinataire réel)", extractProspectToken({ to: ["contact@oisepeinture.fr"], received_for: [`prospect-${T}@reponses.jercat.fr`] }, "reponses.jercat.fr"), T);
+t("prospect : Cci dans le champ bcc", extractProspectToken({ to: ["a@b.fr"], bcc: [`Preuve <prospect-${T}@reponses.jercat.fr>`] }, "reponses.jercat.fr"), T);
+t("prospect : autre domaine ignoré", extractProspectToken({ received_for: [`prospect-${T}@pirate.com`] }, "reponses.jercat.fr"), null);
+t("prospect : domaine voisin ignoré", extractProspectToken({ received_for: [`prospect-${T}@reponses.jercat.fr.evil.com`] }, "reponses.jercat.fr"), null);
+t("prospect : jeton de devis non confondu", extractProspectToken({ to: [`devis-${T}@reponses.jercat.fr`] }, "reponses.jercat.fr"), null);
+t("devis : jeton de prospect non confondu", extractToken({ to: [`prospect-${T}@reponses.jercat.fr`] }, "reponses.jercat.fr"), { token: null, ambiguous: false });
 console.log(`\n${ok} réussis, ${ko} échoués`);
 process.exit(ko ? 1 : 0);
