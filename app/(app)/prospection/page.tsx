@@ -42,8 +42,9 @@ export default async function ProspectionPage() {
         <div className="space-y-1">
           <p className="font-medium">Aucun envoi automatique.</p>
           <p className="text-muted-foreground">
-            Relisez chaque message, passez-le en « Validé », puis ouvrez le brouillon dans Gmail et cliquez vous-même sur
-            « Envoyer ». Marquez ensuite le prospect « Envoyé ». Ces prospects ne reçoivent jamais de relance automatique.
+            Relisez chaque message, passez-le en « Validé », ouvrez le brouillon et cliquez vous-même sur « Envoyer ».
+            Vérifiez que l'expéditeur est bien jercat.bilman@gmail.com et que le message apparaît dans « Messages envoyés »,
+            puis seulement marquez le prospect « Envoyé ». Ces prospects ne reçoivent jamais de relance automatique.
           </p>
           <p className="text-muted-foreground">
             Conseil : 2 ou 3 envois par jour, depuis jercat.bilman@gmail.com. Chaque message se termine par la possibilité de

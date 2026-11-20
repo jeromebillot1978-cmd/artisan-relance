@@ -48,6 +48,11 @@ function gmailDraftUrl(to: string, subject: string | null, body: string) {
   return `https://mail.google.com/mail/?${p.toString()}`;
 }
 
+/** Lien « mailto » : ouvre l'application e-mail du téléphone ou de l'ordinateur, sans rien envoyer. */
+function mailtoUrl(to: string, subject: string | null, body: string) {
+  return `mailto:${to}?subject=${encodeURIComponent(subject ?? "")}&body=${encodeURIComponent(body)}`;
+}
+
 async function copy(text: string, what: string) {
   try {
     await navigator.clipboard.writeText(text);
@@ -164,13 +169,20 @@ export function ProspectCard({ p, index }: { p: ProspectView; index: number }) {
           {p.email && validated && (
             <Button asChild size="sm">
               <a href={gmailDraftUrl(p.email, p.subject, p.message)} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="h-4 w-4" /> Ouvrir le brouillon dans Gmail
+                <ExternalLink className="h-4 w-4" /> Brouillon Gmail (ordinateur)
+              </a>
+            </Button>
+          )}
+          {p.email && validated && (
+            <Button asChild variant="outline" size="sm">
+              <a href={mailtoUrl(p.email, p.subject, p.message)}>
+                <Mail className="h-4 w-4" /> Appli e-mail (téléphone)
               </a>
             </Button>
           )}
           {p.email && !validated && (
             <span className="self-center text-xs text-muted-foreground">
-              Validez le message pour pouvoir ouvrir le brouillon dans Gmail.
+              Validez le message pour pouvoir ouvrir le brouillon.
             </span>
           )}
           {p.channel === "formulaire" && p.website && (
