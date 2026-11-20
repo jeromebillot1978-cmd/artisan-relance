@@ -56,6 +56,8 @@ export type BadgeTone = "pending" | "signed" | "lost" | "secondary" | "outline" 
 
 export function statusDisplay(
   c: Pick<Campaign, "status" | "next_followup_at" | "initial_send_status" | "pause_reason" | "followup_enabled">,
+  /** Nombre de réponses réellement reçues par e-mail, si connu. 0 = « Répondu » marqué à la main, sans réponse reçue. */
+  receivedReplies?: number,
 ): { label: string; tone: BadgeTone } {
   // Couleurs : En attente gris · Relance prévue orange · Répondu bleu · Gagné vert · Perdu rouge · Terminé violet
   const map: Record<CampaignStatus, { label: string; tone: BadgeTone }> = {
@@ -74,6 +76,8 @@ export function statusDisplay(
   if (c.status === "paused" && c.pause_reason === "bounce") return { label: "Adresse invalide", tone: "lost" };
   if (c.status === "stopped" && c.pause_reason === "opt_out") return { label: "Désinscrit (STOP)", tone: "neutral" };
   if (c.status === "stopped" && c.pause_reason === "complaint") return { label: "Signalé comme spam", tone: "lost" };
+  // Une réponse marquée à la main n'est pas une réponse reçue : le libellé le dit (audit, même famille que la Prospection)
+  if (c.status === "replied" && receivedReplies === 0) return { label: "Marqué répondu", tone: "info" };
   return map[c.status];
 }
 

@@ -55,7 +55,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
       <div className="mb-6 flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-semibold tracking-tight">{c.prospect_name}</h1>
-          <CampaignStatusBadge campaign={c} />
+          <CampaignStatusBadge campaign={c} receivedReplies={detail.replies.length} />
         </div>
         <p className="text-sm text-muted-foreground">
           {c.reference ? `Devis ${c.reference} · ` : ""}

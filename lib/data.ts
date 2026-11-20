@@ -49,7 +49,7 @@ export async function getCampaigns() {
   const { supabase, user } = await requireUser();
   const { data, error } = await supabase
     .from("campaigns")
-    .select("*, campaign_attachments(count)")
+    .select("*, campaign_attachments(count), inbound_replies(count)")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(1000) // plafond de l'API Supabase ; au-delà, voir l'export CSV

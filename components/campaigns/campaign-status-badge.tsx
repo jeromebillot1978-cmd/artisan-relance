@@ -4,11 +4,15 @@ import type { Campaign } from "@/types/database";
 
 export function CampaignStatusBadge({
   campaign,
+  receivedReplies,
 }: {
   campaign: Pick<Campaign, "status" | "next_followup_at" | "initial_send_status" | "pause_reason" | "followup_enabled"> &
-    Partial<Pick<Campaign, "initial_sent_at">>;
+    Partial<Pick<Campaign, "initial_sent_at">> & { inbound_replies?: { count: number }[] };
+  /** Réponses réellement reçues ; sinon lues dans campaign.inbound_replies si présent. */
+  receivedReplies?: number;
 }) {
-  const { label, tone } = statusDisplay(campaign);
+  const received = receivedReplies ?? campaign.inbound_replies?.[0]?.count;
+  const { label, tone } = statusDisplay(campaign, received);
   const stopped = followupsStopped({ ...campaign, initial_sent_at: campaign.initial_sent_at ?? null });
   return (
     <span className="inline-flex flex-wrap items-center gap-1">
