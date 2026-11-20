@@ -135,7 +135,7 @@ export function SoftwareJsonLd() {
           priceCurrency: "EUR",
           availability: "https://schema.org/InStock",
           url: `${url}/tarifs`,
-          description: "Gratuit pendant la phase de lancement, sans carte bancaire. Offre payante prévue à 19 € HT par mois.",
+          description: "Gratuit pendant la phase de lancement, sans carte bancaire. Offre payante prévue à 9,99 € HT par mois.",
         },
         publisher: { "@id": LD_IDS.organization(url) },
         creator: { "@id": LD_IDS.founder(url) },

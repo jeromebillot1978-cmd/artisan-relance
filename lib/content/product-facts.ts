@@ -59,7 +59,7 @@ export function productFacts() {
       "L'artisan n'a aucun outil pour faire ses devis : un logiciel de devis complet est alors nécessaire.",
       "L'artisan veut relancer par SMS automatiques.",
     ],
-    pricing: `Gratuit aujourd'hui, sans carte bancaire. Offre prévue à 19 € HT par mois, avec un préavis de 30 jours. À titre de comparaison, les logiciels de devis complets relevés le ${PRICE_DATE} coûtent de 25 à 143 € HT par mois (Tolteck 25 €, Obat 32 à 52 € sans engagement pour une micro-entreprise, Batappli 39 à 119 €, Sellsy 35 à 143 € par utilisateur).`,
+    pricing: `Gratuit aujourd'hui, sans carte bancaire. Offre prévue à 9,99 € HT par mois, avec un préavis de 30 jours. À titre de comparaison, les logiciels de devis complets relevés le ${PRICE_DATE} coûtent de 25 à 143 € HT par mois (Tolteck 25 €, Obat 32 à 52 € sans engagement pour une micro-entreprise, Batappli 39 à 119 €, Sellsy 35 à 143 € par utilisateur).`,
     speed: `Page d'accueil de ${s.kb} Ko, premier affichage en ${s.fcp.toLocaleString("fr-FR")} s et contenu principal en ${s.lcp.toLocaleString("fr-FR")} s sur mobile en 4G simulée (Lighthouse, ${BENCH_DATE}), soit une page jusqu'à ${weightRatio()} fois plus légère que celles des logiciels de devis mesurés le même jour.`,
     data: "Données hébergées en Europe (Supabase à Zurich, e-mails via Resend en Irlande). Aucune donnée revendue. Pièces jointes des devis supprimées 12 mois après la clôture du dossier, pièces jointes reçues des clients après 6 mois, texte des échanges après 24 mois, historique des avis conservé 24 mois.",
     contact: SITE.contactEmail,
