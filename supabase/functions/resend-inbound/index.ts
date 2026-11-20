@@ -205,9 +205,16 @@ async function handleReceived(event: WebhookEvent) {
     // Texte réellement parti : sert à détecter un message tronqué (lien trop long sur mobile).
     // Si la lecture échoue, la preuve d'envoi est quand même enregistrée (contrôle « inconnu »).
     let receivedText: string | null = null;
+    // HTML RÉELLEMENT reçu : sert au diagnostic des liens (href directs ou réécrits ?)
+    let receivedHtml: string | null = null;
     try {
       const received = await getReceivedEmail(id);
       receivedText = received.text?.trim() ? received.text : received.html ? htmlToText(received.html) : null;
+      receivedHtml = received.html ?? null;
+      const hrefs = [...new Set([...(receivedHtml ?? "").matchAll(/href\s*=\s*["']([^"']+)["']/gi)].map((m) => m[1].replace(/&amp;/g, "&")))];
+      log("prospect_proof_links", {
+        email_id: id, hrefs, google_redirect: hrefs.some((h) => /google\.[a-z.]+\/url\?/i.test(h)), html_length: receivedHtml?.length ?? 0,
+      });
     } catch (e) {
       log("prospect_proof_read_failed", { email_id: id, error: e instanceof Error ? e.message : String(e) });
     }
@@ -217,6 +224,7 @@ async function handleReceived(event: WebhookEvent) {
       p_from: from,
       p_expected_from: PROSPECTION_SENDER,
       p_received_text: receivedText ? receivedText.slice(0, 20000) : null,
+      p_received_html: receivedHtml ? receivedHtml.slice(0, 200000) : null,
     });
     if (error) {
       log("prospect_proof_error", { email_id: id, error: error.message });

@@ -8,9 +8,12 @@ import { ProspectCard } from "@/components/prospection/prospect-card";
 import { NewProspectButton } from "@/components/prospection/prospect-form";
 import { getProspects, STAGE_LABEL, type Prospect, type Stage } from "@/lib/prospects";
 import { isPlatformAdmin } from "@/lib/stats";
+import { PROSPECTION_SENDER as SENDER } from "@/lib/prospect-links";
 
 export const metadata: Metadata = { title: "Prospection" };
 export const dynamic = "force-dynamic";
+/** L'envoi SMTP se fait dans l'action serveur de cette page : marge au-delà des ~2 s habituelles. */
+export const maxDuration = 30;
 
 const DAY = 24 * 3600 * 1000;
 
@@ -18,7 +21,18 @@ const DAY = 24 * 3600 * 1000;
 function todo(p: Prospect, today: string, now: number): string | null {
   if (p.do_not_contact_at) return null;
   const open = p.attempts.find((a) => a.state === "ouverte");
+  if (open && open.draft_method === "serveur") {
+    return now - new Date(open.opened_at).getTime() > 2 * 60 * 1000 ? "Envoi automatique resté sans réponse : vérifiez puis annulez" : null;
+  }
   if (open) return open.draft_opened_at ? "Tentative à terminer (confirmer, signaler un échec ou annuler)" : "Tentative commencée, brouillon jamais ouvert";
+  const rewritten = p.attempts.find((a) => a.link_rewrite_detected);
+  if (rewritten) return "Liens réécrits détectés dans l'e-mail reçu : voir le diagnostic";
+  const sentNoProof = p.attempts.find((a) => a.state === "envoyee");
+  if (sentNoProof?.sent_at && now - new Date(sentNoProof.sent_at).getTime() > 15 * 60 * 1000)
+    return "Envoyé par le serveur il y a plus de 15 min, copie de contrôle toujours absente";
+  const lastFail = p.attempts[0];
+  if (lastFail?.state === "echec" && lastFail.draft_method === "serveur" && !["contacte", "en_discussion", "interesse"].includes(p.stage))
+    return `Dernier envoi en échec : ${lastFail.failure_reason ?? "raison inconnue"}`;
   const bad = p.attempts.find((a) => a.state === "verifiee" && (a.wrong_sender || a.content_check === "tronque"));
   if (bad && p.stage === "contacte") return bad.wrong_sender ? "Envoyé depuis un autre compte : à vérifier" : "Message reçu incomplet : à vérifier";
   const unproven = p.attempts.find((a) => a.channel === "email" && a.state === "declaree");
@@ -29,7 +43,7 @@ function todo(p: Prospect, today: string, now: number): string | null {
 }
 
 /**
- * Prospection (administrateur uniquement). Rien n'est envoyé depuis cette page.
+ * Prospection (administrateur uniquement). L'envoi des e-mails se fait côté serveur (Gmail SMTP).
  * Les compteurs séparent ce qui est PROUVÉ de ce qui est seulement DÉCLARÉ.
  */
 export default async function ProspectionPage({ searchParams }: { searchParams: Promise<{ vue?: string; etape?: string }> }) {
@@ -57,6 +71,8 @@ export default async function ProspectionPage({ searchParams }: { searchParams: 
   const proven = attempts.filter((a) => a.state === "verifiee").length;
   const provenWithWarning = attempts.filter((a) => a.state === "verifiee" && (a.wrong_sender || a.content_check === "tronque")).length;
   const declaredEmail = attempts.filter((a) => a.state === "declaree" && a.channel === "email").length;
+  const sentAwaiting = attempts.filter((a) => a.state === "envoyee").length;
+  const failed = attempts.filter((a) => a.state === "echec" && a.draft_method === "serveur").length;
   const declaredOther = attempts.filter((a) => a.state === "declaree" && a.channel !== "email").length;
   const stages = (Object.keys(STAGE_LABEL) as Stage[]).map((s) => ({ s, label: STAGE_LABEL[s], n: real.filter((p) => p.stage === s).length }));
   const proofDomain = process.env.INBOUND_DOMAIN || "reponses.jercat.fr";
@@ -78,7 +94,7 @@ export default async function ProspectionPage({ searchParams }: { searchParams: 
     <>
       <PageHeader
         title="Prospection"
-        description="Artisans à démarcher. Visible uniquement par vous. Aucun envoi automatique."
+        description="Artisans à démarcher. Visible uniquement par vous. « Valider et envoyer » envoie l'e-mail directement depuis le serveur."
         actions={!archives ? <NewProspectButton /> : undefined}
       />
 
@@ -94,10 +110,9 @@ export default async function ProspectionPage({ searchParams }: { searchParams: 
             <div className="space-y-1">
               <p className="font-medium">Ce que cette page affiche</p>
               <p className="text-muted-foreground">
-                Chaque contact passe par 4 niveaux : 1. intention (tentative commencée) → 2. brouillon ouvert → 3. action déclarée
-                par vous → 4. preuve. « Prouvé » : la plateforme a reçu la copie de contrôle de l&apos;e-mail (adresse en Cci).
-                « Déclaré » : vous avez indiqué l&apos;avoir fait, sans preuve technique (formulaires, appels, ou e-mail dont la copie
-                n&apos;est pas arrivée).
+                E-mail : « Valider et envoyer » → le serveur envoie depuis {SENDER} → « Envoyé » (Gmail a accepté le message, avec
+                date, heure et identifiant) → « Prouvé » (la copie de contrôle en Cci est arrivée, avec les liens réellement reçus).
+                Formulaires et appels : « Déclaré » par vous, sans preuve technique possible.
               </p>
             </div>
           </Card>
@@ -109,8 +124,9 @@ export default async function ProspectionPage({ searchParams }: { searchParams: 
               {provenWithWarning > 0 && <p className="text-xs text-red-700 dark:text-red-400">dont {provenWithWarning} avec une anomalie</p>}
             </Card>
             <Card className="p-4">
-              <p className="text-xs text-muted-foreground">E-mails déclarés — en attente de preuve</p>
-              <p className="text-2xl font-semibold tabular-nums">{declaredEmail}</p>
+              <p className="text-xs text-muted-foreground">E-mails envoyés — en attente de preuve</p>
+              <p className="text-2xl font-semibold tabular-nums">{sentAwaiting + declaredEmail}</p>
+              {failed > 0 && <p className="text-xs text-red-700 dark:text-red-400">{failed} envoi{failed > 1 ? "s" : ""} en échec</p>}
             </Card>
             <Card className="p-4">
               <p className="text-xs text-muted-foreground">Formulaires et appels — déclarés</p>

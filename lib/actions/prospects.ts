@@ -9,7 +9,7 @@ import { cleanLinks } from "@/lib/prospect-links";
  * Actions de prospection. Chaque action appelle UNE fonction de base de données,
  * qui vérifie les règles métier et écrit le journal. L'application n'écrit plus
  * jamais directement dans les tables (la base le refuse).
- * Aucune de ces actions n'envoie quoi que ce soit.
+ * Seule sendProspectEmail envoie un e-mail (Gmail SMTP, côté serveur).
  */
 
 export type ProspectActionResult = { ok: true; data?: unknown } | { ok: false; error: string; conflict?: boolean };
@@ -33,6 +33,89 @@ async function call(fn: string, args: Record<string, unknown>): Promise<Prospect
   }
   revalidatePath("/prospection");
   return { ok: true, data };
+}
+
+/** Journal structuré (Vercel > Logs), un objet JSON par étape de l'envoi. */
+function sendLog(event: string, data: Record<string, unknown>) {
+  console.log(JSON.stringify({ scope: "prospection_envoi", event, ...data, at: new Date().toISOString() }));
+}
+
+/**
+ * « Valider et envoyer » : UN clic, tout le reste côté serveur.
+ *   1. la base valide le texte et réserve l'envoi (tentative « ouverte », jeton de copie cachée) ;
+ *   2. le HTML est construit avec des liens directs, puis contrôlé (aucune redirection) ;
+ *   3. Gmail SMTP envoie l'e-mail (copie cachée vers l'adresse de preuve) ;
+ *   4. la base enregistre le résultat réel : « envoyée » (Message-ID, réponse SMTP, href) ou « échec » ;
+ *   5. la copie cachée, en arrivant, fait passer la tentative à « prouvée ».
+ */
+export async function sendProspectEmail(id: string, v: number): Promise<ProspectActionResult> {
+  const { smtpConfigured, sendProspectSmtp, explainSmtpError } = await import("@/lib/prospect-smtp");
+  const { buildProspectEmail, assertDirectLinks } = await import("@/lib/prospect-email");
+  const { proofAddress } = await import("@/lib/prospects");
+  if (!smtpConfigured()) {
+    sendLog("config_manquante", { prospect_id: id });
+    return {
+      ok: false,
+      error: "Envoi automatique pas encore configuré : ajoutez PROSPECTION_SMTP_PASSWORD (mot de passe d'application Gmail) dans Vercel. Rien n'a été envoyé.",
+    };
+  }
+  const { supabase, user } = await getUser();
+  if (!user) return { ok: false, error: "Session expirée. Reconnectez-vous." };
+
+  // 1. Réservation (la base vérifie STOP, archivage, doublon 24 h, plafond quotidien, double clic)
+  const begin = await supabase.rpc("prospect_server_send_begin", { p_id: uuid.parse(id), p_version: version.parse(v) });
+  if (begin.error) {
+    sendLog("reservation_refusee", { prospect_id: id, code: begin.error.code, erreur: begin.error.message });
+    const readable = ["P0001", "40001", "42501", "P0002"].includes(begin.error.code ?? "");
+    return { ok: false, conflict: begin.error.code === "40001", error: readable ? begin.error.message : "Envoi impossible pour le moment. Rien n'a été envoyé." };
+  }
+  const row = (begin.data as { attempt_id: string; bcc_token: string; to_address: string; subject: string; message: string }[] | null)?.[0];
+  if (!row) return { ok: false, error: "Réservation de l'envoi non confirmée. Rien n'a été envoyé." };
+
+  const report = (ok: boolean, extra: { messageId?: string | null; response?: string | null; error?: string | null; hrefs?: string[] | null; ms?: number | null }) =>
+    supabase.rpc("prospect_server_send_result", {
+      p_attempt_id: row.attempt_id, p_ok: ok, p_message_id: extra.messageId ?? null, p_response: extra.response ?? null,
+      p_error: extra.error ?? null, p_sent_hrefs: extra.hrefs ?? null, p_duration_ms: extra.ms ?? null,
+    });
+
+  // 2. HTML à liens directs, contrôlé AVANT l'envoi
+  let mail: ReturnType<typeof buildProspectEmail>;
+  let hrefs: string[];
+  try {
+    mail = buildProspectEmail(row.subject, row.message);
+    hrefs = assertDirectLinks(mail.html);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    sendLog("controle_liens_echec", { attempt_id: row.attempt_id, erreur: msg });
+    await report(false, { error: msg });
+    revalidatePath("/prospection");
+    return { ok: false, error: `Envoi bloqué : ${msg}` };
+  }
+  const bcc = proofAddress(row.bcc_token);
+  sendLog("envoi_debut", { attempt_id: row.attempt_id, prospect_id: id, destinataire: row.to_address, liens_html: hrefs, taille_html: mail.html.length });
+
+  // 3. Envoi SMTP
+  try {
+    const r = await sendProspectSmtp({ to: row.to_address, bcc, subject: mail.subject, html: mail.html, text: mail.text, attemptId: row.attempt_id });
+    if (r.rejected.length && !r.accepted.includes(row.to_address)) throw Object.assign(new Error(`Destinataire refusé : ${r.rejected.join(", ")}`), { response: r.response });
+    sendLog("envoi_accepte", { attempt_id: row.attempt_id, message_id: r.messageId, reponse_smtp: r.response, acceptes: r.accepted, refuses: r.rejected, duree_ms: r.durationMs, liens_html: hrefs });
+    // 4. Résultat réel en base
+    const res = await report(true, { messageId: r.messageId, response: r.response, hrefs, ms: r.durationMs });
+    if (res.error) {
+      // L'e-mail EST parti : on ne le cache pas. La copie cachée le prouvera de toute façon.
+      sendLog("enregistrement_resultat_echec", { attempt_id: row.attempt_id, erreur: res.error.message });
+      revalidatePath("/prospection");
+      return { ok: true, data: { warning: "E-mail envoyé, mais l'enregistrement a échoué. La preuve par copie cachée le confirmera." } };
+    }
+    revalidatePath("/prospection");
+    return { ok: true, data: { messageId: r.messageId } };
+  } catch (e) {
+    const { message, response } = explainSmtpError(e);
+    sendLog("envoi_echec", { attempt_id: row.attempt_id, erreur: message, reponse_smtp: response, brut: e instanceof Error ? e.message : String(e) });
+    await report(false, { error: message, response, hrefs });
+    revalidatePath("/prospection");
+    return { ok: false, error: message };
+  }
 }
 
 export async function approveMessage(id: string, v: number) {

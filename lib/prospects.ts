@@ -10,15 +10,15 @@ import { createClient } from "@/lib/supabase/server";
  *   - la PREUVE de chaque tentative (aucune, déclaration, copie cachée reçue, API Gmail).
  *
  * Aucune donnée affichée ne doit laisser croire qu'une action a eu lieu sans preuve.
- * Aucun envoi automatique : l'envoi est toujours fait à la main par l'administrateur.
+ * E-mails : envoyés par le serveur (Gmail SMTP) en un clic, puis prouvés par la copie cachée reçue.
  */
 
 export type Stage = "a_preparer" | "pret" | "contacte" | "en_discussion" | "interesse" | "pas_interesse" | "ne_plus_contacter";
 export type Channel = "email" | "formulaire" | "telephone";
-export type AttemptState = "ouverte" | "declaree" | "verifiee" | "echec" | "annulee";
-export type Proof = "aucune" | "declaration" | "cci_recue" | "gmail_api";
+export type AttemptState = "ouverte" | "envoyee" | "declaree" | "verifiee" | "echec" | "annulee";
+export type Proof = "aucune" | "declaration" | "smtp" | "cci_recue" | "gmail_api";
 export type CallOutcome = "joint" | "messagerie" | "pas_de_reponse" | "faux_numero" | "a_rappeler";
-export type DraftMethod = "gmail_web" | "gmail_app_android" | "gmail_app_ios" | "mailto" | "copie" | "site_ouvert" | "numero_compose" | "manuel";
+export type DraftMethod = "gmail_web" | "gmail_app_android" | "gmail_app_ios" | "mailto" | "copie" | "site_ouvert" | "numero_compose" | "manuel" | "serveur";
 export type ContentCheck = "complet" | "tronque" | "inconnu";
 
 /** Libellés de l'étape : décrivent une situation commerciale, jamais une action technique. */
@@ -55,6 +55,16 @@ export type Attempt = {
   opened_at: string;
   declared_at: string | null;
   verified_at: string | null;
+  closed_at: string | null;
+  /** Envoi serveur : Gmail a accepté le message (date, heure, Message-ID, réponse SMTP) */
+  sent_at: string | null;
+  smtp_message_id: string | null;
+  smtp_response: string | null;
+  send_duration_ms: number | null;
+  /** Diagnostic des liens : href du HTML envoyé / du HTML réellement reçu (copie cachée) */
+  sent_hrefs: string[] | null;
+  received_hrefs: string[] | null;
+  link_rewrite_detected: boolean | null;
 };
 
 export type ProspectEvent = { id: number; attempt_id: string | null; type: string; actor: string; detail: Record<string, unknown>; created_at: string };
@@ -94,7 +104,7 @@ export type Prospect = {
 const PROSPECT_COLUMNS =
   "id, company, city, trade, website, email, phone, channel, why, findings, subject, message, caution, notes, stage, approved_at, approved_message_md5, do_not_contact_at, do_not_contact_reason, next_action_at, source_label, source_url, source_checked_at, archived_at, is_test, version, position";
 const ATTEMPT_COLUMNS =
-  "id, prospect_id, channel, state, proof, bcc_token, to_address, subject_snapshot, message_snapshot, call_outcome, draft_opened_at, draft_method, verified_from, wrong_sender, content_check, failure_reason, cancel_reason, opened_at, declared_at, verified_at";
+  "id, prospect_id, channel, state, proof, bcc_token, to_address, subject_snapshot, message_snapshot, call_outcome, draft_opened_at, draft_method, verified_from, wrong_sender, content_check, failure_reason, cancel_reason, opened_at, declared_at, verified_at, closed_at, sent_at, smtp_message_id, smtp_response, send_duration_ms, sent_hrefs, received_hrefs, link_rewrite_detected";
 
 /**
  * Empreinte du texte, calculée comme en base (_prospect_md5 : objet + « | » + message).
