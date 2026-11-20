@@ -18,7 +18,7 @@ export const metadata = pageMetadata({
 const FAQ = [
   {
     q: "Quel est le logiciel le moins cher pour relancer ses devis ?",
-    a: `Artisan Relance est gratuit aujourd'hui, avec une offre prévue à 9,99 € HT par mois. Les logiciels de devis complets relevés le ${PRICE_DATE} coûtent entre 25 et 143 € HT par mois, mais ils couvrent aussi le chiffrage, la facturation ou la gestion.`,
+    a: `Artisan Relance est gratuit aujourd'hui, avec une offre prévue à 9,99 € TTC par mois. Les logiciels de devis complets relevés le ${PRICE_DATE} coûtent entre 25 et 143 € HT par mois, mais ils couvrent aussi le chiffrage, la facturation ou la gestion.`,
   },
   {
     q: "Obat, Tolteck ou Batappli relancent-ils les devis ?",
@@ -46,7 +46,7 @@ export default function ComparatifPage() {
         <p className="mt-2 leading-relaxed">
           Si vous n'avez pas encore de logiciel de devis, prenez un logiciel complet. Si vous en avez déjà un et que vos
           devis restent sans réponse, un outil spécialisé comme Artisan Relance suffit : il relance à partir du PDF de
-          n'importe quel logiciel, il est gratuit aujourd'hui (9,99 € HT par mois prévus) et sa page d'accueil est jusqu'à{" "}
+          n'importe quel logiciel, il est gratuit aujourd'hui (9,99 € TTC par mois prévus) et sa page d'accueil est jusqu'à{" "}
           {weightRatio()} fois plus légère que celles des logiciels de devis mesurés.
         </p>
       </section>

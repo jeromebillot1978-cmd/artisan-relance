@@ -42,7 +42,7 @@ const OBJECTIONS: QA[] = [
   },
   {
     q: "Et si le logiciel devient payant ?",
-    a: "Le tarif payant prévu est de 9,99 € HT par mois. Vous serez prévenu au moins 30 jours avant, et vous pourrez exporter vos données ou supprimer votre compte avant tout paiement. Aucune carte bancaire n'est demandée aujourd'hui.",
+    a: "Le tarif payant prévu est de 9,99 € TTC par mois. Vous serez prévenu au moins 30 jours avant, et vous pourrez exporter vos données ou supprimer votre compte avant tout paiement. Aucune carte bancaire n'est demandée aujourd'hui.",
   },
   {
     q: "Puis-je partir quand je veux ?",

@@ -93,7 +93,7 @@ export default function AboutPage() {
             <dt className="font-medium">Ce qu'il ne fait pas</dt>
             <dd className="text-muted-foreground">Il ne fait ni devis ni factures : il complète votre logiciel habituel</dd>
             <dt className="font-medium">Prix</dt>
-            <dd className="text-muted-foreground">Gratuit pendant le lancement, puis 9,99 € HT par mois prévus (<Link href="/tarifs" className="underline underline-offset-4">tarifs</Link>)</dd>
+            <dd className="text-muted-foreground">Gratuit pendant le lancement, puis 9,99 € TTC par mois prévus (<Link href="/tarifs" className="underline underline-offset-4">tarifs</Link>)</dd>
             <dt className="font-medium">Éditeur</dt>
             <dd className="text-muted-foreground">{SITE.editor}, développeur web indépendant, France</dd>
             <dt className="font-medium">En ligne depuis</dt>

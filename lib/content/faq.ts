@@ -246,7 +246,7 @@ export const FAQ_GROUPS: { title: string; items: QA[] }[] = [
       },
       {
         q: "Combien coûte Artisan Relance ?",
-        a: "Artisan Relance est gratuit aujourd'hui, sans carte bancaire. Une offre payante est prévue à 9,99 € HT par mois : les comptes existants seront prévenus au moins 30 jours avant et pourront exporter leurs données ou supprimer leur compte.",
+        a: "Artisan Relance est gratuit aujourd'hui, sans carte bancaire. Une offre payante est prévue à 9,99 € TTC par mois : les comptes existants seront prévenus au moins 30 jours avant et pourront exporter leurs données ou supprimer leur compte.",
       },
     ],
   },
