@@ -1,6 +1,6 @@
 // Tests : node --experimental-strip-types lib/prospect-links.test.ts
 import {
-  detectPlatform, emailDraftLinks, gmailAndroidIntentUrl, gmailIosUrl, gmailWebUrl, mailtoUrl, phoneNumbers, SAFE_LINK_LENGTH,
+  cleanLinks, detectPlatform, emailDraftLinks, gmailAndroidIntentUrl, gmailIosUrl, gmailWebUrl, mailtoUrl, phoneNumbers, SAFE_LINK_LENGTH,
 } from "./prospect-links.ts";
 
 let ok = 0, ko = 0;
@@ -69,6 +69,23 @@ const longBody = { ...d, body: "é".repeat(400) };
 t("message long signalé (accents encodés ×6)", emailDraftLinks(longBody, "desktop")[0].long, true);
 t("message normal non signalé", emailDraftLinks(d, "desktop")[0].long, false);
 t("seuil de longueur", SAFE_LINK_LENGTH, 2000);
+
+// --- Liens propres : jamais de redirection Google, adresses officielles exactes
+const A = "https://artisan-relance.jercat.fr/", V = "https://pubartisanrelance.vercel.app/";
+t("redirection Google (texte) → lien d'origine",
+  cleanLinks("Vidéo : https://www.google.com/url?q=https://pubartisanrelance.vercel.app/&source=gmail&ust=1795280000298000&sa=E"), `Vidéo : ${V}`);
+t("redirection Google (HTML &amp;) → lien d'origine",
+  cleanLinks('<a href="https://www.google.com/url?q=https://artisan-relance.jercat.fr/&amp;source=gmail&amp;ust=1&amp;sa=E">x</a>'), `<a href="${A}">x</a>`);
+t("redirection Google avec lien encodé", cleanLinks("https://www.google.com/url?q=https%3A%2F%2Fpubartisanrelance.vercel.app%2F&sa=D"), V);
+t("sans barre finale → barre ajoutée", cleanLinks("Essai : https://artisan-relance.jercat.fr"), `Essai : ${A}`);
+t("fin de phrase", cleanLinks("Voir https://artisan-relance.jercat.fr."), `Voir ${A}.`);
+t("sans https ni barre", cleanLinks("pubartisanrelance.vercel.app"), V);
+t("http → https", cleanLinks("http://artisan-relance.jercat.fr/"), A);
+t("déjà exact : inchangé", cleanLinks(`${A} et ${V}`), `${A} et ${V}`);
+t("sous-page conservée", cleanLinks("https://artisan-relance.jercat.fr/inscription"), "https://artisan-relance.jercat.fr/inscription");
+t("adresse e-mail non touchée", cleanLinks("contact@artisan-relance.jercat.fr"), "contact@artisan-relance.jercat.fr");
+t("autre site non touché", cleanLinks("https://dev.jercat.fr"), "https://dev.jercat.fr");
+t("brouillon : liens nettoyés", decodeURIComponent(emailDraftLinks({ ...d, body: "https://www.google.com/url?q=https://artisan-relance.jercat.fr&sa=E" }, "desktop")[0].href).includes(`body=${A}`), true);
 
 console.log(`\n${ok} réussis, ${ko} échoués`);
 process.exit(ko ? 1 : 0);
