@@ -3,7 +3,7 @@ import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
 /** Pages de l'application (privées) : jamais comptées comme visites du site. */
-export const PRIVATE_PREFIXES = ["/dashboard", "/devis", "/parametres", "/avis-google", "/statistiques", "/api", "/auth", "/r/"];
+export const PRIVATE_PREFIXES = ["/dashboard", "/devis", "/parametres", "/avis-google", "/statistiques", "/prospection", "/api", "/auth", "/r/"];
 
 export function isTrackablePath(path: string) {
   return (
