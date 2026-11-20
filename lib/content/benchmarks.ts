@@ -57,7 +57,7 @@ export const PRICES: PriceRow[] = [
   {
     name: "Artisan Relance",
     what: "Relance de devis et demande d'avis Google",
-    price: "Gratuit aujourd'hui · 9,99 € TTC/mois prévu",
+    price: "Gratuit aujourd'hui · 9,99 € par mois prévu, TVA non applicable, article 293 B du CGI",
     monthly: 9.99,
     quoteFollowUp: "Oui, c'est le cœur du produit",
     source: { label: "artisan-relance.jercat.fr/tarifs", href: "/tarifs" },

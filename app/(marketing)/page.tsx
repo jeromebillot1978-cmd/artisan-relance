@@ -264,7 +264,7 @@ export default function HomePage() {
               Ne payez pas un logiciel complet si votre problème est seulement de relancer vos devis
             </h2>
             <p className="mt-3 text-muted-foreground">
-              Gratuit aujourd'hui. Demain, une offre unique prévue à 9,99 € TTC par mois, annoncée 30 jours à l'avance.
+              Gratuit aujourd'hui. Demain, une offre unique prévue à 9,99 € par mois, TVA non applicable, article 293 B du CGI, annoncée 30 jours à l'avance.
             </p>
           </div>
           <div className="mx-auto mt-10 max-w-4xl">
