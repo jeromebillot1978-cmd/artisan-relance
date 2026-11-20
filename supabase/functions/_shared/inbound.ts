@@ -123,6 +123,26 @@ export function extractToken(
 }
 
 /**
+ * Jeton de PREUVE D'ENVOI d'un e-mail de prospection : l'e-mail préparé contient
+ * en copie cachée « prospect-<jeton>@<domaine de réception> ». Quand Gmail l'envoie
+ * réellement, une copie arrive ici : c'est la preuve que le message est parti.
+ * Mêmes bornes strictes que pour les devis.
+ */
+export function extractProspectToken(
+  fields: { to?: string[]; cc?: string[]; bcc?: string[]; received_for?: string[] },
+  inboundDomain: string,
+): string | null {
+  const domain = inboundDomain.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(`(?:^|[^\\w.+-])prospect-([a-f0-9]{24})@${domain || "[^\\s>]+"}(?![\\w.-])`, "i");
+  const ordered = [...(fields.received_for ?? []), ...(fields.bcc ?? []), ...(fields.to ?? []), ...(fields.cc ?? [])];
+  for (const a of ordered) {
+    const m = re.exec(a);
+    if (m) return m[1].toLowerCase();
+  }
+  return null;
+}
+
+/**
  * Texte écrit par le client, sans l'historique recopié sous sa réponse
  * (« Le … a écrit : », « De : … Envoyé : … », « -----Message d'origine----- », lignes « > »).
  * Si tout serait retiré (réponse placée sous la citation), le texte complet est gardé.

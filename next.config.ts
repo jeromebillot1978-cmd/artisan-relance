@@ -43,6 +43,7 @@ const PRIVATE_SOURCES = [
   "/parametres/:path*",
   "/avis-google/:path*",
   "/statistiques/:path*",
+  "/prospection/:path*",
   "/connexion",
   "/inscription",
   "/mot-de-passe-oublie",

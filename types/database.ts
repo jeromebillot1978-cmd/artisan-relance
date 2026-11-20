@@ -53,7 +53,11 @@ export interface Campaign {
   updated_at: string;
 }
 
-export type CampaignListItem = Campaign & { campaign_attachments: { count: number }[] };
+export type CampaignListItem = Campaign & {
+  campaign_attachments: { count: number }[];
+  /** Réponses réellement reçues par e-mail (preuve), à distinguer d'un « répondu » marqué à la main. */
+  inbound_replies?: { count: number }[];
+};
 
 export interface CampaignAttachment {
   id: string;

@@ -14,13 +14,13 @@ import { Testimonials } from "@/components/marketing/testimonials";
 export const metadata = pageMetadata({
   title: "Prix du logiciel de relance de devis : gratuit | Artisan Relance",
   description:
-    "Artisan Relance est gratuit aujourd'hui, puis 19 € HT/mois prévus : relances automatiques, avis Google, tableau de bord. Comparez avec Obat, Tolteck, Batappli.",
+    "Artisan Relance est gratuit aujourd'hui, puis 9,99 € par mois prévus (TVA non applicable, article 293 B du CGI) : relances automatiques, avis Google, tableau de bord. Comparez avec Obat, Tolteck, Batappli.",
   path: "/tarifs",
 });
 
 const PRICING_FAQ = [
   { q: "Artisan Relance est-il vraiment gratuit ?", a: "Oui, aujourd'hui toutes les fonctionnalités sont gratuites, sans carte bancaire et sans limite de nombre de devis. Seul le nombre d'e-mails envoyés par jour est plafonné (30 par compte) pour éviter les abus." },
-  { q: "Combien coûtera Artisan Relance ?", a: "Une offre unique est prévue à 19 € HT par mois. Vous serez prévenu par e-mail au moins 30 jours avant tout changement, avec la possibilité d'exporter vos devis en CSV ou de supprimer votre compte sans frais." },
+  { q: "Combien coûtera Artisan Relance ?", a: "Une offre unique est prévue à 9,99 € par mois, TVA non applicable, article 293 B du CGI. Vous serez prévenu par e-mail au moins 30 jours avant tout changement, avec la possibilité d'exporter vos devis en CSV ou de supprimer votre compte sans frais." },
   { q: "Pourquoi ne pas utiliser la relance de mon logiciel de devis ?", a: "Si votre logiciel relance déjà vos devis et que vous l'utilisez, gardez-le. Artisan Relance s'adresse aux artisans dont l'outil de devis ne relance pas, ou qui ne veulent pas payer un logiciel complet pour cette seule fonction." },
   { q: "Faut-il un logiciel de devis en plus ?", a: "Oui, Artisan Relance ne crée pas les devis : vous gardez votre outil habituel (ou Excel, Word) et vous joignez le PDF. Il s'occupe de l'envoi, des relances et de la demande d'avis Google." },
 ];
@@ -47,9 +47,9 @@ const plans = [
   },
   {
     name: "Offre prévue",
-    price: "19 € HT",
+    price: "9,99 €",
     period: "par mois",
-    description: "La même chose, sans logiciel complet à payer en plus. Préavis de 30 jours avant le passage.",
+    description: "La même chose, sans logiciel complet à payer en plus. Préavis de 30 jours avant le passage. TVA non applicable, article 293 B du CGI.",
     badge: "Prévu",
     highlighted: false,
   },
@@ -61,7 +61,7 @@ export default function PricingPage() {
       <FaqJsonLd items={PRICING_FAQ} />
       <BreadcrumbJsonLd items={[{ name: "Accueil", path: "/" }, { name: "Tarifs", path: "/tarifs" }]} />
       <div className="mx-auto max-w-2xl text-center">
-        <h1 className="text-balance text-4xl font-semibold tracking-tight">Tarifs : gratuit aujourd'hui, 19 € HT par mois demain</h1>
+        <h1 className="text-balance text-4xl font-semibold tracking-tight">Tarifs : gratuit aujourd'hui, 9,99 € par mois demain</h1>
         <p className="mt-3 text-muted-foreground">
           Ne payez pas un logiciel complet si votre problème est seulement de relancer vos devis.
         </p>

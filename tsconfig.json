@@ -36,6 +36,7 @@
   ],
   "exclude": [
     "node_modules",
+    "lib/**/*.test.ts",
     "supabase/functions/campaign-mailer",
     "supabase/functions/resend-inbound",
     "supabase/functions/_shared/images.ts",

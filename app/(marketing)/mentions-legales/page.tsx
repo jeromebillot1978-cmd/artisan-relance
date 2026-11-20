@@ -40,7 +40,7 @@ export default function MentionsLegalesPage() {
         <p>
           Artisan Relance est un logiciel en ligne (SaaS) de relance automatique de devis destiné aux artisans et TPE du
           bâtiment, en ligne depuis {SITE.launched}. Il est gratuit pendant sa phase de lancement ; une offre payante est
-          prévue à 19 € HT par mois, annoncée au moins 30 jours à l'avance (voir les <Link href="/tarifs">tarifs</Link>).
+          prévue à 9,99 € par mois, TVA non applicable, article 293 B du CGI, annoncée au moins 30 jours à l'avance (voir les <Link href="/tarifs">tarifs</Link>).
         </p>
         <p>{SITE.support} : <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>.</p>
       </section>

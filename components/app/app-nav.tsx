@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, FileText, LayoutDashboard, Settings, Star } from "lucide-react";
+import { BarChart3, FileText, LayoutDashboard, Send, Settings, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const NAV_ITEMS = [
@@ -12,10 +12,13 @@ export const NAV_ITEMS = [
   { href: "/parametres", label: "Paramètres", short: "Réglages", icon: Settings },
 ];
 
-/** Entrée réservée à l'administrateur de la plateforme. */
-const ADMIN_ITEM = { href: "/statistiques", label: "Statistiques", short: "Stats", icon: BarChart3 };
+/** Entrées réservées à l'administrateur de la plateforme. */
+const ADMIN_ITEMS = [
+  { href: "/statistiques", label: "Statistiques", short: "Stats", icon: BarChart3 },
+  { href: "/prospection", label: "Prospection", short: "Prospects", icon: Send },
+];
 
-const itemsFor = (isAdmin?: boolean) => (isAdmin ? [...NAV_ITEMS, ADMIN_ITEM] : NAV_ITEMS);
+const itemsFor = (isAdmin?: boolean) => (isAdmin ? [...NAV_ITEMS, ...ADMIN_ITEMS] : NAV_ITEMS);
 
 function Dot({ count, className }: { count?: number; className?: string }) {
   if (!count) return null;
@@ -60,7 +63,7 @@ export function MobileTabBar({ isAdmin, unread }: { isAdmin?: boolean; unread?: 
   const pathname = usePathname();
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg md:hidden">
-      <div className={cn("grid", isAdmin ? "grid-cols-5" : "grid-cols-4")}>
+      <div className={cn("grid", isAdmin ? "grid-cols-6" : "grid-cols-4")}>
         {itemsFor(isAdmin).map((item) => {
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (

@@ -203,7 +203,7 @@ export async function campaignAction(id: string, action: string): Promise<Campai
 async function freshCampaign(supabase: Awaited<ReturnType<typeof getUser>>["supabase"], id: string) {
   const { data } = await supabase
     .from("campaigns")
-    .select("*, campaign_attachments(count)")
+    .select("*, campaign_attachments(count), inbound_replies(count)")
     .eq("id", id)
     .maybeSingle<CampaignListItem>();
   return data ?? undefined;

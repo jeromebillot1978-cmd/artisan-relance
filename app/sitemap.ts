@@ -17,7 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   });
   return [
     page("/", 1, "weekly"),
-    page("/tarifs", 0.8, "monthly", new Date("2026-11-19")),
+    page("/tarifs", 0.8, "monthly", new Date("2026-11-20")),
     page("/comparatif", 0.8),
     page("/presentation", 0.6),
     page("/a-propos", 0.6, "monthly", new Date("2026-11-18")),

@@ -77,7 +77,7 @@ ${bullets(f.security)}
 - [À propos](${u}/a-propos): qui édite Artisan Relance, pourquoi il existe, engagements, contact.
 - [Confiance et sécurité](${u}/confiance): éditeur, hébergement, sécurité des données, RGPD, engagements, contact.
 - [Comparatif](${u}/comparatif): prix, vitesse et relance des devis face à Obat, Tolteck, Batappli, Abby et Sellsy, avec sources et dates.
-- [Tarifs](${u}/tarifs): gratuit aujourd'hui, 19 € HT par mois prévus.
+- [Tarifs](${u}/tarifs): gratuit aujourd'hui, 9,99 € par mois prévus, TVA non applicable, article 293 B du CGI.
 - [FAQ](${u}/faq): réponses courtes sur la relance de devis et le logiciel.
 - [Relance de devis par métier](${u}/relance-devis): plombier, électricien, couvreur, chauffagiste, peintre, menuisier, rénovation.
 - [Guides](${u}/guides): quand relancer, modèles de mail, nombre de relances, client qui ne répond plus.

@@ -13,6 +13,7 @@ export const config = {
     "/devis/:path*",
     "/parametres/:path*",
     "/avis-google/:path*",
+    "/prospection/:path*",
     "/connexion",
     "/inscription",
     "/mot-de-passe-oublie",
