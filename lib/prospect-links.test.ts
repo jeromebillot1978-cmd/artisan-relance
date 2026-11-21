@@ -1,6 +1,6 @@
 // Tests : node --experimental-strip-types lib/prospect-links.test.ts
 import {
-  cleanLinks, detectPlatform, emailDraftLinks, gmailAndroidIntentUrl, gmailIosUrl, gmailWebUrl, mailtoUrl, phoneNumbers, SAFE_LINK_LENGTH,
+  cleanLinks, confirmNorm, detectPlatform, emailDraftLinks, gmailAndroidIntentUrl, gmailIosUrl, gmailWebUrl, mailtoUrl, phoneNumbers, SAFE_LINK_LENGTH,
 } from "./prospect-links.ts";
 
 let ok = 0, ko = 0;
@@ -87,5 +87,14 @@ t("adresse e-mail non touchée", cleanLinks("contact@artisan-relance.jercat.fr")
 t("autre site non touché", cleanLinks("https://dev.jercat.fr"), "https://dev.jercat.fr");
 t("brouillon : liens nettoyés", decodeURIComponent(emailDraftLinks({ ...d, body: "https://www.google.com/url?q=https://artisan-relance.jercat.fr&sa=E" }, "desktop")[0].href).includes(`body=${A}`), true);
 
+// --- Confirmation d'effacement tolérante au copier-coller
+const N = "TEST complet — Jercat";
+t("nom identique", confirmNorm(N) === confirmNorm("TEST complet — Jercat"), true);
+t("collé avec espaces autour et retour à la ligne", confirmNorm(N) === confirmNorm("  TEST complet — Jercat \n"), true);
+t("tiret court ou trait d'union tapé au clavier", confirmNorm(N) === confirmNorm("TEST complet - Jercat"), true);
+t("espace insécable", confirmNorm(N) === confirmNorm("TEST complet\u00A0—\u00A0Jercat"), true);
+t("minuscules", confirmNorm(N) === confirmNorm("test complet — jercat"), true);
+t("autre nom refusé", confirmNorm(N) === confirmNorm("TEST complet — Autre"), false);
+t("nom incomplet refusé", confirmNorm(N) === confirmNorm("TEST complet"), false);
 console.log(`\n${ok} réussis, ${ko} échoués`);
 process.exit(ko ? 1 : 0);
