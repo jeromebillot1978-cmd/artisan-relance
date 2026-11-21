@@ -143,6 +143,23 @@ export function extractProspectToken(
 }
 
 /**
+ * Jeton de RÉPONSE d'un prospect : les e-mails de prospection ont pour « Répondre à »
+ * « prospect-reponse-<jeton>@<domaine de réception> » (comme « devis-<jeton>@ » pour les devis).
+ */
+export function extractProspectReplyToken(
+  fields: { to?: string[]; cc?: string[]; received_for?: string[] },
+  inboundDomain: string,
+): string | null {
+  const domain = inboundDomain.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(`(?:^|[^\\w.+-])prospect-reponse-([a-f0-9]{24})@${domain || "[^\\s>]+"}(?![\\w.-])`, "i");
+  for (const a of [...(fields.received_for ?? []), ...(fields.to ?? []), ...(fields.cc ?? [])]) {
+    const m = re.exec(a);
+    if (m) return m[1].toLowerCase();
+  }
+  return null;
+}
+
+/**
  * Texte écrit par le client, sans l'historique recopié sous sa réponse
  * (« Le … a écrit : », « De : … Envoyé : … », « -----Message d'origine----- », lignes « > »).
  * Si tout serait retiré (réponse placée sous la citation), le texte complet est gardé.

@@ -20,6 +20,10 @@ const DAY = 24 * 3600 * 1000;
 /** Raison pour laquelle un prospect demande une action aujourd'hui (null = rien à faire). */
 function todo(p: Prospect, today: string, now: number): string | null {
   if (p.do_not_contact_at) return null;
+  const unread = p.messages.filter((m) => m.direction === "in" && !m.read_at && m.kind !== "auto_reply").length;
+  if (unread) return `${unread} nouvelle${unread > 1 ? "s" : ""} réponse${unread > 1 ? "s" : ""} à lire`;
+  const failedReply = p.messages.find((m) => m.direction === "out" && m.status === "failed");
+  if (failedReply) return `Votre réponse n'est pas partie : ${failedReply.error ?? "erreur inconnue"}`;
   const open = p.attempts.find((a) => a.state === "ouverte");
   if (open && open.draft_method === "serveur") {
     return now - new Date(open.opened_at).getTime() > 2 * 60 * 1000 ? "Envoi automatique resté sans réponse : vérifiez puis annulez" : null;

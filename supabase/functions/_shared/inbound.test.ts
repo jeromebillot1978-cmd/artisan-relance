@@ -1,5 +1,5 @@
 // Tests : node --experimental-strip-types supabase/functions/_shared/inbound.test.ts
-import { stripQuoted, classifyInbound, extractToken, extractProspectToken, htmlToText, isOptOut, addressOnly } from "./inbound.ts";
+import { stripQuoted, classifyInbound, extractToken, extractProspectToken, extractProspectReplyToken, htmlToText, isOptOut, addressOnly } from "./inbound.ts";
 import { renderReplyForward, replySubject } from "./templates.ts";
 let ok = 0, ko = 0;
 const t = (name: string, got: unknown, exp: unknown) => {
@@ -63,5 +63,10 @@ t("prospect : autre domaine ignoré", extractProspectToken({ received_for: [`pro
 t("prospect : domaine voisin ignoré", extractProspectToken({ received_for: [`prospect-${T}@reponses.jercat.fr.evil.com`] }, "reponses.jercat.fr"), null);
 t("prospect : jeton de devis non confondu", extractProspectToken({ to: [`devis-${T}@reponses.jercat.fr`] }, "reponses.jercat.fr"), null);
 t("devis : jeton de prospect non confondu", extractToken({ to: [`prospect-${T}@reponses.jercat.fr`] }, "reponses.jercat.fr"), { token: null, ambiguous: false });
+t("réponse prospect : Répondre à reconnu", extractProspectReplyToken({ to: [`Jercat <prospect-reponse-${T}@reponses.jercat.fr>`] }, "reponses.jercat.fr"), T);
+t("réponse prospect : pas confondue avec la preuve", extractProspectToken({ to: [`prospect-reponse-${T}@reponses.jercat.fr`] }, "reponses.jercat.fr"), null);
+t("preuve : pas confondue avec une réponse", extractProspectReplyToken({ to: [`prospect-${T}@reponses.jercat.fr`] }, "reponses.jercat.fr"), null);
+t("réponse prospect : faux domaine refusé", extractProspectReplyToken({ to: [`prospect-reponse-${T}@reponses.jercat.fr.pirate.com`] }, "reponses.jercat.fr"), null);
+t("devis : réponse prospect non confondue", extractToken({ to: [`prospect-reponse-${T}@reponses.jercat.fr`] }, "reponses.jercat.fr"), { token: null, ambiguous: false });
 console.log(`\n${ok} réussis, ${ko} échoués`);
 process.exit(ko ? 1 : 0);

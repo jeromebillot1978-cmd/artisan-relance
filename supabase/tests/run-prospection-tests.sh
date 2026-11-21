@@ -25,7 +25,8 @@ insert into public.prospects (position, company, city, trade, website, email, ph
 SQL
 $P -f supabase/migrations/20261121090000_prospection_v2.sql 2>&1 | grep -v NOTICE || true
 $P -f supabase/migrations/20261121100000_prospection_envoi_serveur.sql 2>&1 | grep -v NOTICE || true
-OUT=$($P -f supabase/tests/prospection_v2.test.sql 2>&1 && $P -f supabase/tests/prospection_v3_envoi_serveur.test.sql 2>&1) || { echo "$OUT"; echo "ERREUR SQL pendant les tests"; exit 1; }
+$P -f supabase/migrations/20261121110000_prospection_reponses.sql 2>&1 | grep -v NOTICE || true
+OUT=$($P -f supabase/tests/prospection_v2.test.sql 2>&1 && $P -f supabase/tests/prospection_v3_envoi_serveur.test.sql 2>&1 && $P -f supabase/tests/prospection_v4_reponses.test.sql 2>&1) || { echo "$OUT"; echo "ERREUR SQL pendant les tests"; exit 1; }
 echo "$OUT"
 OK=$(grep -c '^OK' <<<"$OUT" || true); KO=$(grep -c '^KO' <<<"$OUT" || true)
 echo; echo "Résultat : $OK réussis, $KO échoués"

@@ -41,7 +41,27 @@ export function explainSmtpError(e: unknown): { message: string; response: strin
   return { message: `Envoi refusé par Gmail : ${(err.message ?? "erreur inconnue").slice(0, 300)}`, response };
 }
 
-export async function sendProspectSmtp(mail: { to: string; bcc: string; subject: string; html: string; text: string; attemptId: string }): Promise<SmtpResult> {
+export type ProspectMail = {
+  to: string;
+  /** Copie cachée de preuve (envoi initial uniquement) */
+  bcc?: string;
+  subject: string;
+  html: string;
+  text: string;
+  /** Adresse de réponse : prospect-reponse-<jeton>@reponses.jercat.fr (réponses gérées comme pour les devis) */
+  replyTo: string;
+  /** Même fil de discussion chez le destinataire */
+  inReplyTo?: string | null;
+  /** Référence interne pour le journal (tentative ou message) */
+  ref: string;
+};
+
+/** Adresse de réponse d'un prospect (comme devis-<jeton>@… pour les devis). */
+export function prospectReplyAddress(token: string) {
+  return `prospect-reponse-${token}@${process.env.INBOUND_DOMAIN || "reponses.jercat.fr"}`;
+}
+
+export async function sendProspectSmtp(mail: ProspectMail): Promise<SmtpResult> {
   const pass = (process.env.PROSPECTION_SMTP_PASSWORD ?? "").replace(/\s/g, "");
   if (!pass) throw Object.assign(new Error("PROSPECTION_SMTP_PASSWORD manquant"), { code: "ENOCONFIG" });
   const fromName = (process.env.PROSPECTION_FROM_NAME || "Jercat").replace(/["<>\r\n]/g, "").trim();
@@ -59,13 +79,15 @@ export async function sendProspectSmtp(mail: { to: string; bcc: string; subject:
     from: { name: fromName, address: PROSPECTION_SMTP_USER },
     to: mail.to,
     bcc: mail.bcc,
+    replyTo: mail.replyTo,
     subject: mail.subject,
     text: mail.text,
     html: mail.html,
-    // Désinscription en un clic côté messagerie du destinataire (bonne pratique de délivrabilité)
+    ...(mail.inReplyTo ? { inReplyTo: mail.inReplyTo, references: [mail.inReplyTo] } : {}),
+    // Désinscription : même en-tête que les devis (« STOP » vers l'adresse de réponse, traité automatiquement)
     headers: {
-      "List-Unsubscribe": `<mailto:${PROSPECTION_SMTP_USER}?subject=stop>`,
-      "X-Prospect-Attempt": mail.attemptId,
+      "List-Unsubscribe": `<mailto:${mail.replyTo}?subject=STOP>`,
+      "X-Prospect-Ref": mail.ref,
     },
   });
   transport.close();

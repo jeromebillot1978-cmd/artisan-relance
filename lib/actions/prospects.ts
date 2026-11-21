@@ -49,7 +49,7 @@ function sendLog(event: string, data: Record<string, unknown>) {
  *   5. la copie cachée, en arrivant, fait passer la tentative à « prouvée ».
  */
 export async function sendProspectEmail(id: string, v: number): Promise<ProspectActionResult> {
-  const { smtpConfigured, sendProspectSmtp, explainSmtpError } = await import("@/lib/prospect-smtp");
+  const { smtpConfigured, sendProspectSmtp, explainSmtpError, prospectReplyAddress } = await import("@/lib/prospect-smtp");
   const { buildProspectEmail, assertDirectLinks } = await import("@/lib/prospect-email");
   const { proofAddress } = await import("@/lib/prospects");
   if (!smtpConfigured()) {
@@ -92,11 +92,18 @@ export async function sendProspectEmail(id: string, v: number): Promise<Prospect
     return { ok: false, error: `Envoi bloqué : ${msg}` };
   }
   const bcc = proofAddress(row.bcc_token);
+  const { data: tok } = await supabase.from("prospects").select("reply_token").eq("id", id).maybeSingle();
+  if (!tok?.reply_token) {
+    await report(false, { error: "Adresse de réponse introuvable" });
+    revalidatePath("/prospection");
+    return { ok: false, error: "Adresse de réponse introuvable. Rien n'a été envoyé." };
+  }
+  const replyTo = prospectReplyAddress(tok.reply_token);
   sendLog("envoi_debut", { attempt_id: row.attempt_id, prospect_id: id, destinataire: row.to_address, liens_html: hrefs, taille_html: mail.html.length });
 
   // 3. Envoi SMTP
   try {
-    const r = await sendProspectSmtp({ to: row.to_address, bcc, subject: mail.subject, html: mail.html, text: mail.text, attemptId: row.attempt_id });
+    const r = await sendProspectSmtp({ to: row.to_address, bcc, replyTo, subject: mail.subject, html: mail.html, text: mail.text, ref: row.attempt_id });
     if (r.rejected.length && !r.accepted.includes(row.to_address)) throw Object.assign(new Error(`Destinataire refusé : ${r.rejected.join(", ")}`), { response: r.response });
     sendLog("envoi_accepte", { attempt_id: row.attempt_id, message_id: r.messageId, reponse_smtp: r.response, acceptes: r.accepted, refuses: r.rejected, duree_ms: r.durationMs, liens_html: hrefs });
     // 4. Résultat réel en base
@@ -116,6 +123,52 @@ export async function sendProspectEmail(id: string, v: number): Promise<Prospect
     revalidatePath("/prospection");
     return { ok: false, error: message };
   }
+}
+
+/**
+ * Répondre à un prospect depuis le site (comme « Répondre » dans un dossier de devis).
+ * Même fil chez le destinataire (Re: + In-Reply-To), même adresse de réponse, envoi par Gmail SMTP.
+ */
+export async function replyToProspect(id: string, body: string): Promise<ProspectActionResult> {
+  const { smtpConfigured, sendProspectSmtp, explainSmtpError, prospectReplyAddress } = await import("@/lib/prospect-smtp");
+  const { buildProspectEmail, assertDirectLinks } = await import("@/lib/prospect-email");
+  if (!smtpConfigured()) return { ok: false, error: "Envoi automatique pas encore configuré (PROSPECTION_SMTP_PASSWORD manquant). Rien n'a été envoyé." };
+  const { supabase, user } = await getUser();
+  if (!user) return { ok: false, error: "Session expirée. Reconnectez-vous." };
+  const text = z.string().trim().min(2, "Écrivez votre message.").max(5000).parse(body);
+  const begin = await supabase.rpc("prospect_reply_begin", { p_id: uuid.parse(id), p_body: text });
+  if (begin.error) {
+    sendLog("reponse_refusee", { prospect_id: id, code: begin.error.code, erreur: begin.error.message });
+    return { ok: false, error: begin.error.code === "P0001" || begin.error.code === "P0002" ? begin.error.message : "Envoi impossible pour le moment." };
+  }
+  const row = (begin.data as { message_id: string; to_address: string; subject: string; in_reply_to: string | null; reply_token: string }[] | null)?.[0];
+  if (!row) return { ok: false, error: "Envoi non confirmé. Rien n'a été envoyé." };
+  const result = (ok: boolean, x: { mid?: string | null; resp?: string | null; err?: string | null }) =>
+    supabase.rpc("prospect_reply_result", { p_message_id: row.message_id, p_ok: ok, p_smtp_message_id: x.mid ?? null, p_response: x.resp ?? null, p_error: x.err ?? null });
+  try {
+    const mail = buildProspectEmail(row.subject, text);
+    const hrefs = assertDirectLinks(mail.html);
+    sendLog("reponse_debut", { message_id: row.message_id, prospect_id: id, destinataire: row.to_address, liens_html: hrefs, en_reponse_a: row.in_reply_to });
+    const r = await sendProspectSmtp({
+      to: row.to_address, replyTo: prospectReplyAddress(row.reply_token), inReplyTo: row.in_reply_to,
+      subject: mail.subject, html: mail.html, text: mail.text, ref: row.message_id,
+    });
+    sendLog("reponse_acceptee", { message_id: row.message_id, smtp_message_id: r.messageId, reponse_smtp: r.response, duree_ms: r.durationMs });
+    await result(true, { mid: r.messageId, resp: r.response });
+    revalidatePath("/prospection");
+    return { ok: true };
+  } catch (e) {
+    const { message, response } = explainSmtpError(e);
+    sendLog("reponse_echec", { message_id: row.message_id, erreur: message, reponse_smtp: response });
+    await result(false, { err: message, resp: response });
+    revalidatePath("/prospection");
+    return { ok: false, error: message };
+  }
+}
+
+/** Réponses du prospect marquées comme lues (ouverture de la conversation). */
+export async function markProspectRead(id: string) {
+  return call("prospect_mark_read", { p_id: uuid.parse(id) });
 }
 
 export async function approveMessage(id: string, v: number) {

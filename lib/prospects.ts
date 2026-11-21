@@ -67,6 +67,22 @@ export type Attempt = {
   link_rewrite_detected: boolean | null;
 };
 
+/** Message échangé avec le prospect (mêmes champs que campaign_messages). */
+export type ProspectMessage = {
+  id: string;
+  direction: "in" | "out";
+  kind: "reply" | "auto_reply" | "opt_out" | "suspicious" | "jercat";
+  from_address: string | null;
+  subject: string | null;
+  body: string;
+  status: "received" | "sending" | "sent" | "failed";
+  error: string | null;
+  files_note: string | null;
+  read_at: string | null;
+  sent_at: string | null;
+  created_at: string;
+};
+
 export type ProspectEvent = { id: number; attempt_id: string | null; type: string; actor: string; detail: Record<string, unknown>; created_at: string };
 
 export type Prospect = {
@@ -99,6 +115,7 @@ export type Prospect = {
   version: number;
   attempts: Attempt[];
   events: ProspectEvent[];
+  messages: ProspectMessage[];
 };
 
 const PROSPECT_COLUMNS =
@@ -120,14 +137,18 @@ export async function getProspects({ archived = false } = {}): Promise<Prospect[
   const supabase = await createClient();
   let pq = supabase.from("prospects").select(PROSPECT_COLUMNS);
   pq = archived ? pq.not("archived_at", "is", null) : pq.is("archived_at", null);
-  const [p, a, e] = await Promise.all([
+  const [p, a, e, m] = await Promise.all([
     pq.order("is_test", { ascending: false }).order("position"),
     supabase.from("prospect_attempts").select(ATTEMPT_COLUMNS).order("opened_at", { ascending: false }),
     // Pas de limite globale : une limite ferait disparaître l'historique des prospects les plus anciens (Mi).
     supabase.from("prospect_events").select("id, prospect_id, attempt_id, type, actor, detail, created_at").order("id", { ascending: false }),
+    supabase
+      .from("prospect_messages")
+      .select("id, prospect_id, direction, kind, from_address, subject, body, status, error, files_note, read_at, sent_at, created_at")
+      .order("created_at"),
   ]);
-  if (p.error || a.error || e.error) {
-    console.error("prospects", p.error?.message ?? a.error?.message ?? e.error?.message);
+  if (p.error || a.error || e.error || m.error) {
+    console.error("prospects", p.error?.message ?? a.error?.message ?? e.error?.message ?? m.error?.message);
     return null;
   }
   return Promise.all(
@@ -138,6 +159,7 @@ export async function getProspects({ archived = false } = {}): Promise<Prospect[
         approved_current: Boolean(approved_message_md5) && approved_message_md5 === (await textMd5(row.subject, row.message)),
         attempts: (a.data ?? []).filter((x) => x.prospect_id === row.id) as Attempt[],
         events: (e.data ?? []).filter((x) => x.prospect_id === row.id) as ProspectEvent[],
+        messages: (m.data ?? []).filter((x) => x.prospect_id === row.id) as ProspectMessage[],
       };
     }),
   );

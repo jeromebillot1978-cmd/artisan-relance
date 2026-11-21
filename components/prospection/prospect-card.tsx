@@ -16,6 +16,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ProspectFormDialog } from "@/components/prospection/prospect-form";
+import { ProspectConversation } from "@/components/prospection/prospect-conversation";
+import { ProspectTimeline } from "@/components/prospection/prospect-timeline";
+import { prospectDeliveryStatus } from "@/lib/prospect-status";
 import {
   approveMessage, archiveProspect, cancelAttempt, declareAttempt, doNotContact, eraseProspect, failAttempt, markDraftOpened, recordReply,
   sendProspectEmail, setNextAction, startAttempt, updateNotes, type ProspectActionResult,
@@ -385,30 +388,6 @@ function ConfirmDialog(props: {
   );
 }
 
-const EVENT_LABEL: Record<string, string> = {
-  reprise_v2: "Reprise des anciennes données",
-  message_valide: "Message relu et validé",
-  tentative_ouverte: "Tentative de contact commencée",
-  tentative_declaree: "Action déclarée par vous",
-  tentative_annulee: "Tentative annulée",
-  declaration_retiree: "Déclaration retirée (erreur corrigée)",
-  tentative_echouee: "Échec signalé",
-  envoi_prouve: "Envoi prouvé (copie de contrôle reçue)",
-  envoi_prouve_mauvais_expediteur: "Envoi prouvé depuis un AUTRE compte",
-  reponse_enregistree: "Réponse enregistrée",
-  ne_plus_contacter: "Opposition enregistrée (ne plus contacter)",
-  notes_modifiees: "Notes modifiées",
-  archive: "Archivé",
-  desarchive: "Désarchivé",
-  brouillon_ouvert: "Brouillon / outil ouvert depuis la page",
-  prospect_cree: "Fiche créée",
-  fiche_modifiee: "Fiche modifiée",
-  prochaine_action: "Prochaine action planifiée",
-  envoi_serveur_demande: "Valider et envoyer : envoi demandé",
-  envoi_serveur_accepte: "Envoyé par le serveur (Gmail a accepté)",
-  envoi_serveur_echec: "Échec de l'envoi automatique",
-  liens_reecrits: "ALERTE : liens réécrits dans l'e-mail reçu",
-};
 
 type DialogKind = null | "approve" | "declare" | "cancel" | "fail" | "reply" | "dnc" | "archive" | "unarchive" | "erase" | "edit";
 
@@ -513,6 +492,8 @@ export function ProspectCard({ p, proofDomain }: { p: Prospect; proofDomain: str
   }
 
   const stage = STAGE[p.stage];
+  const delivery = prospectDeliveryStatus(p);
+  const unreadReplies = p.messages.filter((m) => m.direction === "in" && !m.read_at && m.kind !== "auto_reply").length;
   const bcc = open?.bcc_token ? `prospect-${open.bcc_token}@${proofDomain}` : "";
   const draft = open && p.email ? { to: p.email, bcc, subject: open.subject_snapshot, body: open.message_snapshot ?? "" } : null;
   const links = draft && platform ? emailDraftLinks(draft, platform) : [];
@@ -530,9 +511,20 @@ export function ProspectCard({ p, proofDomain }: { p: Prospect; proofDomain: str
         <div className="flex flex-wrap items-start justify-between gap-2">
           <CardTitle className="flex flex-wrap items-center gap-2 text-base">
             {p.company} {p.is_test && <Badge variant="neutral">TEST — non compté</Badge>}
+            {unreadReplies > 0 && (
+              <Badge variant="info">{unreadReplies} nouvelle{unreadReplies > 1 ? "s" : ""} réponse{unreadReplies > 1 ? "s" : ""}</Badge>
+            )}
             {archived && <Badge variant="neutral">Archivé</Badge>}
           </CardTitle>
-          <Badge variant={stage.variant}>{stage.label}</Badge>
+          <span className="inline-flex flex-wrap items-center gap-1">
+            {delivery && (
+              <Badge variant={delivery.tone} className="whitespace-nowrap">
+                <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                {delivery.label}
+              </Badge>
+            )}
+            <Badge variant={stage.variant}>{stage.label}</Badge>
+          </span>
         </div>
         <p className="text-sm text-muted-foreground">
           {p.trade} · {p.city}
@@ -624,6 +616,16 @@ export function ProspectCard({ p, proofDomain }: { p: Prospect; proofDomain: str
           )}
           {(open ?? lastUseful)?.draft_method === "serveur" && <LinkDiagnostic a={(open ?? lastUseful)!} />}
         </div>
+
+        {/* Échanges : même fonctionnement que la conversation d'un dossier de devis */}
+        {p.email && (p.messages.length > 0 || p.attempts.some((a) => a.state === "envoyee" || a.state === "verifiee")) && (
+          <ProspectConversation
+            prospectId={p.id}
+            prospectName={p.company}
+            messages={p.messages}
+            blockedReason={blocked ? "Ce prospect a demandé à ne plus être contacté : aucune réponse ne peut lui être envoyée." : archived ? "Prospect archivé." : null}
+          />
+        )}
 
         <div className="rounded-md border bg-muted/30 p-3">
           <div className="mb-2 flex flex-wrap items-center gap-2 font-medium">
@@ -891,16 +893,9 @@ export function ProspectCard({ p, proofDomain }: { p: Prospect; proofDomain: str
         </div>
 
         {showHistory && (
-          <ol className="space-y-1 border-l pl-3 text-xs text-muted-foreground">
-            {p.events.map((e) => (
-              <li key={e.id}>
-                <span className="tabular-nums">{when(e.created_at)}</span> — {EVENT_LABEL[e.type] ?? e.type}
-                {e.actor === "reception" && " (automatique)"}
-                {typeof e.detail?.raison === "string" && ` : ${e.detail.raison}`}
-                {typeof e.detail?.methode === "string" && ` : ${METHOD[e.detail.methode] ?? e.detail.methode}`}
-              </li>
-            ))}
-          </ol>
+          <div className="pl-3 pt-1">
+            <ProspectTimeline events={p.events} />
+          </div>
         )}
 
         {!archived && (
