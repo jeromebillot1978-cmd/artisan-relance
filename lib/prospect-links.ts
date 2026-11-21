@@ -110,3 +110,18 @@ export function emailDraftLinks(draft: EmailDraft, platform: Platform): DraftLin
   if (platform === "ios") return [make("gmail_app_ios", "Ouvrir dans l'appli Gmail", gmailIosUrl(d), true, false), mailto];
   return [make("gmail_web", "Ouvrir dans Gmail", gmailWebUrl(d), true, true), mailto];
 }
+
+/**
+ * Comparaison tolérante d'un nom retapé (confirmation d'effacement) : un copier-coller
+ * ajoute souvent des espaces, une espace insécable ou un autre tiret (— – -).
+ * Même règle qu'en base (_prospect_confirm_norm).
+ */
+export function confirmNorm(s: string) {
+  return (s ?? "")
+    .normalize("NFKC")
+    .replace(/[\u2010-\u2015\u2212\uFE58\uFE63\uFF0D-]/g, "-")
+    .replace(/[\s\u00A0\u202F\u200B-\u200D\uFEFF]+/g, " ")
+    .replace(/[«»"“”'’]/g, "")
+    .trim()
+    .toLowerCase();
+}

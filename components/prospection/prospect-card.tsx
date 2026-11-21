@@ -23,7 +23,7 @@ import {
   approveMessage, archiveProspect, cancelAttempt, declareAttempt, doNotContact, eraseProspect, failAttempt, markDraftOpened, recordReply,
   sendProspectEmail, setNextAction, startAttempt, updateNotes, type ProspectActionResult,
 } from "@/lib/actions/prospects";
-import { detectPlatform, emailDraftLinks, phoneNumbers, PROSPECTION_SENDER, type Platform } from "@/lib/prospect-links";
+import { confirmNorm, detectPlatform, emailDraftLinks, phoneNumbers, PROSPECTION_SENDER, type Platform } from "@/lib/prospect-links";
 import type { Attempt, CallOutcome, Channel, DraftMethod, Prospect, Stage } from "@/lib/prospects";
 
 // ---------------------------------------------------------------------------
@@ -329,7 +329,7 @@ function ConfirmDialog(props: {
     allChecked &&
     (!props.choices || Boolean(choice)) &&
     (!props.reason?.required || reason.trim().length >= 3) &&
-    (!props.typeToConfirm || reason === props.typeToConfirm);
+    (!props.typeToConfirm || confirmNorm(reason) === confirmNorm(props.typeToConfirm));
   return (
     <AlertDialog open={props.open} onOpenChange={props.onOpenChange}>
       <AlertDialogContent>
@@ -362,8 +362,12 @@ function ConfirmDialog(props: {
           )}
           {props.typeToConfirm && (
             <label className="block space-y-1">
-              <span className="font-medium">Retapez exactement : {props.typeToConfirm}</span>
+              <span className="font-medium">Retapez ou collez le nom : {props.typeToConfirm}</span>
               <Input value={reason} onChange={(e) => setReason(e.target.value)} autoComplete="off" />
+              <span className="block text-xs text-muted-foreground">
+                Majuscules, espaces et type de tiret ne comptent pas.
+                {reason && confirmNorm(reason) !== confirmNorm(props.typeToConfirm) && " Le nom ne correspond pas encore."}
+              </span>
             </label>
           )}
           {props.reason && (
@@ -1043,7 +1047,8 @@ export function ProspectCard({ p, proofDomain }: { p: Prospect; proofDomain: str
         confirmLabel="Effacer définitivement"
         destructive
         pending={pending}
-        onConfirm={(v) => run(() => eraseProspect(p.id, v.reason), "Données effacées")}
+        // Le nom saisi a été vérifié ici de façon tolérante (copier-coller) : la base reçoit le nom exact de la fiche
+        onConfirm={() => run(() => eraseProspect(p.id, p.company), "Données effacées")}
       />
     </Card>
   );
