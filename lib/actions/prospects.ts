@@ -166,6 +166,11 @@ export async function replyToProspect(id: string, body: string): Promise<Prospec
   }
 }
 
+/** Effacer toute la conversation (messages reçus et envoyés). Envois et preuves conservés. */
+export async function clearProspectConversation(id: string) {
+  return call("prospect_clear_messages", { p_id: uuid.parse(id) });
+}
+
 /** Réponses du prospect marquées comme lues (ouverture de la conversation). */
 export async function markProspectRead(id: string) {
   return call("prospect_mark_read", { p_id: uuid.parse(id) });
