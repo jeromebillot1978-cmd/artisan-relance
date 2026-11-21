@@ -77,10 +77,40 @@ export function firstWrittenLine(msg: InboundMessage) {
   return "";
 }
 
-/** Demande de désinscription : « STOP » en objet ou en première ligne du message. */
+/**
+ * Formules de retrait écrites en toutes lettres (« merci de me retirer de votre liste »,
+ * « ne plus recevoir vos e-mails », « ne me contactez plus »…). Volontairement précises :
+ * « pas intéressé » reste une réponse (un refus poli), pas une opposition.
+ */
+const REMOVAL_PHRASES = [
+  /\bretir(?:er|ez|é|e)(?![a-zà-ÿ])[^.!?\n]{0,40}\b(?:de|des|du)\s+(?:votre|vos|ta|tes|la|cette|la\s+votre)?\s*(?:liste|listes|fichier|fichiers|base|mailing|diffusion|contacts?)\b/i,
+  /\bsupprim(?:er|ez|é)(?![a-zà-ÿ])[^.!?\n]{0,30}\b(?:mon|mes)\s+(?:adresse|e-?mail|mail|coordonnées|données)\b/i,
+  /\bne\s+(?:plus|jamais\s+plus)\s+(?:me\s+|m['’]\s*)?(?:recevoir|envoyer|écrire|ecrire|contacter|relancer|solliciter|démarcher|demarcher|adresser)\b/i,
+  /\bne\s+(?:souhaite|souhaitons|veux|voulons|désire|desire)\s+(?:plus\s+(?:du\s+tout\s+)?(?:recevoir|être\s+(?:contact|relanc|sollicit|démarch|demarch))|pas\s+être\s+(?:contact|relanc|sollicit|démarch|demarch))/i,
+  /\bne\s+(?:me|m['’])\s*(?:envoyez|écrivez|ecrivez|contactez|relancez|sollicitez|démarchez|demarchez)\s+plus\b/i,
+  /\b(?:cessez|arr[êe]tez)\s+(?:de\s+m['’]\s*(?:envoyer|écrire|ecrire)|de\s+me\s+(?:contacter|relancer|solliciter|démarcher|demarcher)|vos\s+(?:e-?mails|mails|messages|relances|envois))\b/i,
+  /\bd[ée]sinscri(?:re|vez|ption|s)\b|\bd[ée]sabonn(?:er|ez|ement)\b/i,
+  /\b(?:unsubscribe|remove\s+me|stop\s+(?:emailing|contacting)\s+me)\b/i,
+];
+/** Notre propre phrase de bas de message (« Pour ne plus recevoir… répondez « stop » ») : jamais prise pour une demande. */
+const OUR_FOOTER = /pour\s+ne\s+plus\s+(?:recevoir|être\s+relanc)[^\n]*r[ée]pondez/i;
+
+/** Texte réellement écrit par l'expéditeur : sans citation, sans nos propres phrases de bas de message. */
+function writtenText(msg: InboundMessage) {
+  const text = msg.text?.trim() ? msg.text : msg.html ? htmlToText(msg.html) : "";
+  return stripQuoted(text)
+    .split(/\r?\n/)
+    .filter((l) => !l.trimStart().startsWith(">") && !OUR_FOOTER.test(l))
+    .join("\n")
+    .slice(0, 2000);
+}
+
+/** Demande de désinscription : « STOP » en objet ou en première ligne, ou formule de retrait dans le texte écrit. */
 export function isOptOut(msg: InboundMessage) {
   const subject = (msg.subject ?? "").replace(/^\s*((re|tr|fw|fwd)\s*:\s*)+/i, "").trim();
-  return STOP_WORDS.test(subject) || STOP_WORDS.test(firstWrittenLine(msg));
+  if (STOP_WORDS.test(subject) || STOP_WORDS.test(firstWrittenLine(msg))) return true;
+  const written = writtenText(msg);
+  return REMOVAL_PHRASES.some((re) => re.test(written)) || REMOVAL_PHRASES.some((re) => re.test(subject));
 }
 
 /** Expéditeur usurpé probable : DMARC en échec, ou SPF et DKIM tous deux en échec. */

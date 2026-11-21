@@ -68,5 +68,28 @@ t("réponse prospect : pas confondue avec la preuve", extractProspectToken({ to:
 t("preuve : pas confondue avec une réponse", extractProspectReplyToken({ to: [`prospect-${T}@reponses.jercat.fr`] }, "reponses.jercat.fr"), null);
 t("réponse prospect : faux domaine refusé", extractProspectReplyToken({ to: [`prospect-reponse-${T}@reponses.jercat.fr.pirate.com`] }, "reponses.jercat.fr"), null);
 t("devis : réponse prospect non confondue", extractToken({ to: [`prospect-reponse-${T}@reponses.jercat.fr`] }, "reponses.jercat.fr"), { token: null, ambiguous: false });
+// Formules de retrait (STOP écrit en toutes lettres)
+const optOut = (text: string, subject = "Re: [TEST] Vos devis sans réponse") => classifyInbound({ from: "a@b.fr", subject, text });
+t("retrait : « Merci de me retirer de votre liste de diffusion. »", optOut("Merci de me retirer de votre liste de diffusion."), "opt_out");
+t("retrait : « retirez-moi de vos fichiers »", optOut("Bonjour, retirez-moi de vos fichiers svp"), "opt_out");
+t("retrait : « je ne souhaite plus recevoir vos e-mails »", optOut("Je ne souhaite plus recevoir vos e-mails."), "opt_out");
+t("retrait : « ne me contactez plus »", optOut("Ne me contactez plus, merci."), "opt_out");
+t("retrait : « merci de ne plus me relancer »", optOut("Merci de ne plus me relancer, j'ai choisi un autre artisan."), "opt_out");
+t("retrait : « arrêtez de m'envoyer… »", optOut("Arrêtez de m'envoyer ces messages"), "opt_out");
+t("retrait : « cessez vos relances »", optOut("Cessez vos relances s'il vous plaît"), "opt_out");
+t("retrait : « supprimez mon adresse »", optOut("Supprimez mon adresse de vos contacts"), "opt_out");
+t("retrait : « veuillez me désinscrire »", optOut("Veuillez me désinscrire"), "opt_out");
+t("retrait : anglais « please remove me »", optOut("Please remove me from this list"), "opt_out");
+t("retrait : dans l'objet", optOut("", "Retirez-moi de votre liste"), "opt_out");
+t("retrait : « je ne veux pas être démarché »", optOut("Je ne veux pas être démarché par e-mail."), "opt_out");
+t("pas un retrait : « je ne souhaite pas recevoir le devis avant lundi »", optOut("Je ne souhaite pas recevoir le devis avant lundi"), "reply");
+t("retrait : « je veux être retiré de votre fichier »", optOut("Je veux être retiré de votre fichier."), "opt_out");
+t("pas un retrait : « pas intéressé »", optOut("Merci mais je ne suis pas intéressé."), "reply");
+t("pas un retrait : intérêt", optOut("Oui ça m'intéresse, appelez-moi"), "reply");
+t("pas un retrait : « je ne veux plus attendre »", optOut("Je ne veux plus attendre, quand commencez-vous ?"), "reply");
+t("pas un retrait : notre bas de message cité sans « > »", optOut("Oui pourquoi pas\n\nPour ne plus recevoir de message de ma part, répondez « stop »."), "reply");
+t("pas un retrait : citation Gmail contenant notre bas de message",
+  optOut("D'accord !\n\nLe sam. 21 nov. 2026 à 20:38, Jercat <jercat.bilman@gmail.com> a écrit :\n> Pour ne plus recevoir de message de ma part, répondez « stop »."), "reply");
+t("pas un retrait : « retirer le devis »", optOut("Je voudrais retirer le devis du chantier, on en reparle ?"), "reply");
 console.log(`\n${ok} réussis, ${ko} échoués`);
 process.exit(ko ? 1 : 0);
