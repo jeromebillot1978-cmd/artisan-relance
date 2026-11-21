@@ -66,3 +66,17 @@ select pg_temp.refuse($$insert into public.prospect_messages (prospect_id, direc
 set role service_role;
 select pg_temp.ok((select count(*) from public.prospect_register_inbound('000000000000000000000000', 'in-3', 'a', null, 's', 'b', 'reply', null)) = 0, 'jeton inconnu : ignoré');
 reset role;
+
+\echo '== Effacer la conversation'
+set role authenticated;
+select public.prospect_clear_messages(pg_temp.pid('Réponses Démo')) as nb \gset
+reset role;
+select pg_temp.ok(:'nb'::int = 4 and (select count(*) from public.prospect_messages where prospect_id = pg_temp.pid('Réponses Démo')) = 0, 'conversation effacée (4 messages)');
+select pg_temp.ok(exists (select 1 from public.prospect_events where prospect_id = pg_temp.pid('Réponses Démo') and type = 'conversation_effacee' and (detail->>'messages')::int = 4), 'journal : effacement tracé');
+select pg_temp.ok((select count(*) from public.prospect_attempts where prospect_id = pg_temp.pid('Réponses Démo')) = 1, 'envoi et preuve conservés');
+set role authenticated;
+select pg_temp.refuse(format($$select public.prospect_clear_messages(%L)$$, pg_temp.pid('Réponses Démo')), 'effacer une conversation déjà vide');
+select set_config('request.jwt.claim.sub', '22222222-2222-2222-2222-222222222222', false);
+select pg_temp.refuse(format($$select public.prospect_clear_messages(%L)$$, pg_temp.pid('Réponses Démo')), 'effacer par un non-administrateur');
+select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', false);
+reset role;

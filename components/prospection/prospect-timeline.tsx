@@ -37,6 +37,7 @@ export const PROSPECT_EVENT_LABELS: Record<string, string> = {
   archive: "Archivé",
   desarchive: "Désarchivé",
   reprise_v2: "Reprise des anciennes données",
+  conversation_effacee: "Conversation effacée",
 };
 
 function iconFor(type: string) {
@@ -78,6 +79,8 @@ function describe(e: ProspectEvent) {
       return d.destinataire ? `À ${s(d.destinataire)}` : null;
     case "reponse_envoyee":
       return d.reponse_smtp ? `Gmail : ${s(d.reponse_smtp).slice(0, 80)}` : null;
+    case "conversation_effacee":
+      return d.messages != null ? `${s(d.messages)} message(s) supprimé(s)` : null;
     default:
       return typeof d.raison === "string" ? d.raison : null;
   }

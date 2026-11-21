@@ -10,11 +10,14 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { AlertTriangle, Clock, Inbox, MessageSquare, Paperclip, Send, XCircle } from "lucide-react";
+import { AlertTriangle, Clock, Inbox, MessageSquare, Paperclip, Send, Trash2, XCircle } from "lucide-react";
 import { formatDateTime } from "@/lib/campaigns/constants";
-import { markProspectRead, replyToProspect } from "@/lib/actions/prospects";
+import { clearProspectConversation, markProspectRead, replyToProspect } from "@/lib/actions/prospects";
 import type { ProspectMessage } from "@/lib/prospects";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -60,6 +63,7 @@ export function ProspectConversation({
   const router = useRouter();
   const [body, setBody] = useState("");
   const [pending, start] = useTransition();
+  const [confirmClear, setConfirmClear] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const unread = messages.some((m) => m.direction === "in" && !m.read_at);
   const waiting = messages.some((m) => m.direction === "out" && m.status === "sending");
@@ -95,6 +99,21 @@ export function ProspectConversation({
     });
   }
 
+  function clearAll() {
+    start(async () => {
+      let res;
+      try {
+        res = await clearProspectConversation(prospectId);
+      } catch {
+        res = { ok: false as const, error: "Effacement non confirmé (connexion). Rechargez la page." };
+      }
+      if (!res.ok) return void toast.error(res.error);
+      setConfirmClear(false);
+      toast.success("Conversation effacée.");
+      router.refresh();
+    });
+  }
+
   return (
     <div className="space-y-3 rounded-md border p-3">
       <div className="flex items-center justify-between">
@@ -102,8 +121,18 @@ export function ProspectConversation({
           <MessageSquare className="h-4 w-4" /> Échanges avec le prospect
         </h3>
         {messages.length > 0 && (
-          <span className="text-xs text-muted-foreground">
+          <span className="flex items-center gap-2 text-xs text-muted-foreground">
             {messages.length} message{messages.length > 1 ? "s" : ""}
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-red-700 dark:text-red-400"
+              onClick={() => setConfirmClear(true)}
+              disabled={pending}
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Effacer la conversation
+            </Button>
           </span>
         )}
       </div>
@@ -188,6 +217,25 @@ export function ProspectConversation({
           </div>
         </form>
       ) : null}
+
+      <AlertDialog open={confirmClear} onOpenChange={setConfirmClear}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Effacer la conversation ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Les {messages.length} message{messages.length > 1 ? "s" : ""} échangé{messages.length > 1 ? "s" : ""} avec {prospectName} seront
+              supprimés définitivement du site. La fiche, l&apos;envoi et sa preuve sont conservés, et l&apos;historique garde la trace de
+              l&apos;effacement. Les e-mails déjà présents dans vos boîtes Gmail ne sont pas touchés.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={pending}>Annuler</AlertDialogCancel>
+            <Button variant="destructive" onClick={clearAll} disabled={pending}>
+              <Trash2 className="h-4 w-4" /> {pending ? "Effacement…" : "Effacer définitivement"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
