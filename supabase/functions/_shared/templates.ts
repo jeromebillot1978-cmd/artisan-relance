@@ -255,22 +255,33 @@ export function renderReplyAlert(opts: {
   dashboardUrl: string;
   kind: "reply" | "opt_out" | "suspicious";
   unexpectedSender?: boolean;
+  /** « devis » (défaut) : réponse d'un client à un devis ; « prospection » : réponse d'un artisan démarché. */
+  context?: "devis" | "prospection";
 }): RenderedEmail {
   const name = opts.prospectName;
+  const prospection = opts.context === "prospection";
   const subject = (
     opts.kind === "opt_out"
-      ? `[STOP] ${name} ne souhaite plus être relancé`
+      ? prospection ? `[STOP] ${name} ne souhaite plus être contacté` : `[STOP] ${name} ne souhaite plus être relancé`
       : opts.kind === "suspicious"
         ? `[À vérifier] Message reçu au nom de ${name}`
-        : `${name} a répondu à votre devis`
+        : prospection ? `${name} a répondu à votre e-mail de prospection` : `${name} a répondu à votre devis`
   ).slice(0, 200);
-  const lead = {
-    reply: `${name} a répondu à votre devis « ${opts.originalSubject} ». Les relances automatiques sont arrêtées.`,
-    opt_out: `${name} a demandé à ne plus être relancé (« STOP »). Le devis est arrêté.`,
-    suspicious: `Un message a été reçu au nom de ${name}, mais l'expéditeur n'a pas pu être authentifié (possible usurpation). Les relances continuent.`,
-  }[opts.kind];
+  const lead = prospection
+    ? {
+        reply: `${name} a répondu à votre e-mail « ${opts.originalSubject} ».`,
+        opt_out: `${name} a demandé à ne plus être contacté (« STOP »). La fiche est passée en « Ne plus contacter » : aucun nouvel envoi ne sera possible.`,
+        suspicious: `Un message a été reçu au nom de ${name}, mais l'expéditeur n'a pas pu être authentifié (possible usurpation). Vérifiez avant de répondre.`,
+      }[opts.kind]
+    : {
+        reply: `${name} a répondu à votre devis « ${opts.originalSubject} ». Les relances automatiques sont arrêtées.`,
+        opt_out: `${name} a demandé à ne plus être relancé (« STOP »). Le devis est arrêté.`,
+        suspicious: `Un message a été reçu au nom de ${name}, mais l'expéditeur n'a pas pu être authentifié (possible usurpation). Les relances continuent.`,
+      }[opts.kind];
   const extra = [
-    opts.unexpectedSender ? `Attention : ce message vient de ${opts.from}, qui n'est pas l'adresse à laquelle le devis a été envoyé.` : "",
+    opts.unexpectedSender
+      ? `Attention : ce message vient de ${opts.from}, qui n'est pas l'adresse ${prospection ? "de la fiche prospect" : "à laquelle le devis a été envoyé"}.`
+      : "",
     opts.fileCount > 0 ? `${opts.fileCount} pièce${opts.fileCount > 1 ? "s" : ""} jointe${opts.fileCount > 1 ? "s" : ""} disponible${opts.fileCount > 1 ? "s" : ""} dans le dossier.` : "",
   ].filter(Boolean);
   const excerpt = opts.excerpt.trim().replace(/\s+/g, " ");
@@ -281,7 +292,7 @@ export function renderReplyAlert(opts: {
 ${escapeHtml(lead)}${extra.map((e) => `<br>${escapeHtml(e)}`).join("")}</div>
 ${short ? `<div style="border-left:3px solid #e4e4e7;padding-left:14px;color:#3f3f46;font-style:italic;">${escapeHtml(short)}</div>` : ""}
 <p style="margin:22px 0 8px 0;"><a href="${url}" style="display:inline-block;background:#18181b;color:#ffffff;text-decoration:none;font-weight:600;padding:11px 18px;border-radius:8px;">Lire et répondre</a></p>
-<p style="margin:10px 0 0 0;font-size:13px;color:#71717a;">Répondez depuis le dossier pour garder tout l'historique au même endroit${
+<p style="margin:10px 0 0 0;font-size:13px;color:#71717a;">Répondez depuis ${prospection ? "la fiche" : "le dossier"} pour garder tout l'historique au même endroit${
     opts.kind === "suspicious" ? "" : " (vous pouvez aussi répondre directement à cet e-mail)"
   }.</p>`;
   const text = [
@@ -296,7 +307,12 @@ ${short ? `<div style="border-left:3px solid #e4e4e7;padding-left:14px;color:#3f
     .join("\n");
   return {
     subject,
-    html: layout(inner, "Alerte Artisan Relance. Choisissez le type de notification dans Paramètres.", subject, opts.companyName),
+    html: layout(
+      inner,
+      prospection ? "Alerte Prospection — Artisan Relance." : "Alerte Artisan Relance. Choisissez le type de notification dans Paramètres.",
+      subject,
+      opts.companyName,
+    ),
     text,
   };
 }

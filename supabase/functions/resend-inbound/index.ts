@@ -496,6 +496,7 @@ async function handleProspectReply(event: WebhookEvent, token: string) {
     dashboardUrl,
     kind: row.kind === "opt_out" || row.kind === "suspicious" ? row.kind : "reply",
     unexpectedSender: !row.sender_matches,
+    context: "prospection",
   });
   try {
     await sendEmail(
