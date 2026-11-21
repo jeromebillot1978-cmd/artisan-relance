@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   Archive, ArchiveRestore, CalendarClock, CheckCircle2, Circle, CircleAlert, CircleDashed, Copy, ExternalLink, Globe, History, Mail,
-  MessageSquareText, Pencil, Phone, ShieldAlert, ShieldCheck, Trash2, TriangleAlert, Undo2,
+  Loader2, MessageSquareText, Pencil, Phone, Send, ShieldAlert, ShieldCheck, Trash2, TriangleAlert, Undo2,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -16,9 +16,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ProspectFormDialog } from "@/components/prospection/prospect-form";
+import { ProspectConversation } from "@/components/prospection/prospect-conversation";
+import { ProspectTimeline } from "@/components/prospection/prospect-timeline";
+import { prospectDeliveryStatus } from "@/lib/prospect-status";
 import {
   approveMessage, archiveProspect, cancelAttempt, declareAttempt, doNotContact, eraseProspect, failAttempt, markDraftOpened, recordReply,
-  setNextAction, startAttempt, updateNotes, type ProspectActionResult,
+  sendProspectEmail, setNextAction, startAttempt, updateNotes, type ProspectActionResult,
 } from "@/lib/actions/prospects";
 import { detectPlatform, emailDraftLinks, phoneNumbers, PROSPECTION_SENDER, type Platform } from "@/lib/prospect-links";
 import type { Attempt, CallOutcome, Channel, DraftMethod, Prospect, Stage } from "@/lib/prospects";
@@ -55,10 +58,17 @@ const METHOD: Record<string, string> = {
   site_ouvert: "site ouvert",
   numero_compose: "numéro composé",
   manuel: "préparé autrement",
+  serveur: "envoi direct par le serveur",
 };
 
 const when = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" }) : "";
+
+/** Date et heure à la seconde (envois serveur). */
+const whenS = (iso: string | null) =>
+  iso
+    ? new Date(iso).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "Europe/Paris" })
+    : "";
 
 const day = (d: string | null) => (d ? new Date(`${d}T12:00:00`).toLocaleDateString("fr-FR") : "");
 
@@ -84,6 +94,28 @@ function usePlatform(): Platform | null {
 // Preuve : ce que l'on sait réellement de la dernière tentative
 // ---------------------------------------------------------------------------
 function ProofLine({ a }: { a: Attempt }) {
+  if (a.state === "envoyee") {
+    return (
+      <div className="space-y-1">
+        <p className="flex gap-2 text-sky-700 dark:text-sky-400">
+          <Send className="mt-0.5 h-4 w-4 shrink-0" />
+          Envoyé le {whenS(a.sent_at)} par le serveur à {a.to_address} — Gmail a accepté le message.
+        </p>
+        <p className="flex gap-2 text-muted-foreground">
+          <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" />
+          En attente de la copie de contrôle (preuve de réception)… La page se met à jour toute seule.
+        </p>
+      </div>
+    );
+  }
+  if (a.state === "ouverte" && a.draft_method === "serveur") {
+    return (
+      <p className="flex gap-2 text-sky-700 dark:text-sky-400">
+        <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" />
+        Envoi en cours depuis le serveur (demandé le {whenS(a.opened_at)})…
+      </p>
+    );
+  }
   if (a.state === "verifiee") {
     const truncated = a.content_check === "tronque" && (
       <p className="flex gap-2 text-red-700 dark:text-red-400">
@@ -104,7 +136,8 @@ function ProofLine({ a }: { a: Attempt }) {
       <div className="space-y-1">
         <p className="flex gap-2 text-green-700 dark:text-green-400">
           <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-          E-mail envoyé, prouvé : copie de contrôle reçue le {when(a.verified_at)} depuis {a.verified_from}.
+          {a.sent_at ? <>Envoyé le {whenS(a.sent_at)}, prouvé le {whenS(a.verified_at)} : copie de contrôle reçue depuis {a.verified_from}.</>
+            : <>E-mail envoyé, prouvé : copie de contrôle reçue le {when(a.verified_at)} depuis {a.verified_from}.</>}
         </p>
         {truncated}
         {a.content_check === "inconnu" && (
@@ -143,6 +176,34 @@ function ProofLine({ a }: { a: Attempt }) {
 // Les 4 niveaux, jamais confondus : intention → brouillon → action → preuve
 // ---------------------------------------------------------------------------
 function Levels({ a }: { a: Attempt }) {
+  if (a.draft_method === "serveur") {
+    const rows: { label: string; done: boolean; text: string; warn?: boolean }[] = [
+      { label: "1. Validé, envoi demandé", done: true, text: whenS(a.opened_at) },
+      {
+        label: "2. Envoyé (Gmail a accepté)",
+        done: Boolean(a.sent_at),
+        text: a.sent_at
+          ? `${whenS(a.sent_at)}${a.send_duration_ms != null ? ` — ${a.send_duration_ms} ms` : ""}${a.smtp_response ? ` — ${a.smtp_response.slice(0, 60)}` : ""}`
+          : a.state === "echec" ? `Échec : ${a.failure_reason ?? "?"}` : "En cours…",
+        warn: a.state === "echec",
+      },
+      {
+        label: "3. Prouvé (copie reçue)",
+        done: a.state === "verifiee",
+        text: a.state === "verifiee"
+          ? `${whenS(a.verified_at)}${a.wrong_sender ? " — AUTRE expéditeur" : ""}${a.content_check === "tronque" ? " — message INCOMPLET" : ""}`
+          : "Pas encore reçue",
+        warn: a.state === "verifiee" && (a.wrong_sender || a.content_check === "tronque"),
+      },
+      {
+        label: "4. Liens reçus",
+        done: a.link_rewrite_detected === false,
+        text: a.link_rewrite_detected == null ? "Pas encore contrôlés" : a.link_rewrite_detected ? "RÉÉCRITS (voir le diagnostic)" : "Directs, aucune réécriture",
+        warn: a.link_rewrite_detected === true,
+      },
+    ];
+    return <LevelRows rows={rows} />;
+  }
   const proofLabel =
     a.channel !== "email"
       ? "Impossible à prouver pour ce canal"
@@ -168,6 +229,10 @@ function Levels({ a }: { a: Attempt }) {
       warn: a.state === "verifiee" && (a.wrong_sender || a.content_check === "tronque"),
     },
   ];
+  return <LevelRows rows={rows} />;
+}
+
+function LevelRows({ rows }: { rows: { label: string; done: boolean; text: string; warn?: boolean }[] }) {
   return (
     <ol className="grid gap-1 text-xs sm:grid-cols-2">
       {rows.map((r) => (
@@ -185,6 +250,48 @@ function Levels({ a }: { a: Attempt }) {
         </li>
       ))}
     </ol>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Diagnostic des liens : HTML envoyé par le serveur / HTML réellement reçu (copie cachée)
+// ---------------------------------------------------------------------------
+function LinkDiagnostic({ a }: { a: Attempt }) {
+  if (!a.sent_hrefs && !a.received_hrefs) return null;
+  const list = (h: string[] | null) =>
+    h && h.length ? (
+      <ul className="ml-4 list-disc break-all">
+        {h.map((x) => (
+          <li key={x} className={/google\.[a-z.]+\/url\?|safelinks|urldefense/i.test(x) ? "font-medium text-red-700 dark:text-red-400" : undefined}>
+            <code>{x}</code>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p className="ml-4 text-muted-foreground">{h ? "aucun lien" : "pas encore connu"}</p>
+    );
+  return (
+    <details className="rounded-md border p-2 text-xs" open={a.link_rewrite_detected === true}>
+      <summary className="cursor-pointer font-medium">
+        Diagnostic des liens{" "}
+        {a.link_rewrite_detected === true ? (
+          <span className="text-red-700 dark:text-red-400">— réécriture détectée</span>
+        ) : a.link_rewrite_detected === false ? (
+          <span className="text-green-700 dark:text-green-400">— liens directs confirmés à la réception</span>
+        ) : null}
+      </summary>
+      <div className="mt-2 space-y-2">
+        <div>
+          <p className="font-medium">href dans le HTML envoyé par le serveur :</p>
+          {list(a.sent_hrefs)}
+        </div>
+        <div>
+          <p className="font-medium">href dans le HTML reçu (copie de contrôle) :</p>
+          {list(a.received_hrefs)}
+        </div>
+        {a.smtp_message_id && <p className="break-all text-muted-foreground">Message-ID : {a.smtp_message_id}</p>}
+      </div>
+    </details>
   );
 }
 
@@ -281,26 +388,6 @@ function ConfirmDialog(props: {
   );
 }
 
-const EVENT_LABEL: Record<string, string> = {
-  reprise_v2: "Reprise des anciennes données",
-  message_valide: "Message relu et validé",
-  tentative_ouverte: "Tentative de contact commencée",
-  tentative_declaree: "Action déclarée par vous",
-  tentative_annulee: "Tentative annulée",
-  declaration_retiree: "Déclaration retirée (erreur corrigée)",
-  tentative_echouee: "Échec signalé",
-  envoi_prouve: "Envoi prouvé (copie de contrôle reçue)",
-  envoi_prouve_mauvais_expediteur: "Envoi prouvé depuis un AUTRE compte",
-  reponse_enregistree: "Réponse enregistrée",
-  ne_plus_contacter: "Opposition enregistrée (ne plus contacter)",
-  notes_modifiees: "Notes modifiées",
-  archive: "Archivé",
-  desarchive: "Désarchivé",
-  brouillon_ouvert: "Brouillon / outil ouvert depuis la page",
-  prospect_cree: "Fiche créée",
-  fiche_modifiee: "Fiche modifiée",
-  prochaine_action: "Prochaine action planifiée",
-};
 
 type DialogKind = null | "approve" | "declare" | "cancel" | "fail" | "reply" | "dnc" | "archive" | "unarchive" | "erase" | "edit";
 
@@ -316,10 +403,21 @@ export function ProspectCard({ p, proofDomain }: { p: Prospect; proofDomain: str
   const [now, setNow] = useState(() => Date.now());
 
   const archived = Boolean(p.archived_at);
-  const open = p.attempts.find((a) => a.state === "ouverte") ?? null;
-  const lastUseful = p.attempts.find((a) => a.state === "verifiee" || a.state === "declaree") ?? null;
-  const proofPending = p.attempts.some((a) => a.channel === "email" && (a.state === "ouverte" || a.state === "declaree"));
   const blocked = Boolean(p.do_not_contact_at);
+  const open = p.attempts.find((a) => a.state === "ouverte") ?? null;
+  const lastUseful = p.attempts.find((a) => a.state === "verifiee" || a.state === "envoyee" || a.state === "declaree") ?? null;
+  const lastAttempt = p.attempts[0] ?? null;
+  const lastServerFail = lastAttempt?.state === "echec" && lastAttempt.draft_method === "serveur" ? lastAttempt : null;
+  const proofPending = p.attempts.some((a) => a.channel === "email" && (a.state === "ouverte" || a.state === "envoyee" || a.state === "declaree"));
+  // Suivi « en direct » juste après un envoi serveur : rafraîchissement toutes les 3 s pendant 5 min
+  const liveWatch = p.attempts.some(
+    (a) => (a.state === "ouverte" && a.draft_method === "serveur") ||
+      (a.state === "envoyee" && a.sent_at && Date.now() - new Date(a.sent_at).getTime() < 5 * 60 * 1000),
+  );
+  const serverOpen = open?.draft_method === "serveur" ? open : null;
+  const serverOpenStuck = serverOpen ? now - new Date(serverOpen.opened_at).getTime() > 2 * 60 * 1000 : false;
+  const canServerSend = !archived && !blocked && !open && Boolean(p.email) && Boolean(p.subject?.trim()) &&
+    ["a_preparer", "pret", "contacte", "en_discussion"].includes(p.stage);
   const canContact = !archived && !blocked && !open && p.approved_current && ["pret", "contacte", "en_discussion"].includes(p.stage);
   const canReply = !archived && !blocked && Boolean(lastUseful) && ["contacte", "en_discussion"].includes(p.stage);
   const phones = phoneNumbers(p.phone);
@@ -330,10 +428,17 @@ export function ProspectCard({ p, proofDomain }: { p: Prospect; proofDomain: str
 
   // Tant qu'une preuve d'envoi est attendue, la page se met à jour toute seule (synchronisation Gmail → écran)
   useEffect(() => {
-    if (!proofPending) return;
-    const t = setInterval(() => router.refresh(), 15000);
+    if (!proofPending && !liveWatch) return;
+    const t = setInterval(() => router.refresh(), liveWatch ? 3000 : 15000);
     return () => clearInterval(t);
-  }, [proofPending, router]);
+  }, [proofPending, liveWatch, router]);
+
+  // Horloge pour savoir si un envoi serveur reste bloqué (bouton d'annulation après 2 min)
+  useEffect(() => {
+    if (!serverOpen) return;
+    const t = setInterval(() => setNow(Date.now()), 5000);
+    return () => clearInterval(t);
+  }, [serverOpen]);
 
   // Compte à rebours avant de pouvoir déclarer (le serveur le vérifie aussi)
   useEffect(() => {
@@ -376,7 +481,7 @@ export function ProspectCard({ p, proofDomain }: { p: Prospect; proofDomain: str
    * Niveau 2 : enregistre l'ouverture du brouillon SANS bloquer le lien (le navigateur doit garder le geste
    * de l'utilisateur pour ouvrir l'appli Gmail). En cas d'échec, l'utilisateur est prévenu et peut réessayer.
    */
-  function noteDraftOpened(method: DraftMethod) {
+  function noteDraftOpened(method: Exclude<DraftMethod, "serveur">) {
     if (!open || open.draft_opened_at) return;
     markDraftOpened(open.id, method)
       .then((res) => {
@@ -387,6 +492,8 @@ export function ProspectCard({ p, proofDomain }: { p: Prospect; proofDomain: str
   }
 
   const stage = STAGE[p.stage];
+  const delivery = prospectDeliveryStatus(p);
+  const unreadReplies = p.messages.filter((m) => m.direction === "in" && !m.read_at && m.kind !== "auto_reply").length;
   const bcc = open?.bcc_token ? `prospect-${open.bcc_token}@${proofDomain}` : "";
   const draft = open && p.email ? { to: p.email, bcc, subject: open.subject_snapshot, body: open.message_snapshot ?? "" } : null;
   const links = draft && platform ? emailDraftLinks(draft, platform) : [];
@@ -404,9 +511,20 @@ export function ProspectCard({ p, proofDomain }: { p: Prospect; proofDomain: str
         <div className="flex flex-wrap items-start justify-between gap-2">
           <CardTitle className="flex flex-wrap items-center gap-2 text-base">
             {p.company} {p.is_test && <Badge variant="neutral">TEST — non compté</Badge>}
+            {unreadReplies > 0 && (
+              <Badge variant="info">{unreadReplies} nouvelle{unreadReplies > 1 ? "s" : ""} réponse{unreadReplies > 1 ? "s" : ""}</Badge>
+            )}
             {archived && <Badge variant="neutral">Archivé</Badge>}
           </CardTitle>
-          <Badge variant={stage.variant}>{stage.label}</Badge>
+          <span className="inline-flex flex-wrap items-center gap-1">
+            {delivery && (
+              <Badge variant={delivery.tone} className="whitespace-nowrap">
+                <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                {delivery.label}
+              </Badge>
+            )}
+            <Badge variant={stage.variant}>{stage.label}</Badge>
+          </span>
         </div>
         <p className="text-sm text-muted-foreground">
           {p.trade} · {p.city}
@@ -490,7 +608,24 @@ export function ProspectCard({ p, proofDomain }: { p: Prospect; proofDomain: str
           <h3 className="font-medium">Situation réelle</h3>
           {open ? <ProofLine a={open} /> : lastUseful ? <ProofLine a={lastUseful} /> : <p className="text-muted-foreground">Aucun contact enregistré.</p>}
           {(open ?? lastUseful) && <Levels a={(open ?? lastUseful)!} />}
+          {lastServerFail && (
+            <p className="flex gap-2 text-red-700 dark:text-red-400">
+              <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+              Dernier envoi automatique en échec le {whenS(lastServerFail.closed_at ?? lastServerFail.opened_at)} : {lastServerFail.failure_reason}
+            </p>
+          )}
+          {(open ?? lastUseful)?.draft_method === "serveur" && <LinkDiagnostic a={(open ?? lastUseful)!} />}
         </div>
+
+        {/* Échanges : même fonctionnement que la conversation d'un dossier de devis */}
+        {p.email && (p.messages.length > 0 || p.attempts.some((a) => a.state === "envoyee" || a.state === "verifiee")) && (
+          <ProspectConversation
+            prospectId={p.id}
+            prospectName={p.company}
+            messages={p.messages}
+            blockedReason={blocked ? "Ce prospect a demandé à ne plus être contacté : aucune réponse ne peut lui être envoyée." : archived ? "Prospect archivé." : null}
+          />
+        )}
 
         <div className="rounded-md border bg-muted/30 p-3">
           <div className="mb-2 flex flex-wrap items-center gap-2 font-medium">
@@ -512,7 +647,22 @@ export function ProspectCard({ p, proofDomain }: { p: Prospect; proofDomain: str
         </div>
 
         {/* Étape 1 : relire (toute version non validée du texte, M9) */}
-        {!archived && !blocked && !p.approved_current && !open && (
+        {/* E-mail : UN clic — validation du texte + envoi direct par le serveur */}
+        {canServerSend && (
+          <Button
+            className="w-full sm:w-auto"
+            disabled={pending}
+            onClick={() =>
+              run(() => sendProspectEmail(p.id, p.version), `E-mail envoyé à ${p.email}. Preuve de réception attendue…`)
+            }
+          >
+            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {pending ? "Envoi en cours…" : "Valider et envoyer"}
+          </Button>
+        )}
+        {!archived && !blocked && !open && p.email && !p.subject?.trim() && <p className="text-xs text-amber-700">Ajoutez un objet (Modifier la fiche) pour pouvoir envoyer.</p>}
+
+        {!archived && !blocked && !p.approved_current && !open && !p.email && (
           <Button onClick={() => setDialog("approve")} className="w-full sm:w-auto">
             <CheckCircle2 className="h-4 w-4" /> J&apos;ai relu ce message
           </Button>
@@ -521,11 +671,6 @@ export function ProspectCard({ p, proofDomain }: { p: Prospect; proofDomain: str
         {/* Étape 2 : commencer une tentative (un seul canal à la fois) */}
         {canContact && (
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-            {p.email && (
-              <Button onClick={() => run(() => startAttempt(p.id, "email", p.version), "Tentative par e-mail commencée")} disabled={pending}>
-                <Mail className="h-4 w-4" /> Préparer l&apos;e-mail
-              </Button>
-            )}
             {p.website && (
               <Button variant="outline" onClick={() => run(() => startAttempt(p.id, "formulaire", p.version), "Tentative par formulaire commencée")} disabled={pending}>
                 <Globe className="h-4 w-4" /> Contacter par leur formulaire
@@ -540,7 +685,26 @@ export function ProspectCard({ p, proofDomain }: { p: Prospect; proofDomain: str
         )}
 
         {/* Étape 3 : tentative en cours — instructions propres au canal */}
-        {open && (
+        {serverOpen && (
+          <div className="space-y-2 rounded-md border border-sky-500/30 bg-sky-500/5 p-3">
+            <p className="flex items-center gap-2 font-medium">
+              <Loader2 className="h-4 w-4 animate-spin" /> Envoi en cours depuis le serveur…
+            </p>
+            {serverOpenStuck && (
+              <>
+                <p className="text-xs text-amber-700 dark:text-amber-400">
+                  Aucun compte rendu depuis plus de 2 minutes. Si l&apos;e-mail est parti, la copie de contrôle le prouvera quand même.
+                  Vérifiez « Messages envoyés » de {SENDER} avant d&apos;annuler.
+                </p>
+                <Button size="sm" variant="ghost" onClick={() => setDialog("cancel")} disabled={pending}>
+                  Annuler cet envoi bloqué
+                </Button>
+              </>
+            )}
+          </div>
+        )}
+
+        {open && !serverOpen && (
           <div className="space-y-3 rounded-md border border-sky-500/30 bg-sky-500/5 p-3">
             <p className="font-medium">Tentative en cours : {CHANNEL[open.channel]}</p>
 
@@ -729,16 +893,9 @@ export function ProspectCard({ p, proofDomain }: { p: Prospect; proofDomain: str
         </div>
 
         {showHistory && (
-          <ol className="space-y-1 border-l pl-3 text-xs text-muted-foreground">
-            {p.events.map((e) => (
-              <li key={e.id}>
-                <span className="tabular-nums">{when(e.created_at)}</span> — {EVENT_LABEL[e.type] ?? e.type}
-                {e.actor === "reception" && " (automatique)"}
-                {typeof e.detail?.raison === "string" && ` : ${e.detail.raison}`}
-                {typeof e.detail?.methode === "string" && ` : ${METHOD[e.detail.methode] ?? e.detail.methode}`}
-              </li>
-            ))}
-          </ol>
+          <div className="pl-3 pt-1">
+            <ProspectTimeline events={p.events} />
+          </div>
         )}
 
         {!archived && (

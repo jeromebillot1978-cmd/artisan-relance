@@ -22,7 +22,7 @@ import { admin, json, log } from "../_shared/admin.ts";
 import { getReceivedEmail, listReceivedAttachmentMeta, senderName, sendEmail, type ReceivedEmail } from "../_shared/resend.ts";
 import { verifySvix } from "../_shared/svix.ts";
 import { renderArtisanNotice, renderReplyAlert, renderReplyForward } from "../_shared/templates.ts";
-import { addressOnly, classifyInbound, extractProspectToken, extractToken, htmlToText, stripQuoted } from "../_shared/inbound.ts";
+import { addressOnly, classifyInbound, extractProspectReplyToken, extractProspectToken, extractToken, htmlToText, stripQuoted } from "../_shared/inbound.ts";
 import { MAX_FILE_BYTES, planAttachments, safeFileName, withExtension, type PlannedAttachment } from "../_shared/files.ts";
 import { compressImage, IMAGE_KEEP_BELOW, IMAGE_MAX_PIXELS, imageSize } from "../_shared/images.ts";
 
@@ -31,6 +31,8 @@ const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") ?? "";
 const INBOUND_DOMAIN = (Deno.env.get("INBOUND_DOMAIN") ?? "").toLowerCase();
 // Adresse d'où DOIVENT partir les e-mails de prospection (sert à détecter un envoi depuis le mauvais compte)
 const PROSPECTION_SENDER = (Deno.env.get("PROSPECTION_SENDER") ?? "jercat.bilman@gmail.com").toLowerCase();
+// Qui reçoit l'alerte quand un prospect répond (comme l'artisan pour ses devis)
+const PROSPECTION_ALERT_TO = (Deno.env.get("PROSPECTION_ALERT_EMAIL") ?? PROSPECTION_SENDER).toLowerCase();
 const SITE_URL = (Deno.env.get("SITE_URL") ?? "https://artisan-relance.jercat.fr").replace(/\/$/, "");
 const INTERNAL_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const SELF_URL = `${(Deno.env.get("SUPABASE_URL") ?? "").replace(/\/$/, "")}/functions/v1/resend-inbound`;
@@ -198,6 +200,11 @@ async function handleReceived(event: WebhookEvent) {
     return json({ ignored: "own_address" });
   }
 
+  // RÉPONSE d'un prospect (« Répondre à » prospect-reponse-<jeton>@…) : même traitement que
+  // la réponse d'un client à un devis — classement, conversation dans le site, alerte.
+  const prospectReplyToken = extractProspectReplyToken(event.data, INBOUND_DOMAIN);
+  if (prospectReplyToken) return await handleProspectReply(event, prospectReplyToken);
+
   // PREUVE D'ENVOI de prospection : copie cachée « prospect-<jeton>@… » reçue.
   // Traitée à part : ce n'est pas une réponse de client, rien n'est transféré.
   const prospectToken = extractProspectToken(event.data, INBOUND_DOMAIN);
@@ -205,9 +212,16 @@ async function handleReceived(event: WebhookEvent) {
     // Texte réellement parti : sert à détecter un message tronqué (lien trop long sur mobile).
     // Si la lecture échoue, la preuve d'envoi est quand même enregistrée (contrôle « inconnu »).
     let receivedText: string | null = null;
+    // HTML RÉELLEMENT reçu : sert au diagnostic des liens (href directs ou réécrits ?)
+    let receivedHtml: string | null = null;
     try {
       const received = await getReceivedEmail(id);
       receivedText = received.text?.trim() ? received.text : received.html ? htmlToText(received.html) : null;
+      receivedHtml = received.html ?? null;
+      const hrefs = [...new Set([...(receivedHtml ?? "").matchAll(/href\s*=\s*["']([^"']+)["']/gi)].map((m) => m[1].replace(/&amp;/g, "&")))];
+      log("prospect_proof_links", {
+        email_id: id, hrefs, google_redirect: hrefs.some((h) => /google\.[a-z.]+\/url\?/i.test(h)), html_length: receivedHtml?.length ?? 0,
+      });
     } catch (e) {
       log("prospect_proof_read_failed", { email_id: id, error: e instanceof Error ? e.message : String(e) });
     }
@@ -217,6 +231,7 @@ async function handleReceived(event: WebhookEvent) {
       p_from: from,
       p_expected_from: PROSPECTION_SENDER,
       p_received_text: receivedText ? receivedText.slice(0, 20000) : null,
+      p_received_html: receivedHtml ? receivedHtml.slice(0, 200000) : null,
     });
     if (error) {
       log("prospect_proof_error", { email_id: id, error: error.message });
@@ -405,6 +420,103 @@ async function handleReceived(event: WebhookEvent) {
     log("inbound_forward_failed", { campaign_id: row.campaign_id, email_id: id, error: message });
     return json({ error: message }, 500); // enregistré ; Resend réessaiera le transfert
   }
+}
+
+// ---------------------------------------------------------------------
+// Réponses des prospects (même logique que les réponses aux devis)
+// ---------------------------------------------------------------------
+async function handleProspectReply(event: WebhookEvent, token: string) {
+  const id = event.data.email_id;
+  const from = event.data.from ?? "";
+  // Copie renvoyée par Jercat lui-même (« Répondre » sur son propre message envoyé) : rien à enregistrer
+  if (addressOnly(from) === PROSPECTION_SENDER) {
+    log("prospect_reply_own_copy", { email_id: id });
+    return json({ ignored: "own_copy" });
+  }
+  let email: ReceivedEmail;
+  try {
+    email = await getReceivedEmail(id);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    log("prospect_reply_read_failed", { email_id: id, error: message });
+    return json({ error: message }, 500); // Resend réessaiera
+  }
+  const kind = classifyInbound({ ...email, from: email.from || from });
+  const text = email.text?.trim() ? email.text : email.html ? htmlToText(email.html) : "";
+  let filesNote: string | null = null;
+  // Pièces jointes : transmises avec l'alerte (liens Resend valables 1 h), au plus 5 fichiers de 10 Mo
+  let alertFiles: { filename: string; path: string }[] = [];
+  try {
+    const files = await listReceivedAttachmentMeta(id);
+    const real = files.filter((f) => !((f.content_disposition ?? "").toLowerCase().startsWith("inline") && Number(f.size ?? 0) < 100 * 1024));
+    alertFiles = real
+      .filter((f) => f.download_url && Number(f.size ?? 0) <= 10 * 1024 * 1024)
+      .slice(0, 5)
+      .map((f) => ({ filename: (f.filename ?? "fichier").slice(0, 200), path: f.download_url! }));
+    if (real.length) {
+      filesNote = `Pièces jointes reçues : ${real.map((f) => f.filename ?? "fichier").join(", ")}.${
+        alertFiles.length === real.length ? " Elles sont jointes à l'alerte e-mail." : " Certaines (trop lourdes ou trop nombreuses) ne sont pas transmises : demandez-les autrement."
+      }`;
+    }
+  } catch {
+    // liste indisponible : la réponse est enregistrée quand même
+  }
+  const { data, error } = await admin.rpc("prospect_register_inbound", {
+    p_token: token,
+    p_provider_email_id: id,
+    p_from: from,
+    p_to: [...(event.data.to ?? []), ...(event.data.cc ?? [])],
+    p_subject: event.data.subject ?? email.subject ?? "",
+    p_body: stripQuoted(text),
+    p_kind: kind,
+    p_message_id: email.message_id ?? null,
+    p_files_note: filesNote,
+  });
+  if (error) {
+    log("prospect_reply_register_error", { email_id: id, error: error.message });
+    return json({ error: error.message }, 500);
+  }
+  const row = (data as { prospect_id: string; company: string; prospect_email: string | null; last_subject: string | null; already: boolean; kind: string; sender_matches: boolean }[] | null)?.[0];
+  if (!row) {
+    log("prospect_reply_unknown_token", { email_id: id });
+    return json({ ignored: "unknown_prospect" });
+  }
+  log("prospect_reply_received", { email_id: id, prospect_id: row.prospect_id, kind: row.kind, already: row.already, sender_matches: row.sender_matches });
+  if (row.already || row.kind === "auto_reply") return json({ ok: true, kind: row.kind, notified: false });
+
+  // Alerte à Jercat : même modèle que l'alerte envoyée à l'artisan quand un client répond à un devis
+  const dashboardUrl = `${SITE_URL}/prospection#prospect-${row.prospect_id}`;
+  const rendered = renderReplyAlert({
+    prospectName: row.company,
+    originalSubject: row.last_subject ?? event.data.subject ?? "",
+    from,
+    excerpt: stripQuoted(text),
+    fileCount: 0, // les fichiers sont joints à l'alerte elle-même (pas « dans le dossier »)
+    companyName: "Prospection Jercat",
+    dashboardUrl,
+    kind: row.kind === "opt_out" || row.kind === "suspicious" ? row.kind : "reply",
+    unexpectedSender: !row.sender_matches,
+  });
+  try {
+    await sendEmail(
+      {
+        from: fromHeader("Artisan Relance · Prospection"),
+        to: [PROSPECTION_ALERT_TO],
+        reply_to: row.kind === "suspicious" ? undefined : from,
+        subject: rendered.subject,
+        html: rendered.html,
+        text: rendered.text,
+        attachments: row.kind === "suspicious" || !alertFiles.length ? undefined : alertFiles,
+        tags: [{ name: "kind", value: `prospect_reply_alert_${row.kind}` }],
+      },
+      `prospect-alert-${id}`,
+    );
+    log("prospect_reply_alert_sent", { email_id: id, prospect_id: row.prospect_id });
+  } catch (e) {
+    // la réponse est enregistrée et visible dans le site : l'alerte ratée est seulement journalisée
+    log("prospect_reply_alert_failed", { email_id: id, error: e instanceof Error ? e.message : String(e) });
+  }
+  return json({ ok: true, kind: row.kind, notified: true });
 }
 
 // ---------------------------------------------------------------------
