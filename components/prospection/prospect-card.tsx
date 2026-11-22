@@ -25,6 +25,7 @@ import {
 } from "@/lib/actions/prospects";
 import { confirmNorm, detectPlatform, emailDraftLinks, phoneNumbers, PROSPECTION_SENDER, type Platform } from "@/lib/prospect-links";
 import type { Attempt, CallOutcome, Channel, DraftMethod, Prospect, Stage } from "@/lib/prospects";
+import { ensureSiteLink } from "@/lib/prospect-email";
 
 // ---------------------------------------------------------------------------
 // Libellés : un verbe au passé n'apparaît QUE s'il existe une preuve.
@@ -499,7 +500,7 @@ export function ProspectCard({ p, proofDomain }: { p: Prospect; proofDomain: str
   const delivery = prospectDeliveryStatus(p);
   const unreadReplies = p.messages.filter((m) => m.direction === "in" && !m.read_at && m.kind !== "auto_reply").length;
   const bcc = open?.bcc_token ? `prospect-${open.bcc_token}@${proofDomain}` : "";
-  const draft = open && p.email ? { to: p.email, bcc, subject: open.subject_snapshot, body: open.message_snapshot ?? "" } : null;
+  const draft = open && p.email ? { to: p.email, bcc, subject: open.subject_snapshot, body: ensureSiteLink(open.message_snapshot ?? "") } : null;
   const links = draft && platform ? emailDraftLinks(draft, platform) : [];
   const otherLinks =
     draft && platform && showAllLinks
@@ -746,7 +747,7 @@ export function ProspectCard({ p, proofDomain }: { p: Prospect; proofDomain: str
                       size="sm"
                       variant="outline"
                       onClick={async () => {
-                        if (await copy(open.message_snapshot ?? "", "Message")) noteDraftOpened("copie");
+                        if (await copy(ensureSiteLink(open.message_snapshot ?? ""), "Message")) noteDraftOpened("copie");
                       }}
                     >
                       <Copy className="h-4 w-4" /> Copier le message

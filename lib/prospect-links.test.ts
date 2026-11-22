@@ -84,7 +84,9 @@ t("http → https", cleanLinks("http://artisan-relance.jercat.fr/"), A);
 t("déjà exact : inchangé", cleanLinks(`${A} et ${V}`), `${A} et ${V}`);
 t("sous-page conservée", cleanLinks("https://artisan-relance.jercat.fr/inscription"), "https://artisan-relance.jercat.fr/inscription");
 t("adresse e-mail non touchée", cleanLinks("contact@artisan-relance.jercat.fr"), "contact@artisan-relance.jercat.fr");
-t("autre site non touché", cleanLinks("https://dev.jercat.fr"), "https://dev.jercat.fr");
+t("autre site non touché", cleanLinks("https://exemple.fr"), "https://exemple.fr");
+t("site principal normalisé (barre finale)", cleanLinks("https://dev.jercat.fr"), "https://dev.jercat.fr/");
+t("site principal sans https → exact", cleanLinks("Site : dev.jercat.fr"), "Site : https://dev.jercat.fr/");
 t("brouillon : liens nettoyés", decodeURIComponent(emailDraftLinks({ ...d, body: "https://www.google.com/url?q=https://artisan-relance.jercat.fr&sa=E" }, "desktop")[0].href).includes(`body=${A}`), true);
 
 // --- Confirmation d'effacement tolérante au copier-coller

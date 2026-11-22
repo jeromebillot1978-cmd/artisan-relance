@@ -7,7 +7,7 @@
  * sans redirection, sans paramètre de suivi, sans intermédiaire.
  * Le HTML est vérifié avant l'envoi (assertDirectLinks) : un lien réécrit bloque l'envoi.
  */
-import { cleanLinks } from "./prospect-links.ts";
+import { cleanLinks, SITE_LINK } from "./prospect-links.ts";
 
 export type BuiltEmail = { subject: string; html: string; text: string; hrefs: string[] };
 
@@ -38,9 +38,34 @@ function lineToHtml(line: string, hrefs: Set<string>) {
   return out + escapeHtml(line.slice(last));
 }
 
+/** Ligne de signature ajoutée quand le message ne contient pas déjà le site. */
+export const SITE_LINE = `Site web : ${SITE_LINK}`;
+
+/**
+ * Garantit le lien vers le site principal (https://dev.jercat.fr/) dans tout e-mail de prospection :
+ *  - déjà présent (n'importe où) → texte inchangé, jamais de doublon ;
+ *  - sinon, placé dans la signature : juste après la ligne du numéro de téléphone,
+ *    à défaut juste après la ligne « Jercat », à défaut avant la phrase « STOP » finale,
+ *    à défaut en fin de message (cas des réponses courtes envoyées depuis la fiche).
+ */
+export function ensureSiteLink(text: string): string {
+  if (/(?:https?:\/\/)?(?:www\.)?dev\.jercat\.fr/i.test(text)) return text;
+  const lines = text.split("\n");
+  const phone = lines.findIndex((l) => /^\s*(?:tél[^:]*:\s*)?0\d(?:[\s.]?\d{2}){4}\s*$/i.test(l));
+  if (phone >= 0) { lines.splice(phone + 1, 0, SITE_LINE); return lines.join("\n"); }
+  const sig = lines.findIndex((l) => /^\s*jercat\s*$/i.test(l));
+  if (sig >= 0) { lines.splice(sig + 1, 0, SITE_LINE); return lines.join("\n"); }
+  const paras = text.split(/\n{2,}/);
+  if (paras.length > 1 && /\bstop\b/i.test(paras[paras.length - 1])) {
+    paras.splice(paras.length - 1, 0, SITE_LINE);
+    return paras.join("\n\n");
+  }
+  return `${text}\n\n${SITE_LINE}`;
+}
+
 /** Texte saisi dans la fiche → e-mail HTML + texte brut, liens directs uniquement. */
 export function buildProspectEmail(subject: string, message: string): BuiltEmail {
-  const text = cleanLinks(message).replace(/\r\n?/g, "\n").trim();
+  const text = ensureSiteLink(cleanLinks(message).replace(/\r\n?/g, "\n").trim());
   const hrefs = new Set<string>();
   const body = text
     .split(/\n{2,}/)

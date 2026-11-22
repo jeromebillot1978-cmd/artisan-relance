@@ -44,14 +44,17 @@ export function phoneNumbers(raw: string | null | undefined): { label: string; h
     });
 }
 
+/** Site principal de Jercat : présent dans CHAQUE e-mail de prospection (signature). */
+export const SITE_LINK = "https://dev.jercat.fr/";
+
 /** Adresses officielles, écrites exactement ainsi dans les messages (barre finale comprise). */
-export const CANONICAL_LINKS = ["https://artisan-relance.jercat.fr/", "https://pubartisanrelance.vercel.app/"] as const;
+export const CANONICAL_LINKS = ["https://artisan-relance.jercat.fr/", "https://pubartisanrelance.vercel.app/", SITE_LINK] as const;
 
 /**
  * Liens propres dans un message de prospection :
  *  1. toute redirection Google (« https://www.google.com/url?q=<lien>&… », souvent recopiée
  *     depuis un brouillon Gmail) est remplacée par le lien d'origine, sans paramètre ajouté ;
- *  2. les deux adresses officielles sont écrites exactement comme CANONICAL_LINKS
+ *  2. les adresses officielles sont écrites exactement comme CANONICAL_LINKS
  *     (https, barre finale) quand elles désignent la page d'accueil.
  * Les autres liens et le reste du texte ne sont pas modifiés.
  */
