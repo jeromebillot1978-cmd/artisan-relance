@@ -95,16 +95,16 @@ export async function sendProspectSmtp(mail: ProspectMail): Promise<SmtpResult> 
     from: { name: fromName, address: PROSPECTION_SMTP_USER },
     to: mail.to,
     bcc: mail.bcc,
-    replyTo: mail.replyTo,
+    // Nom affiché aussi sur l'adresse de réponse : la réponse du prospect montre « Jercat », pas une adresse technique
+    replyTo: { name: fromName, address: mail.replyTo },
     subject: mail.subject,
     text: mail.text,
     html: mail.html,
     ...(mail.inReplyTo ? { inReplyTo: mail.inReplyTo, references: [mail.inReplyTo] } : {}),
-    // Désinscription : même en-tête que les devis (« STOP » vers l'adresse de réponse, traité automatiquement)
-    headers: {
-      "List-Unsubscribe": `<mailto:${mail.replyTo}?subject=STOP>`,
-      "X-Prospect-Ref": mail.ref,
-    },
+    // Délivrabilité : AUCUN en-tête de liste ou de suivi. « List-Unsubscribe » et les en-têtes « X-… »
+    // signalent un envoi de masse et poussent Gmail à classer en « Promotions ». Un e-mail écrit à la main
+    // n'en a pas ; le retrait se fait par la phrase « répondez stop » (réponse traitée automatiquement).
+    // La référence interne (mail.ref) reste dans le journal et dans la base, pas dans l'e-mail.
   });
   transport.close();
   return {

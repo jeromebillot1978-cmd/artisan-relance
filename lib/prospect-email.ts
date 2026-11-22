@@ -22,7 +22,7 @@ export function escapeHtml(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
-/** Une ligne de texte → HTML échappé, chaque URL transformée en lien direct. */
+/** Une ligne de texte → HTML échappé, chaque URL transformée en lien direct (sans style : comme Gmail). */
 function lineToHtml(line: string, hrefs: Set<string>) {
   let out = "";
   let last = 0;
@@ -32,7 +32,7 @@ function lineToHtml(line: string, hrefs: Set<string>) {
     if (tail) url = url.slice(0, -tail.length);
     out += escapeHtml(line.slice(last, m.index));
     hrefs.add(url);
-    out += `<a href="${escapeHtml(url)}" style="color:#1d4ed8;">${escapeHtml(url)}</a>${escapeHtml(tail)}`;
+    out += `<a href="${escapeHtml(url)}">${escapeHtml(url)}</a>${escapeHtml(tail)}`;
     last = (m.index ?? 0) + m[0].length;
   }
   return out + escapeHtml(line.slice(last));
@@ -63,19 +63,18 @@ export function ensureSiteLink(text: string): string {
   return `${text}\n\n${SITE_LINE}`;
 }
 
-/** Texte saisi dans la fiche → e-mail HTML + texte brut, liens directs uniquement. */
+/**
+ * Texte saisi dans la fiche → e-mail HTML + texte brut, liens directs uniquement.
+ *
+ * Délivrabilité (boîte de réception principale plutôt que « Promotions ») : le HTML reproduit
+ * exactement la forme d'un e-mail tapé dans Gmail — un seul <div dir="ltr">, des <br>, des liens
+ * nus — sans <!DOCTYPE>, sans <head>, sans couleur, sans police imposée, sans bouton ni image.
+ * Le texte brut et le HTML contiennent donc les mêmes mots (ratio texte/HTML proche de 1).
+ */
 export function buildProspectEmail(subject: string, message: string): BuiltEmail {
   const text = ensureSiteLink(cleanLinks(message).replace(/\r\n?/g, "\n").trim());
   const hrefs = new Set<string>();
-  const body = text
-    .split(/\n{2,}/)
-    .map((p) => `<p style="margin:0 0 14px 0;">${p.split("\n").map((l) => lineToHtml(l, hrefs)).join("<br>")}</p>`)
-    .join("\n");
-  const html = `<!DOCTYPE html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
-<body style="margin:0;padding:16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#18181b;">
-${body}
-</body></html>`;
+  const html = `<div dir="ltr">${text.split("\n").map((l) => lineToHtml(l, hrefs) || "").join("<br>")}</div>\n`;
   return { subject: subject.replace(/[\r\n]+/g, " ").trim().slice(0, 200), html, text, hrefs: [...hrefs] };
 }
 
@@ -90,4 +89,82 @@ export function assertDirectLinks(html: string): string[] {
   const bad = hrefs.filter((h) => REWRITE_RE.test(h));
   if (bad.length) throw new Error(`Lien réécrit détecté avant l'envoi : ${bad.join(", ")}`);
   return hrefs;
+}
+
+// ---------------------------------------------------------------------------
+// Modèle court « écrit à la main » + personnalisation (identique à _prospect_render en base)
+// ---------------------------------------------------------------------------
+
+/** Variables utilisables dans l'objet et le message. Remplacées au moment de l'envoi, côté base. */
+export const TEMPLATE_VARIABLES = ["{prenom}", "{entreprise}", "{ville}"] as const;
+
+export const DEFAULT_PROSPECT_SUBJECT = "Question pour {entreprise}";
+
+/**
+ * Modèle par défaut : court (~80 mots), une question, deux liens au plus, aucun mot publicitaire
+ * (« gratuit », « offre », « promotion »…), signature simple, phrase de retrait en dernière ligne
+ * (elle sert aussi au contrôle « message complet » de la preuve d'envoi).
+ */
+export const DEFAULT_PROSPECT_MESSAGE = `Bonjour {prenom},
+
+J'ai vu le site de {entreprise} en cherchant des artisans à {ville}.
+
+Une question : quand un client ne répond pas à un devis, qui s'occupe de le relancer chez vous ?
+
+J'ai créé un petit outil qui fait ces relances par e-mail à votre place et vous prévient dès que le client répond : https://artisan-relance.jercat.fr/
+
+Si ça peut vous servir, répondez simplement à ce message.
+
+Jercat
+Développeur web indépendant – https://dev.jercat.fr/
+07 63 49 49 24
+
+Si ce n'est pas pour vous, répondez « stop » et je ne vous écrirai plus.`;
+
+/** « Liège (BE) » → « Liège », « Laon (02) » → « Laon ». */
+export function cityLabel(city: string | null | undefined) {
+  return (city ?? "").replace(/\s*\([^)]*\)\s*$/, "").trim();
+}
+
+/** Aperçu à l'écran : même règle que la base (sans prénom, « Bonjour {prenom}, » → « Bonjour, »). */
+export function renderProspectTemplate(text: string, v: { firstName?: string | null; company?: string | null; city?: string | null }) {
+  const fn = (v.firstName ?? "").trim();
+  let t = fn ? text.replace(/\{prenom\}/gi, fn) : text.replace(/[ \t]*\{prenom\}/gi, "");
+  t = t.replace(/\{entreprise\}/gi, (v.company ?? "").trim() || "votre entreprise");
+  t = t.replace(/\{ville\}/gi, cityLabel(v.city) || "votre secteur");
+  return t;
+}
+
+/** Variables inconnues restantes ({nom}, {prénom} mal écrit…) : la base refuse l'envoi. */
+export function unknownVariables(text: string) {
+  const known = new Set(TEMPLATE_VARIABLES.map((x) => x.toLowerCase()));
+  return [...new Set((text.match(/\{[^{}\s]{1,30}\}/g) ?? []).filter((x) => !known.has(x.toLowerCase())))];
+}
+
+/** Mots et signes qui font « publicité » et poussent vers l'onglet Promotions ou les spams. */
+const PROMO_WORDS = [
+  "gratuit", "gratuitement", "offert", "offre", "promo", "promotion", "remise", "réduction", "-50", "%", "€",
+  "cliquez ici", "cliquez", "urgent", "dernière chance", "exclusif", "garanti", "100 %", "sans engagement",
+  "meilleur prix", "inscrivez-vous", "essai", "!!!", "$",
+];
+
+export type DeliverabilityCheck = { level: "ok" | "attention"; label: string };
+
+/** Contrôle du texte avant envoi (affiché dans la fiche) : longueur, liens, mots publicitaires, majuscules. */
+export function deliverabilityChecks(subject: string, message: string): DeliverabilityCheck[] {
+  const out: DeliverabilityCheck[] = [];
+  const text = `${subject}\n${message}`;
+  const words = message.trim().split(/\s+/).filter(Boolean).length;
+  const links = new Set((cleanLinks(ensureSiteLink(message)).match(URL_RE) ?? []).map((u) => u.replace(TRAILING, "")));
+  const found = PROMO_WORDS.filter((w) => text.toLowerCase().includes(w.toLowerCase()));
+  const caps = (subject.match(/\b[A-ZÀ-Ý]{4,}\b/g) ?? []).length;
+  out.push(words <= 140 ? { level: "ok", label: `Message court (${words} mots)` } : { level: "attention", label: `Message long (${words} mots) : visez moins de 120 mots` });
+  out.push(links.size <= 2 ? { level: "ok", label: `${links.size} lien${links.size > 1 ? "s" : ""}` } : { level: "attention", label: `${links.size} liens : gardez-en 2 au plus (artisan-relance.jercat.fr et dev.jercat.fr)` });
+  out.push(found.length ? { level: "attention", label: `Mots publicitaires à éviter : ${found.join(", ")}` } : { level: "ok", label: "Aucun mot publicitaire" });
+  if (caps) out.push({ level: "attention", label: "Objet avec des mots en MAJUSCULES" });
+  if (/[!?]{2,}/.test(text)) out.push({ level: "attention", label: "Ponctuation répétée (!! ou ??)" });
+  if (!/\{prenom\}|\{entreprise\}/i.test(text)) out.push({ level: "attention", label: "Pas de personnalisation : ajoutez {prenom} ou {entreprise}" });
+  const unk = unknownVariables(text);
+  if (unk.length) out.push({ level: "attention", label: `Variable inconnue : ${unk.join(", ")} (possibles : {prenom}, {entreprise}, {ville})` });
+  return out;
 }

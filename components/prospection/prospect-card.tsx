@@ -25,7 +25,7 @@ import {
 } from "@/lib/actions/prospects";
 import { confirmNorm, detectPlatform, emailDraftLinks, phoneNumbers, PROSPECTION_SENDER, type Platform } from "@/lib/prospect-links";
 import type { Attempt, CallOutcome, Channel, DraftMethod, Prospect, Stage } from "@/lib/prospects";
-import { ensureSiteLink } from "@/lib/prospect-email";
+import { ensureSiteLink, renderProspectTemplate } from "@/lib/prospect-email";
 
 // ---------------------------------------------------------------------------
 // Libellés : un verbe au passé n'apparaît QUE s'il existe une preuve.
@@ -645,10 +645,11 @@ export function ProspectCard({ p, proofDomain }: { p: Prospect; proofDomain: str
           {p.subject && (
             <p className="mb-2">
               <span className="text-muted-foreground">Objet : </span>
-              {p.subject}
+              {renderProspectTemplate(p.subject, { firstName: p.first_name, company: p.company, city: p.city })}
             </p>
           )}
-          <p className="whitespace-pre-line break-words">{p.message}</p>
+          {/* Texte tel qu'il sera reçu : {prenom}, {entreprise}, {ville} remplacés comme à l'envoi */}
+          <p className="whitespace-pre-line break-words">{renderProspectTemplate(p.message, { firstName: p.first_name, company: p.company, city: p.city })}</p>
         </div>
 
         {/* Étape 1 : relire (toute version non validée du texte, M9) */}

@@ -13,8 +13,8 @@ const msg = `Bonjour,\n\nLe principe en vidéo, en 15 secondes : ${V}\n\nPour es
 const e = buildProspectEmail("Vos devis", msg);
 
 t("href directs : les deux adresses + le site", e.hrefs, [V, A, S]);
-t("balise <a> directe pour l'essai", e.html.includes(`<a href="${A}" style="color:#1d4ed8;">${A}</a>`), true);
-t("balise <a> directe pour la vidéo", e.html.includes(`<a href="${V}" style="color:#1d4ed8;">${V}</a>`), true);
+t("balise <a> directe pour l'essai", e.html.includes(`<a href="${A}">${A}</a>`), true);
+t("balise <a> directe pour la vidéo", e.html.includes(`<a href="${V}">${V}</a>`), true);
 t("aucun google.com/url dans le HTML", /google\.[a-z.]+\/url/i.test(e.html), false);
 t("aucun google.com/url dans le texte", /google\.[a-z.]+\/url/i.test(e.text), false);
 t("extraction = liens construits", extractHrefs(e.html), [V, A, S]);
@@ -44,7 +44,7 @@ const modele = `Bonjour,\n\nPour voir comment ça marche :\n${A}\n\nLa présenta
 const em = buildProspectEmail("Vos devis", modele);
 t("site : placé juste sous le téléphone (signature)", em.text.includes(`Jercat\n07 63 49 49 24\n${SITE_LINE}\n\nSi vous ne souhaitez plus`), true);
 t("site : présent une seule fois dans le texte brut", em.text.split("dev.jercat.fr").length - 1, 1);
-t("site : lien direct cliquable dans le HTML", em.html.includes(`Site web : <a href="${S}" style="color:#1d4ed8;">${S}</a>`), true);
+t("site : lien direct cliquable dans le HTML", em.html.includes(`Site web : <a href="${S}">${S}</a>`), true);
 t("site : href exact, sans redirection", em.hrefs.includes(S) && assertDirectLinks(em.html).includes(S), true);
 t("site : la phrase STOP reste la dernière ligne (contrôle « complet »)", em.text.trim().split("\n").pop(), "Si vous ne souhaitez plus recevoir de message de ma part, répondez simplement STOP.");
 t("site : déjà écrit → pas de doublon", ensureSiteLink(`Bonjour\n\nVous pouvez découvrir nos autres services sur https://dev.jercat.fr/\n\nJercat`), `Bonjour\n\nVous pouvez découvrir nos autres services sur https://dev.jercat.fr/\n\nJercat`);
@@ -53,6 +53,28 @@ t("site : réponse courte depuis la fiche → ajouté en fin", buildProspectEmai
 t("site : sans téléphone, après la ligne Jercat", ensureSiteLink("Merci\n\nBonne journée,\nJercat\n\nRépondez STOP."), `Merci\n\nBonne journée,\nJercat\n${SITE_LINE}\n\nRépondez STOP.`);
 t("site : sans signature, avant la phrase STOP", ensureSiteLink("Bonjour\n\nTexte\n\nRépondez STOP pour ne plus recevoir."), `Bonjour\n\nTexte\n\n${SITE_LINE}\n\nRépondez STOP pour ne plus recevoir.`);
 t("site : texte brut multipart lisible (URL complète)", em.text.includes("Site web : https://dev.jercat.fr/"), true);
+
+// --- Délivrabilité : HTML « écrit à la main », modèle court, personnalisation ---
+import { DEFAULT_PROSPECT_MESSAGE, DEFAULT_PROSPECT_SUBJECT, deliverabilityChecks, renderProspectTemplate, unknownVariables, cityLabel } from "./prospect-email.ts";
+const vars = { firstName: "Pascal", company: "Menuiserie MGPC", city: "Jodoigne (BE)" };
+const rendered = renderProspectTemplate(DEFAULT_PROSPECT_MESSAGE, vars);
+const d = buildProspectEmail(renderProspectTemplate(DEFAULT_PROSPECT_SUBJECT, vars), rendered);
+t("HTML : un seul <div dir=ltr>, comme Gmail", /^<div dir="ltr">[\s\S]*<\/div>\n$/.test(d.html), true);
+t("HTML : ni DOCTYPE, ni <head>, ni <body>, ni style, ni couleur", /<!DOCTYPE|<head|<body|style=|color|font-family|<table|<img|<button/i.test(d.html), false);
+t("modèle : 2 liens exactement (artisan-relance + dev.jercat.fr)", d.hrefs, ["https://artisan-relance.jercat.fr/", "https://dev.jercat.fr/"]);
+t("modèle : pas de ligne « Site web » ajoutée en double", d.text.split("dev.jercat.fr").length - 1, 1);
+t("modèle : prénom, entreprise et ville", d.text.startsWith("Bonjour Pascal,\n\nJ'ai vu le site de Menuiserie MGPC en cherchant des artisans à Jodoigne."), true);
+t("objet personnalisé", d.subject, "Question pour Menuiserie MGPC");
+t("sans prénom : « Bonjour, »", renderProspectTemplate("Bonjour {prenom},", {}), "Bonjour,");
+t("ville sans « (02) »", cityLabel("Laon (02)"), "Laon");
+t("modèle : la phrase « stop » reste la dernière ligne", d.text.trim().split("\n").pop(), "Si ce n'est pas pour vous, répondez « stop » et je ne vous écrirai plus.");
+const words = rendered.split(/\s+/).length;
+t("modèle : court (moins de 120 mots)", words < 120, true);
+t("modèle : aucun avertissement de délivrabilité", deliverabilityChecks(DEFAULT_PROSPECT_SUBJECT, DEFAULT_PROSPECT_MESSAGE).filter((c) => c.level !== "ok").map((c) => c.label), []);
+t("ancien texte : « gratuit » et 3 liens signalés", deliverabilityChecks("Vos devis", "Il est gratuit https://a.fr/ https://b.fr/ https://dev.jercat.fr/").filter((c) => c.level !== "ok").length >= 2, true);
+t("variable inconnue détectée", unknownVariables("Bonjour {nom} {prenom}"), ["{nom}"]);
+const textLen = d.text.length, htmlLen = d.html.length;
+t("ratio texte/HTML proche de 1 (HTML < 1,4 × texte)", htmlLen < textLen * 1.4, true);
 
 console.log(`\n${ok} réussis, ${ko} échoués`);
 process.exit(ko ? 1 : 0);

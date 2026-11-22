@@ -28,6 +28,11 @@ $P -f supabase/migrations/20261121100000_prospection_envoi_serveur.sql 2>&1 | gr
 $P -f supabase/migrations/20261121110000_prospection_reponses.sql 2>&1 | grep -v NOTICE || true
 $P -f supabase/migrations/20261121120000_prospection_effacer_conversation.sql 2>&1 | grep -v NOTICE || true
 OUT=$($P -f supabase/tests/prospection_v2.test.sql 2>&1 && $P -f supabase/tests/prospection_v3_envoi_serveur.test.sql 2>&1 && $P -f supabase/tests/prospection_v4_reponses.test.sql 2>&1) || { echo "$OUT"; echo "ERREUR SQL pendant les tests"; exit 1; }
+# Délivrabilité (rythme d'envoi espacé) : appliquée après les tests qui envoient plusieurs messages d'affilée
+$P -f supabase/migrations/20261122210000_prospection_delivrabilite.sql 2>&1 | grep -v NOTICE || true
+OUT5=$($P -f supabase/tests/prospection_v5_delivrabilite.test.sql 2>&1) || { echo "$OUT5"; echo "ERREUR SQL pendant les tests v5"; exit 1; }
+OUT="$OUT
+$OUT5"
 echo "$OUT"
 OK=$(grep -c '^OK' <<<"$OUT" || true); KO=$(grep -c '^KO' <<<"$OUT" || true)
 echo; echo "Résultat : $OK réussis, $KO échoués"

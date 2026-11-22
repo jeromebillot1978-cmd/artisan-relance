@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createProspect, updateProspectContent, type ProspectActionResult } from "@/lib/actions/prospects";
+import { DEFAULT_PROSPECT_MESSAGE, DEFAULT_PROSPECT_SUBJECT, deliverabilityChecks, renderProspectTemplate } from "@/lib/prospect-email";
 import type { Channel, Prospect } from "@/lib/prospects";
 
 /**
@@ -18,7 +19,7 @@ import type { Channel, Prospect } from "@/lib/prospects";
  * Modifier le texte retire la validation : la base l'impose, l'écran le dit avant d'enregistrer.
  */
 type Values = {
-  company: string; city: string; trade: string; channel: Channel; website: string; email: string; phone: string;
+  company: string; first_name: string; city: string; trade: string; channel: Channel; website: string; email: string; phone: string;
   why: string; findings: string; subject: string; message: string; caution: string;
   source_label: string; source_url: string; source_checked_at: string;
 };
@@ -27,9 +28,10 @@ const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Europe/P
 
 function initial(p?: Prospect): Values {
   return {
-    company: p?.company ?? "", city: p?.city ?? "", trade: p?.trade ?? "", channel: p?.channel ?? "email",
+    company: p?.company ?? "", first_name: p?.first_name ?? "", city: p?.city ?? "", trade: p?.trade ?? "", channel: p?.channel ?? "email",
     website: p?.website ?? "", email: p?.email ?? "", phone: p?.phone ?? "", why: p?.why ?? "", findings: p?.findings ?? "",
-    subject: p?.subject ?? "", message: p?.message ?? "", caution: p?.caution ?? "",
+    // Nouvelle fiche : modèle court « écrit à la main », personnalisé à l'envoi
+    subject: p ? p.subject ?? "" : DEFAULT_PROSPECT_SUBJECT, message: p ? p.message ?? "" : DEFAULT_PROSPECT_MESSAGE, caution: p?.caution ?? "",
     source_label: p?.source_label ?? "", source_url: p?.source_url ?? "", source_checked_at: p?.source_checked_at ?? today(),
   };
 }
@@ -53,7 +55,10 @@ export function ProspectFormDialog(props: { open: boolean; onOpenChange: (v: boo
   }, [props.open, props.prospect]);
 
   const editing = Boolean(props.prospect);
-  const textChanged = editing && (v.subject.trim() !== (props.prospect?.subject ?? "") || v.message !== props.prospect?.message);
+  const textChanged = editing && (v.subject.trim() !== (props.prospect?.subject ?? "") || v.message !== props.prospect?.message
+    || v.first_name.trim() !== (props.prospect?.first_name ?? ""));
+  const vars = { firstName: v.first_name, company: props.prospect?.company ?? v.company, city: props.prospect?.city ?? v.city };
+  const checks = deliverabilityChecks(v.subject, v.message);
   const set = (k: keyof Values) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setV((x) => ({ ...x, [k]: e.target.value }));
   const missing = !v.message.trim() || (!editing && (!v.company.trim() || !v.city.trim() || !v.trade.trim() || !v.source_label.trim() || !v.source_checked_at));
@@ -64,7 +69,7 @@ export function ProspectFormDialog(props: { open: boolean; onOpenChange: (v: boo
       try {
         res = props.prospect
           ? await updateProspectContent(props.prospect.id, props.prospect.version, {
-              website: v.website, email: v.email, phone: v.phone, subject: v.subject, message: v.message, caution: v.caution,
+              website: v.website, email: v.email, phone: v.phone, subject: v.subject, message: v.message, caution: v.caution, first_name: v.first_name,
               source_label: v.source_label, source_url: v.source_url, source_checked_at: v.source_checked_at || null,
             })
           : await createProspect({ ...v, source_checked_at: v.source_checked_at || null });
@@ -122,6 +127,9 @@ export function ProspectFormDialog(props: { open: boolean; onOpenChange: (v: boo
           <Field id="pf-phone" label="Téléphone(s)" hint="Plusieurs numéros : séparez-les par « / ».">
             <Input id="pf-phone" inputMode="tel" value={v.phone} onChange={set("phone")} />
           </Field>
+          <Field id="pf-first-name" label="Prénom du contact" hint="Facultatif. Remplace {prenom} : « Bonjour Pascal, ». Vide : « Bonjour, ».">
+            <Input id="pf-first-name" value={v.first_name} onChange={set("first_name")} maxLength={60} autoComplete="off" />
+          </Field>
           <Field id="pf-source-date" label={editing ? "Coordonnées vérifiées le" : "Coordonnées vérifiées le *"}>
             <Input id="pf-source-date" type="date" value={v.source_checked_at} max={today()} onChange={set("source_checked_at")} />
           </Field>
@@ -147,9 +155,31 @@ export function ProspectFormDialog(props: { open: boolean; onOpenChange: (v: boo
         <Field id="pf-subject" label="Objet (e-mail)">
           <Input id="pf-subject" value={v.subject} onChange={set("subject")} maxLength={200} />
         </Field>
-        <Field id="pf-message" label="Message / script *" hint={`${v.message.length} / 5000 caractères`}>
-          <Textarea id="pf-message" rows={8} value={v.message} onChange={set("message")} maxLength={5000} />
+        <Field id="pf-message" label="Message / script *" hint={`${v.message.length} / 5000 caractères · variables : {prenom}, {entreprise}, {ville}`}>
+          <Textarea id="pf-message" rows={10} value={v.message} onChange={set("message")} maxLength={5000} />
         </Field>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="sm"
+            onClick={() => setV((x) => ({ ...x, subject: DEFAULT_PROSPECT_SUBJECT, message: DEFAULT_PROSPECT_MESSAGE }))}>
+            Remettre le modèle court
+          </Button>
+          <span className="text-xs text-muted-foreground">Court, personnalisé, 2 liens : il ressemble à un e-mail écrit à la main.</span>
+        </div>
+
+        {v.channel === "email" && (
+          <div className="space-y-2 rounded-md border bg-muted/30 p-3 text-sm">
+            <p className="font-medium">Ce que recevra {vars.company || "le prospect"}</p>
+            <p className="text-muted-foreground">Objet : {renderProspectTemplate(v.subject, vars) || "—"}</p>
+            <pre className="whitespace-pre-wrap font-sans text-sm">{renderProspectTemplate(v.message, vars)}</pre>
+            <ul className="space-y-0.5 border-t pt-2 text-xs">
+              {checks.map((c) => (
+                <li key={c.label} className={c.level === "ok" ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-300"}>
+                  {c.level === "ok" ? "✓" : "!"} {c.label}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <Field id="pf-caution" label="Point d'attention (facultatif)">
           <Input id="pf-caution" value={v.caution} onChange={set("caution")} maxLength={500} />
         </Field>

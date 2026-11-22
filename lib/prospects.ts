@@ -88,6 +88,8 @@ export type ProspectEvent = { id: number; attempt_id: string | null; type: strin
 export type Prospect = {
   id: string;
   company: string;
+  /** Prénom du contact (facultatif), pour « Bonjour {prenom}, » */
+  first_name: string | null;
   city: string;
   trade: string;
   website: string | null;
@@ -119,7 +121,7 @@ export type Prospect = {
 };
 
 const PROSPECT_COLUMNS =
-  "id, company, city, trade, website, email, phone, channel, why, findings, subject, message, caution, notes, stage, approved_at, approved_message_md5, do_not_contact_at, do_not_contact_reason, next_action_at, source_label, source_url, source_checked_at, archived_at, is_test, version, position";
+  "id, company, first_name, city, trade, website, email, phone, channel, why, findings, subject, message, caution, notes, stage, approved_at, approved_message_md5, do_not_contact_at, do_not_contact_reason, next_action_at, source_label, source_url, source_checked_at, archived_at, is_test, version, position";
 const ATTEMPT_COLUMNS =
   "id, prospect_id, channel, state, proof, bcc_token, to_address, subject_snapshot, message_snapshot, call_outcome, draft_opened_at, draft_method, verified_from, wrong_sender, content_check, failure_reason, cancel_reason, opened_at, declared_at, verified_at, closed_at, sent_at, smtp_message_id, smtp_response, send_duration_ms, sent_hrefs, received_hrefs, link_rewrite_detected";
 

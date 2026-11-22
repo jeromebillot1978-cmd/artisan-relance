@@ -255,6 +255,8 @@ const contentSchema = z.object({
   source_label: optText(200),
   source_url: optText(500).refine((v) => !v || /^https?:\/\//i.test(v), "Le lien de la source doit commencer par http:// ou https://"),
   source_checked_at: optDate,
+  /** Prénom du contact, pour « Bonjour {prenom}, » (facultatif) */
+  first_name: optText(60),
 });
 const createSchema = contentSchema.extend({
   company: z.string().trim().min(1, "Entreprise obligatoire").max(200),
@@ -279,6 +281,7 @@ export async function createProspect(input: ProspectCreateInput) {
     p_company: v.company, p_city: v.city, p_trade: v.trade, p_website: v.website, p_email: v.email, p_phone: v.phone,
     p_channel: v.channel, p_why: v.why, p_findings: v.findings, p_subject: v.subject, p_message: v.message, p_caution: v.caution,
     p_source_label: v.source_label, p_source_url: v.source_url, p_source_checked_at: v.source_checked_at,
+    p_first_name: v.first_name,
   });
 }
 
@@ -291,6 +294,7 @@ export async function updateProspectContent(id: string, v0: number, input: Prosp
     p_id: uuid.parse(id), p_version: version.parse(v0), p_website: v.website, p_email: v.email, p_phone: v.phone,
     p_subject: v.subject, p_message: v.message, p_caution: v.caution,
     p_source_label: v.source_label, p_source_url: v.source_url, p_source_checked_at: v.source_checked_at,
+    p_first_name: v.first_name,
   });
 }
 
