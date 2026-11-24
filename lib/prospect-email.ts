@@ -111,12 +111,12 @@ J'ai vu le site de {entreprise} en cherchant des artisans à {ville}.
 
 Une question : quand un client ne répond pas à un devis, qui s'occupe de le relancer chez vous ?
 
-J'ai créé un petit outil qui fait ces relances par e-mail à votre place et vous prévient dès que le client répond : https://artisan-relance.jercat.fr/
-
-Si ça peut vous servir, répondez simplement à ce message.
+J'ai créé un petit outil qui fait ces relances par e-mail à votre place et vous prévient dès que le client répond. Vous pouvez le découvrir ici :
+https://artisan-relance.jercat.fr/
 
 Jercat
-Développeur web indépendant – https://dev.jercat.fr/
+Développeur web indépendant
+https://dev.jercat.fr/
 07 63 49 49 24
 
 Si ce n'est pas pour vous, répondez « stop » et je ne vous écrirai plus.`;
