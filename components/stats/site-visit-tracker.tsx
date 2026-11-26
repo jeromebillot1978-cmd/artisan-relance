@@ -2,16 +2,16 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
+import { shouldSkipStats } from "@/lib/stats-exclusion";
 
-const PRIVATE = ["/dashboard", "/devis", "/parametres", "/avis-google", "/statistiques", "/auth", "/r/"];
 
-/** Envoie une page vue anonyme (sans cookie) au serveur à chaque changement de page publique. */
+/** Envoie une page vue anonyme (sans cookie) au serveur à chaque changement de page publique (hors administrateur). */
 export function SiteVisitTracker() {
   const pathname = usePathname();
   const first = useRef(true);
 
   useEffect(() => {
-    if (!pathname || PRIVATE.some((p) => pathname === p || pathname.startsWith(p.endsWith("/") ? p : `${p}/`))) return;
+    if (!pathname || shouldSkipStats(pathname)) return;
     const referrer = first.current ? document.referrer : "";
     first.current = false;
     try {
