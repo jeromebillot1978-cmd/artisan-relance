@@ -112,7 +112,7 @@ J'ai vu le site de {entreprise} en cherchant des artisans à {ville}.
 Une question : quand un client ne répond pas à un devis, qui s'occupe de le relancer chez vous ?
 
 J'ai créé un petit outil qui fait ces relances par e-mail à votre place et vous prévient dès que le client répond. Vous pouvez le découvrir ici :
-https://artisan-relance.jercat.fr/
+https://artisan-relance.jercat.fr/artisans
 
 Jercat
 Développeur web indépendant
@@ -159,7 +159,7 @@ export function deliverabilityChecks(subject: string, message: string): Delivera
   const found = PROMO_WORDS.filter((w) => text.toLowerCase().includes(w.toLowerCase()));
   const caps = (subject.match(/\b[A-ZÀ-Ý]{4,}\b/g) ?? []).length;
   out.push(words <= 140 ? { level: "ok", label: `Message court (${words} mots)` } : { level: "attention", label: `Message long (${words} mots) : visez moins de 120 mots` });
-  out.push(links.size <= 2 ? { level: "ok", label: `${links.size} lien${links.size > 1 ? "s" : ""}` } : { level: "attention", label: `${links.size} liens : gardez-en 2 au plus (artisan-relance.jercat.fr et dev.jercat.fr)` });
+  out.push(links.size <= 2 ? { level: "ok", label: `${links.size} lien${links.size > 1 ? "s" : ""}` } : { level: "attention", label: `${links.size} liens : gardez-en 2 au plus (artisan-relance.jercat.fr/artisans et dev.jercat.fr)` });
   out.push(found.length ? { level: "attention", label: `Mots publicitaires à éviter : ${found.join(", ")}` } : { level: "ok", label: "Aucun mot publicitaire" });
   if (caps) out.push({ level: "attention", label: "Objet avec des mots en MAJUSCULES" });
   if (/[!?]{2,}/.test(text)) out.push({ level: "attention", label: "Ponctuation répétée (!! ou ??)" });

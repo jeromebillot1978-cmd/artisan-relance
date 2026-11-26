@@ -61,7 +61,8 @@ const rendered = renderProspectTemplate(DEFAULT_PROSPECT_MESSAGE, vars);
 const d = buildProspectEmail(renderProspectTemplate(DEFAULT_PROSPECT_SUBJECT, vars), rendered);
 t("HTML : un seul <div dir=ltr>, comme Gmail", /^<div dir="ltr">[\s\S]*<\/div>\n$/.test(d.html), true);
 t("HTML : ni DOCTYPE, ni <head>, ni <body>, ni style, ni couleur", /<!DOCTYPE|<head|<body|style=|color|font-family|<table|<img|<button/i.test(d.html), false);
-t("modèle : 2 liens exactement (artisan-relance + dev.jercat.fr)", d.hrefs, ["https://artisan-relance.jercat.fr/", "https://dev.jercat.fr/"]);
+t("modèle : 2 liens exactement (page d'arrivée /artisans + dev.jercat.fr)", d.hrefs, ["https://artisan-relance.jercat.fr/artisans", "https://dev.jercat.fr/"]);
+t("page /artisans : non modifiée par le nettoyage des liens", buildProspectEmail("x", "https://artisan-relance.jercat.fr/artisans").hrefs[0], "https://artisan-relance.jercat.fr/artisans");
 t("modèle : pas de ligne « Site web » ajoutée en double", d.text.split("dev.jercat.fr").length - 1, 1);
 t("modèle : prénom, entreprise et ville", d.text.startsWith("Bonjour Pascal,\n\nJ'ai vu le site de Menuiserie MGPC en cherchant des artisans à Jodoigne."), true);
 t("objet personnalisé", d.subject, "Question pour Menuiserie MGPC");
@@ -69,7 +70,7 @@ t("sans prénom : « Bonjour, »", renderProspectTemplate("Bonjour {prenom},", {
 t("ville sans « (02) »", cityLabel("Laon (02)"), "Laon");
 t("modèle : la phrase « stop » reste la dernière ligne", d.text.trim().split("\n").pop(), "Si ce n'est pas pour vous, répondez « stop » et je ne vous écrirai plus.");
 t("modèle : aucune formule d'appel à répondre (« répondez simplement à ce message »)", /répondez simplement à ce message/i.test(rendered), false);
-t("modèle : lien Artisan Relance seul sur sa ligne", rendered.split("\n").includes("https://artisan-relance.jercat.fr/"), true);
+t("modèle : lien Artisan Relance seul sur sa ligne", rendered.split("\n").includes("https://artisan-relance.jercat.fr/artisans"), true);
 t("modèle : lien du site seul sur sa ligne (signature)", rendered.split("\n").includes("https://dev.jercat.fr/"), true);
 const words = rendered.split(/\s+/).length;
 t("modèle : court (moins de 120 mots)", words < 120, true);

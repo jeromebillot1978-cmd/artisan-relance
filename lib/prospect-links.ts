@@ -44,6 +44,9 @@ export function phoneNumbers(raw: string | null | undefined): { label: string; h
     });
 }
 
+/** Page d'arrivée des e-mails de prospection (visites comptées à part dans Vercel Analytics). */
+export const PROSPECTION_LANDING = "https://artisan-relance.jercat.fr/artisans";
+
 /** Site principal de Jercat : présent dans CHAQUE e-mail de prospection (signature). */
 export const SITE_LINK = "https://dev.jercat.fr/";
 
